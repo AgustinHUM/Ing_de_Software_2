@@ -1,0 +1,27 @@
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: tinder
+      POSTGRES_PASSWORD: tinder
+      POSTGRES_DB: tinderpelis_dev
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tinder -d tinderpelis_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./server
+    working_dir: /app
+    environment:
+      DATABASE_URL: postgresql+psycopg2://tinder:tinder@db:5432/tinderpelis_dev
+      SECRET_KEY: dev-secret
+    ports:
+      - "5050:5000" # cambie a 5050 pq mac parece usar el 5000
+    depends_on:
+      db:
+        condition: service_healthy
