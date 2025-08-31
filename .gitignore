@@ -6,7 +6,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-#.env
+.env
 .venv
 venv/
 ENV/
@@ -15,6 +15,7 @@ dist/
 
 # Pipenv
 # Pipfile.lock
+
 
 # Node
 node_modules/

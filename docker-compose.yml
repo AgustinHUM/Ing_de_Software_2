@@ -1,4 +1,5 @@
 
+
 # Para correr el contenedor y crear la instancia de base de datos
 # Instalar Docker Desktop
 # Iniciar Docker Desktop
@@ -18,6 +19,7 @@
 # o por docker desktop
 # para detener y borrar contenedores y volúmenes
 # docker-compose down -v
+
 
 services:
   db:
