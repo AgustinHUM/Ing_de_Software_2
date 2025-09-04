@@ -20,13 +20,13 @@ export default function GradientButton({
   const onPrimary = paperTheme.colors.onPrimary || '#fff';
   const surface = paperTheme.colors.surface || 'transparent';
 
-  // Text color for outlined/text modes: use gradient start by default (or primary)
+  // Color del texto para modos outline y text
   const outlineTextColor = start;
 
-  // disabled appearance: use lower opacity
+  // menos opacidad si disabled
   const disabledStyle = disabled ? { opacity: 0.6 } : null;
 
-  // Contained mode: gradient background
+  // Contained mode: fondo gradiante
   if (mode === 'contained') {
     return (
       <TouchableOpacity
@@ -54,7 +54,7 @@ export default function GradientButton({
     );
   }
 
-  // Outlined mode: gradient border, inner view with surface (or transparent)
+  // Outlined mode: borde gradiante, interior con color "surface" o transparente
   if (mode === 'outlined') {
     return (
       <TouchableOpacity
@@ -64,7 +64,6 @@ export default function GradientButton({
         style={style}
         accessibilityRole="button"
       >
-        {/* Outer gradient acts as the border */}
         <LinearGradient
           colors={[start, end]}
           start={[0, 0]}
@@ -72,12 +71,12 @@ export default function GradientButton({
           style={[
             {
               borderRadius: radius,
-              padding: borderWidth, // thickness of the gradient border
+              padding: borderWidth, // grosor del borde gradiante
             },
             disabledStyle,
           ]}
         >
-          {/* Inner container is the button surface */}
+          {/* superficie del botono */}
           <View style={[styles.inner, { borderRadius: Math.max(0, radius - borderWidth), backgroundColor: surface }]}>
             {loading ? (
               <ActivityIndicator color={outlineTextColor} />
@@ -92,7 +91,7 @@ export default function GradientButton({
     );
   }
 
-  // Text mode: no gradient background, plain tappable text (we still use gradient color for text if desired)
+  // Text mode: ni fondo ni nada, solo texto pero color del gradiante
   return (
     <TouchableOpacity
       activeOpacity={0.7}

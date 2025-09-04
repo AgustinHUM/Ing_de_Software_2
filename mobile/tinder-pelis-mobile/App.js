@@ -29,10 +29,10 @@ function MainNavigator() {
   return (
     <Stack.Navigator>
       {state.isLoading ? (
-        // simple loading placeholder
+        // placeholder de carga
         <Stack.Screen name="Loading" component={() => null} options={{ headerShown: false }} />
       ) : !state.userToken ? (
-        // Auth flow
+        // flow de autenticacion
         <>
           <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Log in' }} />
