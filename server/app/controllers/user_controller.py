@@ -2,6 +2,7 @@ from typing import Optional, List
 from ..db import db
 from ..models.user import User
 
+#esto vino con el modelo, no se si sirve
 def create_user(email: str, name: str) -> User:
     u = User(email=email, name=name)
     db.session.add(u)

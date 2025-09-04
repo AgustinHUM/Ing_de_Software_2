@@ -1,7 +1,8 @@
-from flask import Blueprint, request, jsonify
-from ..controllers.register_controller import register_user
+from flask import Blueprint, request
+from ..controllers.register_controller import handle_register
 
 register_bp = Blueprint('register', __name__)
 
-@register_bp.route('/register', methods=['POST'])
+@register_bp.route('/register', methods=['POST','GET'])
 def register():
+    return handle_register(request)

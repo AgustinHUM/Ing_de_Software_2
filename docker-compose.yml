@@ -1,40 +1,6 @@
 
 
-# Para correr el contenedor y crear la instancia de base de datos
-# Instalar Docker Desktop
-# Iniciar Docker Desktop
-# Abrir una terminal y navegar hasta el directorio del proyecto
-# Ejecutar el siguiente comando para iniciar los contenedores
-# docker-compose up -build
-# En docker pueden ver el contenedor
-# Para ver la API http://localhost:5050/health
-# Para conectar a base de datos por DBeaver o otra herramienta:
-#   Host: localhost
-#   Port: 5433
-#   Database: tinderpelis_dev
-#   User: tinder
-#   Password: tinder
-# Para detener los contenedores
-# ctrl + c en la terminal donde lo corrieron 
-# o por docker desktop
-# para detener y borrar contenedores y volúmenes
-# docker-compose down -v
-
-
 services:
-  db:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: tinder
-      POSTGRES_PASSWORD: tinder
-      POSTGRES_DB: tinderpelis_dev
-    ports:
-      - "5433:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tinder -d tinderpelis_dev"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
 
   api:
     build: ./server
