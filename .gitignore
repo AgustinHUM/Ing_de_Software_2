@@ -14,7 +14,8 @@ build/
 dist/
 
 # Pipenv
-Pipfile.lock
+# Pipfile.lock
+
 
 # Node
 node_modules/
