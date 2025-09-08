@@ -10,7 +10,6 @@ export default function LoginScreen({ navigation }) {
 
   const theme = useTheme();
   const spacingS = theme.tokens?.spacing?.s ?? 16;
-  const spacingXXL = theme.tokens?.spacing?.xxl ?? 64;
   const spacingL = theme.tokens?.spacing?.l ?? 24;
   const buttonMaxWidth = 420;
   const btnWidth = Math.min(width * 0.8, buttonMaxWidth);
@@ -55,20 +54,22 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <View style={{ alignSelf: 'center', alignItems: 'center', marginBottom: spacingXXL, width: '70%' }}>
+      <View style={{ alignSelf: 'center', alignItems: 'center', marginBottom: '10%', width: '70%' }}>
         <Text variant="headlineLarge" style={{ textAlign: 'center', color: theme.colors.text, fontWeight: '700' }}>
-          Bienvenido a (...)!
+          Bienvenido a 
+              <Text style={{ color: theme.colors.text, fontWeight: '700' }}> Nombre</Text>
+              <Text style={{ color: theme.colors.primary, fontWeight: '700' }}>App</Text>!
         </Text>
         <Text variant="bodyLarge" style={{ color: theme.colors.text, marginTop: 8, textAlign: 'center' }}>
           Para comenzar te pedimos que completes tus datos.
         </Text>
       </View>
-      <View style={{ gap: 16}}>
+      <View style={{ gap: '3%'}}>
         <TextInput label="Nombre completo" value={nombre} onChangeText={setNombre} />
         <TextInput label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
         <TextInput label="Contraseña" value={password} onChangeText={handlePasswordChange} password={true} />
         <TextInput label="Confirmar contraseña" value={confirmPassword} onChangeText={handleConfirmPasswordChange} password={true} />
-        <View style={{height:32,alignContent:'center'}}>
+        <View style={{height:'5%',alignContent:'center'}}>
           {error ? <HelperText style={{fontSize:16,fontWeight:'700'}} type="error">{error}</HelperText> : null}
         </View>
       </View>
@@ -93,6 +94,6 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, justifyContent: 'top', paddingTop: 64 },
+  container: { flex: 1, padding: 16, justifyContent: 'top', paddingTop: '10%' },
   textInput: { mode: 'outlined', borderRadius: 100 },
 });

@@ -37,7 +37,7 @@ function MainNavigator() {
       ) : !state.userToken ? (
         // flow de autenticacion
         <>
-          <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Inicio" component={WelcomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Inicio de sesión'}} />
           <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: 'Registro' }} />
         </>
