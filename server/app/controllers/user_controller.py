@@ -1,7 +1,10 @@
 from typing import Optional, List
 from ..db import db
-from ..models.user import User
+from ..models.models import User
 
+<<<<<<< HEAD
+=======
+#esto vino con el modelo, no se si sirve
 def create_user(email: str, name: str) -> User:
     u = User(email=email, name=name)
     db.session.add(u)
@@ -10,3 +13,4 @@ def create_user(email: str, name: str) -> User:
 
 def list_users() -> list[User]:
     return User.query.order_by(User.id.desc()).all()
+>>>>>>> main
