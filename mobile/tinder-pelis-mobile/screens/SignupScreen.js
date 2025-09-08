@@ -57,10 +57,10 @@ export default function LoginScreen({ navigation }) {
     <View style={styles.container}>
       <View style={{ alignSelf: 'center', alignItems: 'center', marginBottom: spacingXXL, width: '70%' }}>
         <Text variant="headlineLarge" style={{ textAlign: 'center', color: theme.colors.text, fontWeight: '700' }}>
-          Comencemos!
+          Bienvenido a (...)!
         </Text>
         <Text variant="bodyLarge" style={{ color: theme.colors.text, marginTop: 8, textAlign: 'center' }}>
-          Bienvenido a (...), para comenzar te pedimos que completes tus datos.
+          Para comenzar te pedimos que completes tus datos.
         </Text>
       </View>
       <View style={{ gap: 16}}>

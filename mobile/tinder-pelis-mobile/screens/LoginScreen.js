@@ -32,12 +32,12 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <View style={{alignSelf:'center', alignItems: 'center', marginBottom: spacingXXL, width:'60%'}}>
+      <View style={{alignSelf:'center', alignItems: 'center', marginBottom: spacingXXL, width:'90%'}}>
             <Text variant="headlineLarge" style={{ textAlign: 'center', color: theme.colors.text, fontWeight: '700' }}>
-              Hola, X!
+              Bienvenido de vuelta!
             </Text>
             <Text variant="bodyLarge" style={{ color: theme.colors.text, marginTop: 8, textAlign: 'center' }}>
-              Bienvenido de vuelta, completa tus datos para avanzar.
+              Completa tus datos para avanzar.
             </Text>
       </View>
       <View style={{flex:0.5,gap:16}}>
