@@ -18,7 +18,7 @@ export default function LoginScreen({ navigation }) {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('Error de ejemplo para ver los espaciados');
   const { signIn } = useAuth();
 
   const onSignIn = async () => {
