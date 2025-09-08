@@ -1,4 +1,3 @@
-// components/GradientButton.js
 import React from 'react';
 import { TouchableOpacity, StyleSheet, ActivityIndicator, Text, View } from 'react-native';
 import { useTheme } from 'react-native-paper';
@@ -11,57 +10,44 @@ export default function GradientButton({
   disabled = false,
   style,
   mode = 'contained', // 'contained' | 'outlined' | 'text'
-  borderWidth = 2,
+  borderWidth = 3,
+  fullWidth = false,
 }) {
-  const paperTheme = useTheme();
-  const start = paperTheme.colors.gradientStart || '#ff8a00';
-  const end = paperTheme.colors.gradientEnd || '#ffb347';
-  const radius = 100;
-  const onPrimary = paperTheme.colors.onPrimary || '#fff';
-  const surface = paperTheme.colors.surface || 'transparent';
+  const theme = useTheme();
 
-  // Color del texto para modos outline y text
-  const outlineTextColor = start;
+  // Lo pide al theme pero por si falla los redefino
+  const start = theme.colors?.primary ?? '#ff8a00';
+  const end = theme.colors?.secondary ?? '#fcd25eff';
+  const onPrimary = theme.colors?.onPrimary ?? '#fff';
+  const borderColor = '#ffb833ff'; //un tono en el medio
+  const disabledOpacity = 0.6;
 
-  // menos opacidad si disabled
-  const disabledStyle = disabled ? { opacity: 0.6 } : null;
+  const buttonHeight = (theme.sizes && theme.sizes.buttonHeight) || 52;
+  const paddingH = (theme.tokens && theme.tokens.spacing && theme.tokens.spacing.m) ?? 18;
+  const fontSize = (theme.tokens && theme.tokens.typography && theme.tokens.typography.buttonSize) ?? 16;
+  const fontWeight = (theme.tokens && theme.tokens.typography && theme.tokens.typography.buttonWeight) ?? '600';
 
-  // Contained mode: fondo gradiante
+  const borderRadius = Math.round(buttonHeight / 2);
+  const disabledStyle = disabled ? { opacity: disabledOpacity } : null;
+  const wrapperWidthStyle = fullWidth ? { width: '100%' } : {};
+
+  const Content = ({ color }) =>
+    loading ? (
+      <ActivityIndicator color={color} />
+    ) : (
+      <Text style={[styles.text, { color, fontSize, fontWeight }]} numberOfLines={1}>
+        {children}
+      </Text>
+    );
+
+  // Variante con fondo en degradé
   if (mode === 'contained') {
     return (
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={onPress}
         disabled={disabled || loading}
-        style={style}
-        accessibilityRole="button"
-      >
-        <LinearGradient
-          colors={[start, end]}
-          start={[0, 0]}
-          end={[1, 0]}
-          style={[styles.gradient, { borderRadius: radius }, disabledStyle]}
-        >
-          {loading ? (
-            <ActivityIndicator color={onPrimary} />
-          ) : (
-            <Text style={[styles.text, { color: onPrimary, fontWeight: paperTheme.typography?.buttonWeight || '600' }]}>
-              {children}
-            </Text>
-          )}
-        </LinearGradient>
-      </TouchableOpacity>
-    );
-  }
-
-  // Outlined mode: borde gradiante, interior con color "surface" o transparente
-  if (mode === 'outlined') {
-    return (
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={onPress}
-        disabled={disabled || loading}
-        style={style}
+        style={[wrapperWidthStyle, style]}
         accessibilityRole="button"
       >
         <LinearGradient
@@ -69,62 +55,73 @@ export default function GradientButton({
           start={[0, 0]}
           end={[1, 0]}
           style={[
+            styles.gradient,
             {
-              borderRadius: radius,
-              padding: borderWidth, // grosor del borde gradiante
+              borderRadius,
+              minHeight: buttonHeight,
+              paddingHorizontal: paddingH,
             },
             disabledStyle,
           ]}
         >
-          {/* superficie del botono */}
-          <View style={[styles.inner, { borderRadius: Math.max(0, radius - borderWidth), backgroundColor: surface }]}>
-            {loading ? (
-              <ActivityIndicator color={outlineTextColor} />
-            ) : (
-              <Text style={[styles.text, { color: outlineTextColor, fontWeight: paperTheme.typography?.buttonWeight || '600' }]}>
-                {children}
-              </Text>
-            )}
+          <View style={{ alignItems: 'center', justifyContent: 'center', minHeight: buttonHeight }}>
+            <Content color={onPrimary} />
           </View>
         </LinearGradient>
       </TouchableOpacity>
     );
   }
 
-  // Text mode: ni fondo ni nada, solo texto pero color del gradiante
+  // Variante solo borde
+  if (mode === 'outlined') {
+    return (
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={onPress}
+        disabled={disabled || loading}
+        style={[
+          wrapperWidthStyle,
+          style,
+          {
+            borderRadius,
+            borderWidth,
+            borderColor,
+            backgroundColor: 'transparent',
+            minHeight: buttonHeight,
+            paddingHorizontal: paddingH,
+            alignItems: 'center',
+            justifyContent: 'center',
+          },
+          disabledStyle,
+        ]}
+        accessibilityRole="button"
+      >
+        <Content color={borderColor} />
+      </TouchableOpacity>
+    );
+  }
+
+  // Variante solo texto
   return (
     <TouchableOpacity
       activeOpacity={0.7}
       onPress={onPress}
       disabled={disabled || loading}
-      style={style}
+      style={[wrapperWidthStyle, style, { paddingHorizontal: paddingH, minHeight: buttonHeight, justifyContent: 'center' }]}
       accessibilityRole="button"
     >
-      {loading ? (
-        <ActivityIndicator />
-      ) : (
-        <Text style={[styles.text, { color: outlineTextColor, fontWeight: paperTheme.typography?.buttonWeight || '600' }]}>
-          {children}
-        </Text>
-      )}
+      {loading ? <ActivityIndicator color={borderColor} /> : <Text style={[styles.text, { color: borderColor, fontSize, fontWeight }]}>{children}</Text>}
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   gradient: {
-    paddingVertical: 12,
-    paddingHorizontal: 18,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  inner: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
   },
   text: {
-    fontSize: 16,
+    includeFontPadding: false,
+    textAlign: 'center',
   },
 });

@@ -8,8 +8,8 @@ export default function HomeScreen() {
   const { signOut } = useAuth();
   return (
     <View style={styles.container}>
-      <Text variant='titleLarge'>Inicio (placeholder)</Text>
-      <Text variant='bodyMedium'>Lorem ipsum lorem ipsum lorem ipsum.</Text>
+      <Text variant='titleLarge' style={{color:'#fff'}}>Inicio (placeholder)</Text>
+      <Text variant='bodyMedium' style={{color:'#fff'}}>Lorem ipsum lorem ipsum lorem ipsum.</Text>
       <GradientButton mode="outlined" onPress={() => signOut()} style={{ marginTop: 12 }}>
         Cerrar sesión
       </GradientButton>

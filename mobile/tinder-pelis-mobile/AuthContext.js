@@ -49,9 +49,9 @@ export function AuthProvider({ children }) {
         dispatch({ type: 'SIGN_IN', token: fakeToken });
       }
     },
-    signUp: async (email, password) => {
+    signUp: async (email, nombre, password) => {
       try {
-        await axios.post('https://example.com/api/auth/signup', { email, password });
+        await axios.post('https://example.com/api/auth/signup', { email, nombre, password });
         // after signup directly sign in
         await auth.signIn(email, password);
       } catch (e) {

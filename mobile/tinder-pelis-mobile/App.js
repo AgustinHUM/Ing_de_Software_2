@@ -1,4 +1,4 @@
-import React from 'react';
+import { StatusBar } from 'expo-status-bar';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -13,13 +13,16 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
+    <>
+    <StatusBar style="light"/>
     <PaperProvider theme={theme}>
       <AuthProvider>
-        <NavigationContainer>
+        <NavigationContainer theme={theme}>
           <MainNavigator />
         </NavigationContainer>
       </AuthProvider>
     </PaperProvider>
+    </>
   );
 }
 
@@ -27,7 +30,7 @@ function MainNavigator() {
   const { state } = useAuth();
 
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{headerTintColor:theme.colors.onPrimary, headerStyle:{backgroundColor:theme.colors.surface} }}>
       {state.isLoading ? (
         // placeholder de carga
         <Stack.Screen name="Loading" component={() => null} options={{ headerShown: false }} />
@@ -35,8 +38,8 @@ function MainNavigator() {
         // flow de autenticacion
         <>
           <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Log in' }} />
-          <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: 'Create account' }} />
+          <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Inicio de sesión'}} />
+          <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: 'Registro' }} />
         </>
       ) : (
         // App
