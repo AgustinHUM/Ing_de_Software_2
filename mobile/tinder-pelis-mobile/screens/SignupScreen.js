@@ -69,7 +69,7 @@ export default function LoginScreen({ navigation }) {
         <TextInput label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
         <TextInput label="Contraseña" value={password} onChangeText={handlePasswordChange} password={true} />
         <TextInput label="Confirmar contraseña" value={confirmPassword} onChangeText={handleConfirmPasswordChange} password={true} />
-        <View style={{height:'5%',alignContent:'center'}}>
+        <View style={{height:32,alignContent:'center'}}>
           {error ? <HelperText style={{fontSize:16,fontWeight:'700'}} type="error">{error}</HelperText> : null}
         </View>
       </View>
@@ -84,7 +84,7 @@ export default function LoginScreen({ navigation }) {
           mode="text"
           fullWidth
           onPress={() => navigation.navigate('Login')}
-          style={{ width: btnWidth, marginTop: spacingS / 2 }}
+          style={{ width: btnWidth, marginTop: '-2%'}}
         >
           Iniciar sesión
         </GradientButton>
