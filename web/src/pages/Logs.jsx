@@ -13,14 +13,17 @@ export default function Logs() {
         <p>Registros de actividad y eventos importantes.</p>
   
         <table border="1" cellPadding="8" style={{ marginTop: "1rem", borderCollapse: "collapse", width: "100%" }}>
-          <thead>
-            <tr style={{ background: "#f2f2f2" }}>
-              <th>ID</th>
-              <th>Fecha</th>
-              <th>Tipo</th>
-              <th>Mensaje</th>
-            </tr>
-          </thead>
+        <thead style={{
+          background: "linear-gradient(90deg, var(--grad-start), var(--grad-end))",
+        }}>
+          <tr style={{ color: "#111", textAlign: "left", fontWeight: 600 }}>
+            <th style={{ padding: "10px 12px" }}>ID</th>
+            <th style={{ padding: "10px 12px" }}>Fecha</th>
+            <th style={{ padding: "10px 12px" }}>Tipo</th>
+            <th style={{ padding: "10px 12px" }}>Mensaje</th>
+          </tr>
+</thead>
+
           <tbody>
             {logs.map((log) => (
               <tr key={log.id}>
