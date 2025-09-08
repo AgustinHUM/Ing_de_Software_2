@@ -18,7 +18,7 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('Error de ejemplo para ver los espaciados');
   const { signUp } = useAuth();
 
   const handlePasswordChange = (text) => {
@@ -64,19 +64,19 @@ export default function LoginScreen({ navigation }) {
           Para comenzar te pedimos que completes tus datos.
         </Text>
       </View>
-      <View style={{ gap: '3%'}}>
+      <View style={{ gap: '1%'}}>
         <TextInput label="Nombre completo" value={nombre} onChangeText={setNombre} />
         <TextInput label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
         <TextInput label="Contraseña" value={password} onChangeText={handlePasswordChange} password={true} />
         <TextInput label="Confirmar contraseña" value={confirmPassword} onChangeText={handleConfirmPasswordChange} password={true} />
-        <View style={{height:32,alignContent:'center'}}>
+      </View>
+      <View style={{height:32,alignContent:'center'}}>
           {error ? <HelperText style={{fontSize:16,fontWeight:'700'}} type="error">{error}</HelperText> : null}
-        </View>
       </View>
       <GradientButton mode="contained" onPress={onSignIn} style={{ marginTop: 12 }}>
         Registrarme
       </GradientButton>
-      <View style={{ width: '100%', alignItems: 'center', marginTop: spacingL, backgroundColor: 'transparent' }}>
+      <View style={{ width: '100%', alignItems: 'center', marginTop: '10%', backgroundColor: 'transparent' }}>
         <Text variant="bodyLarge" style={{ color: theme.colors.text, textAlign: 'center' }}>
           ¿Ya estás registrado?
         </Text>
@@ -94,6 +94,6 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, justifyContent: 'top', paddingTop: '10%' },
+  container: { flex: 1, padding: 16, justifyContent: 'top', paddingTop: '15%' },
   textInput: { mode: 'outlined', borderRadius: 100 },
 });
