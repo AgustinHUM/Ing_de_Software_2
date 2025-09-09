@@ -2,6 +2,7 @@ import React from 'react';
 import { TouchableOpacity, StyleSheet, ActivityIndicator, Text, View } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
+import {mixColors} from '../theme'
 
 export default function GradientButton({
   children,
@@ -16,10 +17,10 @@ export default function GradientButton({
   const theme = useTheme();
 
   // Lo pide al theme pero por si falla los redefino
-  const start = theme.colors?.primary ?? '#ff8a00';
-  const end = theme.colors?.secondary ?? '#fcd25eff';
-  const onPrimary = theme.colors?.onPrimary ?? '#fff';
-  const borderColor = '#ffb833ff'; //un tono en el medio
+  const start = theme.colors?.primary ?? 'rgba(255, 138, 0, 1)';
+  const end = theme.colors?.secondary ?? 'rgba(252, 210, 94, 1)';
+  const text = theme.colors?.text ?? '#fff';
+  const borderColor = mixColors(start,end) //Un tono en el medio para los colores fijos
   const disabledOpacity = 0.6;
 
   const buttonHeight = (theme.sizes && theme.sizes.buttonHeight) || 52;
@@ -65,7 +66,7 @@ export default function GradientButton({
           ]}
         >
           <View style={{ alignItems: 'center', justifyContent: 'center', minHeight: buttonHeight }}>
-            <Content color={onPrimary} />
+            <Content color={text} />
           </View>
         </LinearGradient>
       </TouchableOpacity>
