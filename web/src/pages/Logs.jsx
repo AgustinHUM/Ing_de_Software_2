@@ -9,7 +9,7 @@ export default function Logs() {
   
     return (
       <div>
-        <h2>Logs del Sistema</h2>
+        <h2 style={{margin:"0 0 6px"}}>Logs del Sistema</h2>
         <p>Registros de actividad y eventos importantes.</p>
   
         <table border="1" cellPadding="8" style={{ marginTop: "1rem", borderCollapse: "collapse", width: "100%" }}>

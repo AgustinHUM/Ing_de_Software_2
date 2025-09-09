@@ -1,27 +1,30 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Sidebar from "./components/Sidebar";
 import Dashboard from "./pages/Dashboard";
 import Logs from "./pages/Logs";
 import Movies from "./pages/Movies";
+import Login from "./pages/Login";
+import ProtectedLayout from "./layout/ProtectedLayout";
+import { AuthProvider } from "./context/AuthContext";
 
 export default function App() {
   return (
     <BrowserRouter>
-      <Sidebar />
-      <div style={{
-        marginLeft: 200,          // 👈 deja espacio igual al ancho del sidebar
-        minHeight: "100vh",
-        background: "var(--bg)",
-        color: "var(--text)"
-      }}>
-        <main style={{ padding: 20 }}>
-          <Routes>
+      <AuthProvider>
+        <Routes>
+          {/* Pública */}
+          <Route path="/login" element={<Login />} />
+
+          {/* Protegidas */}
+          <Route element={<ProtectedLayout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/logs" element={<Logs />} />
             <Route path="/movies" element={<Movies />} />
-          </Routes>
-        </main>
-      </div>
+          </Route>
+
+          {/* Fallback */}
+          <Route path="*" element={<Login />} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
