@@ -18,7 +18,7 @@ export default function WelcomeScreen({ navigation }) {
   const buttonMaxWidth = 420;
   const btnWidth = Math.min(width * 0.8, buttonMaxWidth);
 
-  const gradianteFondo = ['rgba(0,0,0,1)',setAlpha(theme.colors.surface,0.5), setAlpha(theme.colors.background,0.95),'rgba(0,0,0,0.96)'];
+  const gradianteFondo = ['rgba(0,0,0,1)',setAlpha(theme.colors.surface,0.25), setAlpha(theme.colors.background,0.75),'rgba(0,0,0,0.96)'];
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: 'transparent' }]}>
       <ImageBackground source={bg} style={styles.bg} imageStyle={{ resizeMode: 'cover' }} blurRadius={3}>

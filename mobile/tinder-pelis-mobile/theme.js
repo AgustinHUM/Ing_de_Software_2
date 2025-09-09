@@ -57,12 +57,12 @@ export const tweak = {
 };
 
 /* ===========================
-             Colores (defaults)
+        Colores (defaults)
    =========================== */
 const defaultColors = {
   // core
   primary: 'rgba(255, 138, 0, 1)',
-  secondary: 'rgba(252, 210, 94, 1)',
+  secondary: 'rgba(251, 195, 76, 1)',
   background: 'rgba(18, 8, 36, 1)',
   surface: 'rgba(33, 5, 65, 1)',
   accent:'rgba(50, 23, 68, 1)',
