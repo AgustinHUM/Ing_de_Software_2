@@ -2,6 +2,7 @@ from typing import Optional, List
 from ..db import db
 from ..models.models import User
 
+<<<<<<< HEAD
 
 #esto vino con el modelo, no se si sirve
 def create_user(email: str, name: str) -> User:
@@ -13,3 +14,5 @@ def create_user(email: str, name: str) -> User:
 def list_users() -> list[User]:
     return User.query.order_by(User.id.desc()).all()
 
+=======
+>>>>>>> rama_lautaro
