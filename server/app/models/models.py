@@ -85,13 +85,6 @@ class Admin(Cuenta):
 
     # Admin que creó este admin
     mail_creador = db.Column(db.String(120), db.ForeignKey("ADMIN.mail"), nullable=True)
-<<<<<<< HEAD
-    creador = db.relationship("Admin", remote_side=[mail], backref=db.backref("creado", lazy="dynamic", uselist=False), foreign_keys=[mail_creador])
-
-    #Admin elimina admins
-    eliminado_por_mail = db.Column(db.String(120), db.ForeignKey("ADMIN.mail"), nullable=True)
-    eliminado_por = db.relationship("Admin", remote_side=[mail], backref=db.backref("eliminados", lazy="dynamic"), foreign_keys=[eliminado_por_mail])
-=======
     # Admin que eliminó este admin
     eliminado_por_mail = db.Column(db.String(120), db.ForeignKey("ADMIN.mail"), nullable=True)
     
@@ -117,7 +110,6 @@ class Admin(Cuenta):
         foreign_keys=[eliminado_por_mail]
     )
 
->>>>>>> rama_lautaro
     esta_eliminado = db.Column(db.Boolean, default=False)
 
     __mapper_args__ = {"polymorphic_identity": "admin"}

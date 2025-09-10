@@ -11,15 +11,11 @@ flask-sqlalchemy = "*"
 psycopg2-binary = "*"
 alembic = "*"
 flask-migrate = "*"
-<<<<<<< HEAD
 requests = "*"
-=======
 flask-bcrypt = "*"
 boto3 = "*"
 flask = "*"
->>>>>>> rama_lautaro
 
 [dev-packages]
-
 [requires]
 python_version = "3.11"

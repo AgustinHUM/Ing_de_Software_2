@@ -14,8 +14,9 @@ def seed_watchmode():
     api_key = 'El1TkZY9xIPEWC9qgpDhI6i8DBfWwEz0YtMbWE8n'
     base_url = 'https://api.watchmode.com/v1/'
 
-
+    """
     # Generos
+    print("script started")
     genres_response = requests.get(f'{base_url}genres/?apiKey={api_key}')
     genres_data = genres_response.json()
     for genre in genres_data:
@@ -53,7 +54,7 @@ def seed_watchmode():
                 region = Pais.query.filter_by(nombre_pais=country).first()
                 if region and region not in new_platform.paises:
                     new_platform.paises.append(region)
-            session.add(new_platform)
+            session.add(new_platform)"""
 
     # Peliculas
     all_movies = []
@@ -67,9 +68,9 @@ def seed_watchmode():
             'apiKey': api_key,
             'types': 'movie',
             'genres': genre_id,
-            'limit': 10,
+            'limit': 5,
             'source_ids': platform_id,
-            'sort_by': 'popularity_desc'
+            'sort_by': 'relevance_desc'
             }
             print(params)
             response = requests.get('https://api.watchmode.com/v1/list-titles/', params=params)
