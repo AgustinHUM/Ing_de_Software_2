@@ -1,4 +1,3 @@
-// screens/Profile.js
 import React from 'react';
 import { View, TouchableOpacity, ScrollView } from "react-native";
 import { Text, useTheme } from "react-native-paper";
@@ -21,14 +20,10 @@ export default function ProfileScreen({ navigation, setAppTheme, themesMap, curr
           </GradientButton>
         </View>
 
-        {/* Sección elegir tema (funcional, básica) */}
+
         <View style={{ width: '100%', paddingHorizontal: 24, marginTop: 24 }}>
           <Text variant="headlineSmall" style={{ color: theme.colors.text, fontWeight: 700, marginBottom: 8 }}>
             Elegir tema
-          </Text>
-
-          <Text style={{ color: theme.colors.text, marginBottom: 12 }}>
-            Toca una opción para cambiar el tema de la app.
           </Text>
 
           <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>

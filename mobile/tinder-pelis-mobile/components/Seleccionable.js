@@ -7,6 +7,8 @@ export default function Seleccionable({
     label = '',
     fontSize = 14,
     icon = null, 
+    iconWidth = 16,
+    iconHeight = 16,
     height = 'auto',
     width = 'auto',
     onSelect = () => {},
@@ -60,7 +62,7 @@ export default function Seleccionable({
       if (React.isValidElement(icon)) {
         return <View style={{ marginRight: 8 }}>{icon}</View>;
       }
-      return <Image source={icon} style={{ width: 20, height: 20, marginRight: 8 }} resizeMode="contain" />;
+      return <Image source={icon} style={{ width: iconWidth, height: iconHeight, marginRight: iconWidth/2, marginLeft:iconWidth/4, borderRadius:iconWidth/4 }} resizeMode="contain" />;
     };
 
     if (!selected) {
