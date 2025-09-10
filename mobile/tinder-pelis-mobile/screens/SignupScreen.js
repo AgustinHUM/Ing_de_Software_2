@@ -9,8 +9,6 @@ export default function LoginScreen({ navigation }) {
   const { width } = Dimensions.get('window');
 
   const theme = useTheme();
-  const spacingS = theme.tokens?.spacing?.s ?? 16;
-  const spacingL = theme.tokens?.spacing?.l ?? 24;
   const buttonMaxWidth = 420;
   const btnWidth = Math.min(width * 0.8, buttonMaxWidth);
 

@@ -67,6 +67,7 @@ const defaultColors = {
   surface: 'rgba(33, 5, 65, 1)',
   accent:'rgba(50, 23, 68, 1)',
   text: 'rgba(255, 255, 255, 1)',
+  placeholderText: 'rgba(255,255,255,0.4)',
   disabled: 'rgba(189, 189, 189, 1)',
 
   // info

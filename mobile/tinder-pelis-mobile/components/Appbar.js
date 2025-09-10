@@ -109,7 +109,7 @@ export default function AppBar({ currentRouteName = 'Home', navigationRef }) {
           const iconName = active ? r.icon.filled : r.icon.outline;
 
           const color = active ? theme.colors.text : 'rgba(255,255,255,0.85)';
-          const size = 36;
+          const size = 30;
 
           return (
             <TouchableRipple
@@ -120,7 +120,7 @@ export default function AppBar({ currentRouteName = 'Home', navigationRef }) {
                 try {
                   navigationRef?.current?.navigate(r.route);
                 } catch (e) {
-                  console.warn('Navigation not ready', e);
+                  console.warn('Error en la navegacion con la appbar.', e);
                 }
               }}
               style={styles.tab}

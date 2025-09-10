@@ -20,7 +20,6 @@ const TextInput = React.forwardRef((props, ref) => {
     value: controlledValue,
     defaultValue,
     onChangeText,
-    // support both aliases
     password = false,
     secureTextEntry: secureTextEntryProp,
     showToggle = true,
@@ -39,14 +38,9 @@ const TextInput = React.forwardRef((props, ref) => {
     if (controlledValue === undefined) setUncontrolledValue(t);
   };
 
-  // determine whether field should be secure by default
   const initialSecure = !!password || !!secureTextEntryProp;
   const [secure, setSecure] = React.useState(initialSecure);
 
-  // Build right element:
-  // - if caller passed a React element, use it
-  // - if caller passed an object ({icon, onPress...}), create an Icon
-  // - otherwise, if password mode and showToggle, add eye toggle
   let rightElement = null;
 
   if (React.isValidElement(right)) {
@@ -84,7 +78,6 @@ const TextInput = React.forwardRef((props, ref) => {
       outlineStyle={{ borderRadius: 100, borderWidth: 2 }}
       style={[styles.input, style]}
       selectionColor={theme.colors.primary}
-      // secureTextEntry respects internal toggle (secure) but allow override via rest
       secureTextEntry={rest.secureTextEntry ?? secure}
       right={rightElement ?? rest.right}
       {...rest}
