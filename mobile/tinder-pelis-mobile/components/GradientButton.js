@@ -29,7 +29,7 @@ export default function GradientButton({
   const fontWeight = (theme.tokens && theme.tokens.typography && theme.tokens.typography.buttonWeight) ?? '600';
 
   const borderRadius = Math.round(buttonHeight / 2);
-  const disabledStyle = disabled ? { opacity: disabledOpacity } : null;
+  const disabledStyle = disabled ? { opacity: disabledOpacity,color:theme.colors.disabled } : null;
   const wrapperWidthStyle = fullWidth ? { width: '100%' } : {};
 
   const Content = ({ color }) =>
@@ -108,10 +108,10 @@ export default function GradientButton({
       activeOpacity={0.7}
       onPress={onPress}
       disabled={disabled || loading}
-      style={[wrapperWidthStyle, style, { paddingHorizontal: paddingH, minHeight: buttonHeight, justifyContent: 'center' }]}
+      style={[wrapperWidthStyle, style, { paddingHorizontal: paddingH, minHeight: buttonHeight, justifyContent: 'center' },disabledStyle]}
       accessibilityRole="button"
     >
-      {loading ? <ActivityIndicator color={borderColor} /> : <Text style={[styles.text, { color: borderColor, fontSize, fontWeight }]}>{children}</Text>}
+      {loading ? <ActivityIndicator color={borderColor} /> : <Text style={[styles.text, { color: borderColor, fontSize, fontWeight },disabledStyle]}>{children}</Text>}
     </TouchableOpacity>
   );
 }

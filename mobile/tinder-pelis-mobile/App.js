@@ -16,6 +16,7 @@ import FriendsScreen from './screens/Friends';
 import SearchScreen from './screens/Search';
 import FavouritesScreen from './screens/Favourites';
 import InitialFormScreen from './screens/InitialForm';
+import GenresFormScreen from './screens/SecondForm';
 
 const Stack = createNativeStackNavigator();
 
@@ -143,6 +144,8 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
           <Stack.Screen name="Login" component={LoginScreen} options={{title: 'Inicio de sesión', animation:'fade_from_bottom' }} />
           <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: 'Registro', animation:'fade_from_bottom' }} />
           <Stack.Screen name="InitialForm" component={InitialFormScreen} options={{headerShown:false, title: 'Formulario inicial', animation:'fade_from_bottom' }} />
+          <Stack.Screen name="GenreForm" component={GenresFormScreen} options={{headerShown:true, title: 'Formulario inicial', animation:'fade_from_bottom' }} />
+
         </>
       ) : (
         <>

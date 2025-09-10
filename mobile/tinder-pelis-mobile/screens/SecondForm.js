@@ -3,56 +3,58 @@ import { Divider, Text, useTheme } from "react-native-paper";
 import Seleccionable from "../components/Seleccionable";
 import { useState } from "react";
 import GradientButton from "../components/GradientButton";
+import { useAuth } from "../AuthContext";
 
-export default function InitialFormScreen({navigation}) {
+export default function GenresFormScreen({navigation}) {
+    const { signIn } = useAuth(); //PARA LA DEMO ---- INÉS SI QUERÉS Y SABÉS CAMBIARLO PARA QUE ANDE ES TODO TUYO
     const SERVICIOS = [
-        {name:'Netflix',
-            icon:require('../assets/Netflix.jpg')
+        {name:'Acción',
+            //icon:require('../assets/Netflix.jpg')
         },
-        {name:'Disney+',
-            icon:require('../assets/DisneyPlus.jpg')
+        {name:'Ciencia Ficción',
+            //icon:require('../assets/DisneyPlus.jpg')
         },
-        {name:'Prime Video',
-            icon:require('../assets/PrimeVideo.jpg')
+        {name:'Romance',
+            //icon:require('../assets/PrimeVideo.jpg')
         },
-        {name:'Hulu',
-            icon:require('../assets/Hulu.jpg')
+        {name:'Musical',
+            //icon:require('../assets/Hulu.jpg')
         },
-        {name:'Max',
-            icon:require('../assets/Max.jpg')
+        {name:'Misterio',
+            //icon:require('../assets/Max.jpg')
         },
-        {name:'Paramount Plus',
-            icon:require('../assets/ParamountPlus.jpg')
+        {name:'Thriller',
+            //icon:require('../assets/ParamountPlus.jpg')
         },
-        {name:'DirectTV',
-            icon:require('../assets/DirectTV.jpg')
+        {name:'Criminal',
+            //icon:require('../assets/DirectTV.jpg')
         },
-        {name:'Netflix 2',
-            icon:require('../assets/Netflix.jpg')
+        {name:'Policial',
+            //icon:require('../assets/Netflix.jpg')
         },
-        {name:'Disney*',
-            icon:require('../assets/DisneyPlus.jpg')
+        {name:'Superhéroes',
+            //icon:require('../assets/DisneyPlus.jpg')
         },
-        {name:'Prime Video 2',
-            icon:require('../assets/PrimeVideo.jpg')
+        {name:'Fantasía',
+            //icon:require('../assets/PrimeVideo.jpg')
         },
-        {name:'Hulu 2',
-            icon:require('../assets/Hulu.jpg')
+        {name:'Kung-Fu Panda 2',
+            //icon:require('../assets/Hulu.jpg')
         },
-        {name:'Maximo',
-            icon:require('../assets/Max.jpg')
+        {name:'Infantil',
+            //icon:require('../assets/Max.jpg')
         },
-        {name:'Paramount Plus 2',
-            icon:require('../assets/ParamountPlus.jpg')
+        {name:'Animación',
+            //icon:require('../assets/ParamountPlus.jpg')
         },
-        {name:'DirectTV 2',
-            icon:require('../assets/DirectTV.jpg')
+        {name:'Comedia',
+            //icon:require('../assets/DirectTV.jpg')
         },
     ];
     const theme = useTheme();
-    const [servicesSelected, setServicesSelected] = useState([]);
+    const [genresSelected, setGenresSelected] = useState([]);
     const toggleSelected = (serv, selected) => {
-    setServicesSelected(prev => {
+    setGenresSelected(prev => {
       const exists = prev.includes(serv);
       if (selected) {
         // si selected=true lo ponemos en la lista
@@ -67,20 +69,19 @@ export default function InitialFormScreen({navigation}) {
   };
     return(
         
-        <View style={{ flex: 1, paddingTop: 40,paddingHorizontal: 25, backgroundColor: theme.colors.background }}>
+        <View style={{ flex: 1, paddingHorizontal: 25, backgroundColor: theme.colors.background }}>
             <View style={{flexDirection:'row',justifyContent:'flex-end'}}>
                 <GradientButton
                 mode="text"
-                disabled={!!(servicesSelected.length===0)}
-                onPress={() => navigation.navigate('GenreForm')}
+                onPress={() => signIn("TEST DEMO","contraseña123")} //NO SE COMO HOOKEARLO A LA PÁGINA DE INICIO SI NO ES CON ESTO
                 >
-                Siguiente
+                Finalizar
                 </GradientButton>
             </View>
             <View style={{ flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <View style={{width:'75%', justifyContent:'center'}}>
                 <Text variant="headlineSmall" style={{textAlign:'center', color: theme.colors.text, fontWeight: 700 }}>
-                    ¿Qué servicios de streaming tenés?
+                    ¿Qué géneros te gustan más?
                 </Text>
                 </View>
                 <Divider style={{backgroundColor:theme.colors.primary,width:'100%',height:5,borderRadius:5,marginTop:16}} />
@@ -92,13 +93,13 @@ export default function InitialFormScreen({navigation}) {
                     <Seleccionable
                     label={serv.name}
                     height={75}
-                    icon={serv.icon}
-                    iconHeight={48}
-                    iconWidth={48}
-                    initialSelected={servicesSelected.includes(serv.name)}
+                    //icon={serv.icon}
+                    //iconHeight={48}
+                    //iconWidth={48}
+                    initialSelected={genresSelected.includes(serv.name)}
                     onSelect={(selected) => toggleSelected(serv.name, selected)}
                     width='100%'
-                    fontSize={24}
+                    fontSize={18}
                     />
                 </View>
                 ))}
