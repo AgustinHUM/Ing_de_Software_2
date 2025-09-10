@@ -69,7 +69,7 @@ class Usuario(Cuenta):
     #Favoritas de usuario
     favoritas = db.relationship("Pelicula", secondary=pelis_favoritas, back_populates="fav_usuario")
 
-    generos_fav = db.relationship("Genero", secondary=pelis_favoritas, back_populates="usuarios")
+    generos_fav = db.relationship("Genero", secondary=genero_favorito, back_populates="usuarios")
 
     #Disyuncion del MER
     __mapper_args__ = {"polymorphic_identity": "usuario"}
@@ -85,11 +85,11 @@ class Admin(Cuenta):
 
     # Admin Crea Admin
     mail_creador = db.Column(db.String(120), db.ForeignKey("ADMIN.mail"), nullable=True)
-    creador = db.relationship("Admin", remote_side=[mail], backref=db.backref("creado", lazy="dynamic", uselist=False))
+    creador = db.relationship("Admin", remote_side=[mail], backref=db.backref("creado", lazy="dynamic", uselist=False), foreign_keys=[mail_creador])
 
     #Admin elimina admins
     eliminado_por_mail = db.Column(db.String(120), db.ForeignKey("ADMIN.mail"), nullable=True)
-    eliminado_por = db.relationship("Admin", remote_side=[mail], backref=db.backref("eliminados", lazy="dynamic"))
+    eliminado_por = db.relationship("Admin", remote_side=[mail], backref=db.backref("eliminados", lazy="dynamic"), foreign_keys=[eliminado_por_mail])
     esta_eliminado = db.Column(db.Boolean, default=False)
 
     #Disyuncion del MER
@@ -137,7 +137,7 @@ class Pelicula(db.Model):
 
     id_pelicula = db.Column(db.Integer, primary_key=True)
     trama = db.Column(db.String(1024), nullable=False)
-    anio_lanzamiento = db.Column(db.DateTime, nullable=False)
+    anio_lanzamiento = db.Column(db.Integer, nullable=False)
     titulo = db.Column(db.String(128), nullable=False)
     duracion = db.Column(db.Integer, nullable=False)
     clasificacion_edad = db.Column(db.String(128), nullable=False)
@@ -161,7 +161,7 @@ class Genero(db.Model):
 
     pelis_genero = db.relationship("Pelicula", secondary=genero_pelicula, back_populates="generos")
 
-    usuarios = db.relationship("Usuario", secondary=pelis_favoritas, back_populates="generos_fav")
+    usuarios = db.relationship("Usuario", secondary=genero_favorito, back_populates="generos_fav")
 
 
 
