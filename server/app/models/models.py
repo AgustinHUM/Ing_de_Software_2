@@ -79,24 +79,39 @@ class Usuario(Cuenta):
 
 
 class Admin(Cuenta):
-    __tablename__= "ADMIN"
+    __tablename__ = "ADMIN"
 
     mail = db.Column(db.String(120), db.ForeignKey("CUENTA.mail"), primary_key=True)
 
-    # Admin Crea Admin
+    # Admin que creó este admin
     mail_creador = db.Column(db.String(120), db.ForeignKey("ADMIN.mail"), nullable=True)
-    creador = db.relationship("Admin", remote_side=[mail], backref=db.backref("creado", lazy="dynamic", uselist=False))
-
-    # el admin que lo eliminó
+    # Admin que eliminó este admin
     eliminado_por_mail = db.Column(db.String(120), db.ForeignKey("ADMIN.mail"), nullable=True)
-
-    eliminado_por = db.relationship("Admin", remote_side=[mail], back_populates="eliminados")
-    # Admins que este admin eliminó
-    eliminados = db.relationship("Admin", back_populates="eliminado_por", foreign_keys=[eliminado_por_mail], lazy="dynamic")
     
+    creador = db.relationship(
+        "Admin",
+        remote_side=[mail],
+        backref=db.backref("creado", uselist=False),
+        foreign_keys=[mail_creador]
+    )
+
+    # Admin que eliminó este admin
+    eliminado_por = db.relationship(
+        "Admin",
+        remote_side=[mail],
+        back_populates="eliminados",
+        foreign_keys=[eliminado_por_mail]
+    )
+
+    # Admins eliminados por este admin
+    eliminados = db.relationship(
+        "Admin",
+        back_populates="eliminado_por",
+        foreign_keys=[eliminado_por_mail]
+    )
+
     esta_eliminado = db.Column(db.Boolean, default=False)
 
-    #Disyuncion del MER
     __mapper_args__ = {"polymorphic_identity": "admin"}
 
     def __repr__(self):
@@ -165,7 +180,7 @@ class Genero(db.Model):
 
     pelis_genero = db.relationship("Pelicula", secondary=genero_pelicula, back_populates="generos")
 
-    usuarios = db.relationship("Usuario", secondary=pelis_favoritas, back_populates="generos_fav")
+    usuarios = db.relationship("Usuario", secondary=genero_favorito, back_populates="generos_fav")
 
 
 

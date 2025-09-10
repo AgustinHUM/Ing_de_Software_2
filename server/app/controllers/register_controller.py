@@ -1,17 +1,38 @@
 from flask import request, redirect, jsonify
+from ..models.models import *
+from ..config import Config, bcrypt
+from ..db import db
 
 
-def handle_register():
-    #cambiar para que matchee con la bsae de datos
+
+def handle_register(info = None):
     if request.method == "POST":
-        email = request.form["email"]
-        username = request.form["username"]
-        password = request.form["password"]
-        #agregar funcion de registro y auth
-        #devolver success o fallo a frontend
-        #dejo asi para testear supongo
-        if username == "testuser" and password == "testpass" and email == "testemail":
-            return jsonify({"message": "Registration successful"}), 200
+        if request.is_json:
+            info = request.get_json()
         else:
-            return jsonify({"error": "Invalid credentials"}), 401
-        #si esta mal volver a registro con mensaje de error
+            info = request.form
+
+        mail = info.get("email")
+        nombre_usuario = info.get("username")
+        contrasenia = info.get("password")
+
+        if Usuario.query.filter_by(mail=mail).first():
+            return jsonify({"error": "Ya existe el usuario"}), 400
+        
+        hash_contr = bcrypt.generate_password_hash(contrasenia).decode("utf-8")
+
+        n_usuario = Usuario(mail=mail, nombre_cuenta = nombre_usuario, contrasenia = hash_contr)
+        db.session.add(n_usuario)
+        db.session.commit()
+
+        try:
+            Config.COGNITO_CLIENT.admin_create_user(UserPoolId=Config.COGNITO_USER_POOL_ID,
+                                                    Username = mail,
+                                                    TemporaryPassword = "tmp_Contrasenia1!",
+                                                    MessageAction="SUPPRESS")
+        except Config.COGNITO_CLIENT.exceptions.UsernameExistsException:
+            return jsonify({"error":"Ya existe en Cognito"}), 400 
+        
+        return jsonify({"message":"Registro exitoso"}), 200
+        
+
