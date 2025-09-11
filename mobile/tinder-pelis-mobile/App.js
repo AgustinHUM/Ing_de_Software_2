@@ -115,6 +115,7 @@ export default function App() {
             }}
           >
             <MainNavigator
+              navigationRef={navigationRef} 
               setAppTheme={setAppThemeByName}
               themesMap={TEMAS}
               themeName={themeName}
@@ -127,8 +128,21 @@ export default function App() {
   );
 }
 
-function MainNavigator({ setAppTheme, themesMap, themeName }) {
-  const { state } = useAuth();
+function MainNavigator({ setAppTheme, themesMap, themeName, navigationRef }) {
+  const auth = useAuth();
+  const { state } = auth;
+
+  React.useEffect(() => {
+    if (state.userToken && state.isNewUser) {
+      try {
+        navigationRef.current?.navigate?.('InitialForm');
+      } catch (e) {
+        console.warn('navigation to InitialForm failed', e);
+      } finally {
+        auth.clearNewUser();
+      }
+    }
+  }, [state.userToken, state.isNewUser, navigationRef, auth]);
 
   return (
     <Stack.Navigator
@@ -143,7 +157,6 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
           <Stack.Screen name="Inicio" component={WelcomeScreen} options={{ headerShown: false, animation:'fade_from_bottom' }} />
           <Stack.Screen name="Login" component={LoginScreen} options={{title: 'Inicio de sesión', animation:'fade_from_bottom' }} />
           <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: 'Registro', animation:'fade_from_bottom' }} />
-
         </>
       ) : (
         <>

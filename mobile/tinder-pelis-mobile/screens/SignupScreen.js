@@ -44,7 +44,11 @@ export default function LoginScreen({ navigation }) {
     }
 
     try {
-      await signUp(email, nombre, password);
+     const result = await signUp(email, nombre, password);
+      if (!result.success) {
+        setError(result.message);
+        return;
+      }     
     } catch (e) {
       setError('Ocurrió un error.');
     }
