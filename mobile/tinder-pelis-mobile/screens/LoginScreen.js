@@ -22,7 +22,7 @@ export default function LoginScreen({ navigation }) {
   const onSignIn = async () => {
     setError(null);
     try {
-      const result = await auth.signIn(email, password);
+      const result = await signIn(email, password);
       if (!result.success) {
       if (typeof result?.message === 'string' && result.message.toLowerCase().includes('<!doctype html>')) {
           setError("Error conectándose con la base de datos.")

@@ -5,3 +5,4 @@
 * La logica de la aplicación de pone en la carpeta controllers
 * Las urls (los endpoints) se definen en la carpeta routes
 * Para crear endpoints modulares (ej: separar usuarios de peliculas) se crean modulos distintos con un Blueprint cada uno
+* Usar  flask run --host=0.0.0.0 --port=5000
