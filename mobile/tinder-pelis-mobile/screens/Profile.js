@@ -11,6 +11,11 @@ export default function ProfileScreen({ navigation, setAppTheme, themesMap, curr
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <View style={{ flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+            <View marginBottom={50}>
+              <GradientButton mode='contained' onPress={() => navigation.navigate('InitialForm')} style={{marginTop:32}}>
+                Ir al formulario inicial
+              </GradientButton>
+            </View>
         <View style={{ backgroundColor: theme.colors.surface, padding: 24, borderRadius: 25, borderWidth: 4, borderColor: theme.colors.primary, alignItems:'center' }}>
           <Text style={{ color: theme.colors.text, marginBottom: 8 }}>Pantalla del perfil</Text>
           <Text style={{ color: theme.colors.text, marginBottom: 12 }}>Tema actual: {currentThemeName}</Text>

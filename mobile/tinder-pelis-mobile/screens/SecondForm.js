@@ -73,7 +73,7 @@ export default function GenresFormScreen({navigation}) {
             <View style={{flexDirection:'row',justifyContent:'flex-end'}}>
                 <GradientButton
                 mode="text"
-                onPress={() => signIn("TEST DEMO","contraseña123")} //NO SE COMO HOOKEARLO A LA PÁGINA DE INICIO SI NO ES CON ESTO
+                onPress={() => navigation.navigate("Home")} //NO SE COMO HOOKEARLO A LA PÁGINA DE INICIO SI NO ES CON ESTO
                 >
                 Finalizar
                 </GradientButton>

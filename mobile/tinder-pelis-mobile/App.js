@@ -143,8 +143,6 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
           <Stack.Screen name="Inicio" component={WelcomeScreen} options={{ headerShown: false, animation:'fade_from_bottom' }} />
           <Stack.Screen name="Login" component={LoginScreen} options={{title: 'Inicio de sesión', animation:'fade_from_bottom' }} />
           <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: 'Registro', animation:'fade_from_bottom' }} />
-          <Stack.Screen name="InitialForm" component={InitialFormScreen} options={{headerShown:false, title: 'Formulario inicial', animation:'fade_from_bottom' }} />
-          <Stack.Screen name="GenreForm" component={GenresFormScreen} options={{headerShown:true, title: 'Formulario inicial', animation:'fade_from_bottom' }} />
 
         </>
       ) : (
@@ -164,6 +162,9 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
           <Stack.Screen name="Friends" component={FriendsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Search" component={SearchScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Favourites" component={FavouritesScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="InitialForm" component={InitialFormScreen} options={{headerShown:false, title: 'Formulario inicial', animation:'fade_from_bottom' }} />
+          <Stack.Screen name="GenreForm" component={GenresFormScreen} options={{headerShown:true, title: 'Formulario inicial', animation:'fade_from_bottom' }} />
+        
         </>
       )}
     </Stack.Navigator>
