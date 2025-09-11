@@ -4,7 +4,6 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [packages]
-flask = "*"
 python-dotenv = "*"
 flask-cors = "*"
 sqlalchemy = "*"
@@ -12,6 +11,10 @@ flask-sqlalchemy = "*"
 psycopg2-binary = "*"
 alembic = "*"
 flask-migrate = "*"
+flask-bcrypt = "*"
+boto3 = "*"
+flask = "*"
+
 
 [dev-packages]
 
