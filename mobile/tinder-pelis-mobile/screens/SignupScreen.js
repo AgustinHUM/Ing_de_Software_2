@@ -46,6 +46,10 @@ export default function LoginScreen({ navigation }) {
     try {
      const result = await signUp(email, nombre, password);
       if (!result.success) {
+      if (typeof result?.message === 'string' && result.message.toLowerCase().includes('<!doctype html>')) {
+          setError("Error conectándose con la base de datos.")
+          return
+        }        
         setError(result.message);
         return;
       }     

@@ -51,7 +51,7 @@ export function AuthProvider({ children }) {
      */
     signIn: async (email, password) => {
       try {
-        const res = await axios.post('http://localhost:5000/login', { email, password });
+        const res = await axios.post('http://10.252.53.178:5000/login', { email, password });
         // success only if status is 2xx and token exists
         if (res.status >= 200 && res.status < 300 && res.data?.token) {
           const token = res.data.token;
@@ -85,7 +85,7 @@ export function AuthProvider({ children }) {
      */
     signUp: async (email, username, password) => {
       try {
-        const res = await axios.post('http://localhost:5000/register', {
+        const res = await axios.post('http://10.252.53.178:5000/register', {
           email,
           username,
           password,

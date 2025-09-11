@@ -10,11 +10,11 @@ sqlalchemy = "*"
 flask-sqlalchemy = "*"
 psycopg2-binary = "*"
 alembic = "*"
-flask-migrate = "*"
 flask-bcrypt = "*"
 boto3 = "*"
+cp = "*"
 flask = "*"
-
+flask-migrate = "*"
 
 [dev-packages]
 
