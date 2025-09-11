@@ -16,6 +16,7 @@ flask-bcrypt = "*"
 boto3 = "*"
 flask = "*"
 
+
 [dev-packages]
 [requires]
 python_version = "3.11"
