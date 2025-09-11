@@ -9,8 +9,6 @@ export default function LoginScreen({ navigation }) {
   const { width } = Dimensions.get('window');
 
   const theme = useTheme();
-  const spacingS = theme.tokens?.spacing?.s ?? 16;
-  const spacingL = theme.tokens?.spacing?.l ?? 24;
   const buttonMaxWidth = 420;
   const btnWidth = Math.min(width * 0.8, buttonMaxWidth);
 
@@ -46,7 +44,11 @@ export default function LoginScreen({ navigation }) {
     }
 
     try {
-      await signUp(email, nombre, password);
+     const result = await signUp(email, nombre, password);
+      if (!result.success) {
+        setError(result.message);
+        return;
+      }     
     } catch (e) {
       setError('Ocurrió un error.');
     }
