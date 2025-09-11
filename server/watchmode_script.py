@@ -55,8 +55,31 @@ def seed_watchmode():
                 if region and region not in new_platform.paises:
                     new_platform.paises.append(region)
             session.add(new_platform)"""
+    
+    """#agreagar paises a plataformas ya existentes (falta agregar codigo de pais)
+    print("Adding regions to existing platforms...")
+    platforms_response = requests.get(f'{base_url}sources/?apiKey={api_key}')
+    platforms_data = platforms_response.json()
+    for platform in platforms_data:
+        existing_platform = Plataforma.query.filter_by(nombre_plataforma=platform.get('name')).first()
+        if existing_platform:
+            print(platform.get('regions'))
+            for country_code in platform.get('regions'):
+                region = Pais.query.filter_by(codigo_pais=country_code).first()
+                if region and region not in existing_platform.paises:
+                    existing_platform.paises.append(region)
+            session.add(existing_platform)
+        try:
+            session.commit()
+            print(f"Successfully added regions {existing_platform.nombre_plataforma} {existing_platform.paises}")
+        except Exception as e:
+            print(f"Error adding regions to platform {existing_platform.nombre_plataforma}: {e}")
+            session.rollback()
+    """
+    
+    
 
-    # Peliculas
+    """# Peliculas
     all_movies = []
     genres_data = [{"id": 1, "name": "Action"}, {"id": 4, "name": "Comedy"}, {"id": 3, "name": "Animation"},{"id":33,"name":"Anime"}]
     for genre in genres_data:
@@ -130,8 +153,9 @@ def seed_watchmode():
         except Exception as e:
             print(f"Error adding movie {new_pelicula.titulo}: {e}")
             session.rollback()
+        """
 
-        session.close()
+    session.close()
 
 if __name__ == "__main__":
     seed_watchmode()
