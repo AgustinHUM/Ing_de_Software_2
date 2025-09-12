@@ -183,9 +183,9 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
     >
       {!state.userToken ? (
         <>
-          <Stack.Screen name="Inicio" component={WelcomeScreen} options={{ headerShown: false, animation:'fade_from_bottom' }} />
-          <Stack.Screen name="Login" component={LoginScreen} options={{title: 'Inicio de sesión', animation:'fade_from_bottom' }} />
-          <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: 'Registro', animation:'fade_from_bottom' }} />
+          <Stack.Screen name="Inicio" component={WelcomeScreen} options={{ headerShown: false, animation:'none' }} />
+          <Stack.Screen name="Login" component={LoginScreen} options={{title: 'Inicio de sesión', animation:'none' }} />
+          <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: 'Registro', animation:'none' }} />
         </>
       ) : firstLogin ? (
         <>

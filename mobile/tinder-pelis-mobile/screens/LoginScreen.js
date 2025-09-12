@@ -25,7 +25,7 @@ export default function LoginScreen({ navigation }) {
       await signIn(email, password);
       // No navegamos manualmente: el stack global redirige según primer login
     } catch (e) {
-      Alert.alert('Error', String(e?.message || 'No se pudo iniciar sesión'));
+      setError(String(e?.message || 'No se pudo iniciar sesión'));
     }
   }
 

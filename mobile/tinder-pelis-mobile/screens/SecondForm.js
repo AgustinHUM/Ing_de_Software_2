@@ -4,7 +4,6 @@ import Seleccionable from "../components/Seleccionable";
 import { useState } from "react";
 import * as SecureStore from 'expo-secure-store';
 import GradientButton from "../components/GradientButton";
-import { useAuth } from "../AuthContext";
 
 export default function GenresFormScreen({navigation}) {
     const SERVICIOS = [
