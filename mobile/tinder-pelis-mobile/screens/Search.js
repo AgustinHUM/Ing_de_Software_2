@@ -51,7 +51,7 @@ export default function Search() {
                 )}
             </>
             ) : (
-            <Text style={{marginTop: 12,color: '#666'}}>Escribe algo en la barra de búsqueda y presiona buscar para ver los resultados aquí.</Text>
+            <Text style={{marginTop: 12,color: theme.colors.disabled}}>Escribe algo en la barra de búsqueda y presiona buscar para ver los resultados aquí.</Text>
             )}
         </View>
     </SafeAreaView>
