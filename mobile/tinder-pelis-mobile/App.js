@@ -5,6 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider, useAuth } from './AuthContext';
+import * as SecureStore from 'expo-secure-store';
 import WelcomeScreen from './screens/WelcomeScreen';
 import LoginScreen from './screens/LoginScreen';
 import SignUpScreen from './screens/SignupScreen';
@@ -115,7 +116,6 @@ export default function App() {
             }}
           >
             <MainNavigator
-              navigationRef={navigationRef} 
               setAppTheme={setAppThemeByName}
               themesMap={TEMAS}
               themeName={themeName}
@@ -128,21 +128,52 @@ export default function App() {
   );
 }
 
-function MainNavigator({ setAppTheme, themesMap, themeName, navigationRef }) {
-  const auth = useAuth();
-  const { state } = auth;
 
-  React.useEffect(() => {
-    if (state.userToken && state.isNewUser) {
-      try {
-        navigationRef.current?.navigate?.('InitialForm');
-      } catch (e) {
-        console.warn('navigation to InitialForm failed', e);
-      } finally {
-        auth.clearNewUser();
+
+
+function MainNavigator({ setAppTheme, themesMap, themeName }) {
+  const { state } = useAuth();
+  const [firstLogin, setFirstLogin] = useState(false);
+  const [checkedFirstLogin, setCheckedFirstLogin] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    setCheckedFirstLogin(false);
+    async function checkFirstLogin() {
+      if (!state.userToken) {
+        if (isMounted) {
+          setFirstLogin(false);
+          setCheckedFirstLogin(true);
+        }
+        return;
+      }
+      const email = await SecureStore.getItemAsync('lastLoginEmail');
+      if (!email) {
+        if (isMounted) {
+          setFirstLogin(false);
+          setCheckedFirstLogin(true);
+        }
+        return;
+      }
+      const safeEmail = email.toLowerCase().replace(/[^a-z0-9._-]/g, '_');
+      const key = `firstLoginDone__${safeEmail}`;
+      const seen = await SecureStore.getItemAsync(key);
+      if (isMounted) {
+        setFirstLogin(!seen);
+        setCheckedFirstLogin(true);
       }
     }
-  }, [state.userToken, state.isNewUser, navigationRef, auth]);
+    checkFirstLogin();
+    return () => { isMounted = false; };
+  }, [state.userToken]);
+
+  if (state.isLoading || !checkedFirstLogin) {
+    return (
+      <Stack.Navigator>
+        <Stack.Screen name="Loading" component={() => null} options={{ headerShown: false }} />
+      </Stack.Navigator>
+    );
+  }
 
   return (
     <Stack.Navigator
@@ -150,13 +181,30 @@ function MainNavigator({ setAppTheme, themesMap, themeName, navigationRef }) {
         animation:'none', headerStyle:{backgroundColor:TEMAS[themeName].background}
       }}
     >
-      {state.isLoading ? (
-        <Stack.Screen name="Loading" component={() => null} options={{ headerShown: false }} />
-      ) : !state.userToken ? (
+      {!state.userToken ? (
         <>
           <Stack.Screen name="Inicio" component={WelcomeScreen} options={{ headerShown: false, animation:'fade_from_bottom' }} />
           <Stack.Screen name="Login" component={LoginScreen} options={{title: 'Inicio de sesión', animation:'fade_from_bottom' }} />
           <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: 'Registro', animation:'fade_from_bottom' }} />
+        </>
+      ) : firstLogin ? (
+        <>
+          <Stack.Screen name="InitialForm" component={InitialFormScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="GenreForm" component={GenresFormScreen} options={{headerShown:true, title: 'Formulario inicial', animation:'fade_from_bottom' }} />
+          <Stack.Screen name="Profile" options={{ headerShown: false }}>
+            {props => (
+              <ProfileScreen
+                {...props}
+                setAppTheme={setAppTheme}
+                themesMap={themesMap}
+                currentThemeName={themeName}
+              />
+            )}
+          </Stack.Screen>
+          <Stack.Screen name="Friends" component={FriendsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Search" component={SearchScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Favourites" component={FavouritesScreen} options={{ headerShown: false }} />
         </>
       ) : (
         <>
@@ -171,13 +219,9 @@ function MainNavigator({ setAppTheme, themesMap, themeName, navigationRef }) {
               />
             )}
           </Stack.Screen>
-
           <Stack.Screen name="Friends" component={FriendsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Search" component={SearchScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Favourites" component={FavouritesScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="InitialForm" component={InitialFormScreen} options={{headerShown:false, title: 'Formulario inicial', animation:'fade_from_bottom' }} />
-          <Stack.Screen name="GenreForm" component={GenresFormScreen} options={{headerShown:true, title: 'Formulario inicial', animation:'fade_from_bottom' }} />
-        
         </>
       )}
     </Stack.Navigator>

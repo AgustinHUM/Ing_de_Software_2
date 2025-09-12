@@ -61,7 +61,6 @@ export default function WelcomeScreen({ navigation }) {
               Registrarme
             </GradientButton>
 
-
             <Text variant="bodyLarge" style={{ color: theme.colors.text, marginTop: spacingL, textAlign: 'center' }}>
               ¿Quieres probar la App sin registrarte?
             </Text>
@@ -74,6 +73,7 @@ export default function WelcomeScreen({ navigation }) {
             >
               Entrar como invitado
             </GradientButton>
+            
           </View>
         </View>
       </ImageBackground>
