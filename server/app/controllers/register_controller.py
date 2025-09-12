@@ -26,10 +26,24 @@ def handle_register(info = None):
         db.session.commit()
 
         try:
-            Config.COGNITO_CLIENT.admin_create_user(UserPoolId=Config.COGNITO_USER_POOL_ID,
-                                                    Username = mail,
-                                                    TemporaryPassword = "tmp_Contrasenia1!",
-                                                    MessageAction="SUPPRESS")
+
+            Config.COGNITO_CLIENT.admin_create_user(
+                UserPoolId=Config.COGNITO_USER_POOL_ID,
+                Username=mail,
+                UserAttributes=[
+                    {"Name": "email", "Value": mail},
+                    {"Name": "name", "Value": nombre_usuario}
+                ],
+                MessageAction="SUPPRESS", 
+                TemporaryPassword=contrasenia
+            )
+
+            Config.COGNITO_CLIENT.admin_set_user_password(
+                UserPoolId=Config.COGNITO_USER_POOL_ID,
+                Username=mail,
+                Password=contrasenia,
+                Permanent=True
+            )
         except Config.COGNITO_CLIENT.exceptions.UsernameExistsException:
             return jsonify({"error":"Ya existe en Cognito"}), 400 
         

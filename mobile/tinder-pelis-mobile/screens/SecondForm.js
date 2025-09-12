@@ -2,11 +2,10 @@ import { ScrollView, TouchableOpacity, View } from "react-native";
 import { Divider, Text, useTheme } from "react-native-paper";
 import Seleccionable from "../components/Seleccionable";
 import { useState } from "react";
+import * as SecureStore from 'expo-secure-store';
 import GradientButton from "../components/GradientButton";
-import { useAuth } from "../AuthContext";
 
 export default function GenresFormScreen({navigation}) {
-    const { signIn } = useAuth(); //PARA LA DEMO ---- INÉS SI QUERÉS Y SABÉS CAMBIARLO PARA QUE ANDE ES TODO TUYO
     const SERVICIOS = [
         {name:'Acción',
             //icon:require('../assets/Netflix.jpg')
@@ -67,17 +66,29 @@ export default function GenresFormScreen({navigation}) {
       }
     });
   };
-    return(
-        
-        <View style={{ flex: 1, paddingHorizontal: 25, backgroundColor: theme.colors.background }}>
-            <View style={{flexDirection:'row',justifyContent:'flex-end'}}>
-                <GradientButton
-                mode="text"
-                onPress={() => signIn("TEST DEMO","contraseña123")} //NO SE COMO HOOKEARLO A LA PÁGINA DE INICIO SI NO ES CON ESTO
-                >
-                Finalizar
-                </GradientButton>
-            </View>
+        // Al finalizar, marcar el flag de primer login como completado y borrar el email
+        const handleFinish = async () => {
+            const email = await SecureStore.getItemAsync('lastLoginEmail');
+            if (email) {
+                const safeEmail = email.toLowerCase().replace(/[^a-z0-9._-]/g, '_');
+                const key = `firstLoginDone__${safeEmail}`;
+                await SecureStore.setItemAsync(key, '1');
+                await SecureStore.deleteItemAsync('lastLoginEmail');
+            }
+            
+            navigation.replace('Home');
+        };
+
+        return(
+                <View style={{ flex: 1, paddingHorizontal: 25, backgroundColor: theme.colors.background }}>
+                        <View style={{flexDirection:'row',justifyContent:'flex-end'}}>
+                                <GradientButton
+                                mode="text"
+                                onPress={handleFinish}
+                                >
+                                Finalizar
+                                </GradientButton>
+                        </View>
             <View style={{ flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                 <View style={{width:'75%', justifyContent:'center'}}>
                 <Text variant="headlineSmall" style={{textAlign:'center', color: theme.colors.text, fontWeight: 700 }}>

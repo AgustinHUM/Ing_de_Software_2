@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, StyleSheet,Dimensions } from 'react-native';
-import { HelperText,Text,useTheme } from 'react-native-paper';
+import { View, StyleSheet, Dimensions, Alert } from 'react-native';
+import { HelperText, Text, useTheme } from 'react-native-paper';
 import { useAuth } from '../AuthContext';
 import GradientButton from '../components/GradientButton';
 import TextInput from '../components/TextInput';
@@ -16,17 +16,20 @@ export default function LoginScreen({ navigation }) {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('Error de ejemplo para ver los espaciados');
+  const [error, setError] = useState(null);
   const { signIn } = useAuth();
 
-  const onSignIn = async () => {
+  async function onLogin() {
     setError(null);
     try {
       await signIn(email, password);
+      // No navegamos manualmente: el stack global redirige según primer login
     } catch (e) {
-      setError('Ocurrió un error.');
+      setError(String(e?.message || 'No se pudo iniciar sesión'));
     }
-  };
+  }
+
+  // Navegación automática según primer login eliminada, ahora se maneja directo en onLogin
 
   return (
     <View style={styles.container}>
@@ -45,7 +48,7 @@ export default function LoginScreen({ navigation }) {
           {error ? <HelperText style={{fontSize:16,fontWeight:'700'}} type="error">{error}</HelperText> : null}
         </View>
       </View>
-      <GradientButton mode="contained" onPress={onSignIn}>
+  <GradientButton mode="contained" onPress={onLogin}>
         Iniciar sesión
       </GradientButton>
       <View style={{ width: '100%', alignItems: 'center', marginTop: '3%',backgroundColor:'transparent' }}>

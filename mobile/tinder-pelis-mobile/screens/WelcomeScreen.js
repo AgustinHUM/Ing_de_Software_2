@@ -60,11 +60,6 @@ export default function WelcomeScreen({ navigation }) {
             >
               Registrarme
             </GradientButton>
-            <View>
-              <GradientButton mode='contained' onPress={() => navigation.navigate('InitialForm')} style={{marginTop:32}}>
-                Ir al formulario inicial
-              </GradientButton>
-            </View>
 
             <Text variant="bodyLarge" style={{ color: theme.colors.text, marginTop: spacingL, textAlign: 'center' }}>
               ¿Quieres probar la App sin registrarte?
@@ -78,6 +73,7 @@ export default function WelcomeScreen({ navigation }) {
             >
               Entrar como invitado
             </GradientButton>
+            
           </View>
         </View>
       </ImageBackground>

@@ -10,12 +10,13 @@ sqlalchemy = "*"
 flask-sqlalchemy = "*"
 psycopg2-binary = "*"
 alembic = "*"
-flask-migrate = "*"
-requests = "*"
 flask-bcrypt = "*"
 boto3 = "*"
+cp = "*"
 flask = "*"
+flask-migrate = "*"
 
 [dev-packages]
+
 [requires]
 python_version = "3.11"
