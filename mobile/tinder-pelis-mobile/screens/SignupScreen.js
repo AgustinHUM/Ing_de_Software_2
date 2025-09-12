@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Alert } from 'react-native';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { HelperText, Text, useTheme } from 'react-native-paper';
 import { useAuth } from '../AuthContext';
@@ -9,8 +10,6 @@ export default function LoginScreen({ navigation }) {
   const { width } = Dimensions.get('window');
 
   const theme = useTheme();
-  const spacingS = theme.tokens?.spacing?.s ?? 16;
-  const spacingL = theme.tokens?.spacing?.l ?? 24;
   const buttonMaxWidth = 420;
   const btnWidth = Math.min(width * 0.8, buttonMaxWidth);
 
@@ -19,7 +18,7 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState(null);
-  const { signUp } = useAuth();
+  const { signUp,signIn } = useAuth();
 
   const handlePasswordChange = (text) => {
     setPassword(text);
@@ -47,8 +46,11 @@ export default function LoginScreen({ navigation }) {
 
     try {
       await signUp(email, nombre, password);
+      Alert.alert("Éxito", "Usuario creado con éxito", [
+        { text: "OK", onPress: async () => await signIn(email,password) }
+      ]);
     } catch (e) {
-      setError('Ocurrió un error.');
+      setError(String(e?.message || 'Ocurrió un error.'));
     }
   };
 
@@ -64,19 +66,19 @@ export default function LoginScreen({ navigation }) {
           Para comenzar te pedimos que completes tus datos.
         </Text>
       </View>
-      <View style={{ gap: '3%'}}>
+      <View style={{ gap: '1%'}}>
         <TextInput label="Nombre completo" value={nombre} onChangeText={setNombre} />
         <TextInput label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
         <TextInput label="Contraseña" value={password} onChangeText={handlePasswordChange} password={true} />
         <TextInput label="Confirmar contraseña" value={confirmPassword} onChangeText={handleConfirmPasswordChange} password={true} />
-        <View style={{height:32,alignContent:'center'}}>
+      </View>
+      <View style={{height:32,alignContent:'center'}}>
           {error ? <HelperText style={{fontSize:16,fontWeight:'700'}} type="error">{error}</HelperText> : null}
-        </View>
       </View>
       <GradientButton mode="contained" onPress={onSignIn} style={{ marginTop: 12 }}>
         Registrarme
       </GradientButton>
-      <View style={{ width: '100%', alignItems: 'center', marginTop: spacingL, backgroundColor: 'transparent' }}>
+      <View style={{ width: '100%', alignItems: 'center', marginTop: '10%', backgroundColor: 'transparent' }}>
         <Text variant="bodyLarge" style={{ color: theme.colors.text, textAlign: 'center' }}>
           ¿Ya estás registrado?
         </Text>
@@ -94,6 +96,6 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, justifyContent: 'top', paddingTop: '10%' },
+  container: { flex: 1, padding: 16, justifyContent: 'top', paddingTop: '15%' },
   textInput: { mode: 'outlined', borderRadius: 100 },
 });
