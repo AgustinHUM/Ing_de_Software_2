@@ -4,21 +4,32 @@ import { Text, useTheme } from "react-native-paper";
 import { useAuth } from "../AuthContext";
 import GradientButton from "../components/GradientButton";
 
+
+
 export default function ProfileScreen({ navigation, setAppTheme, themesMap, currentThemeName }) {
   const theme = useTheme();
   const { signOut } = useAuth();
+  
+  async function onSignOut() {
+    try {
+      await signOut();
+    } catch (e) {
+      Alert.alert('Error', String(e?.message || 'No se pudo cerrar sesión'));
+    }
+  }
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <View style={{ flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-
         <View style={{ backgroundColor: theme.colors.surface, padding: 24, borderRadius: 25, borderWidth: 4, borderColor: theme.colors.primary, alignItems:'center' }}>
           <Text style={{ color: theme.colors.text, marginBottom: 8 }}>Pantalla del perfil</Text>
           <Text style={{ color: theme.colors.text, marginBottom: 12 }}>Tema actual: {currentThemeName}</Text>
-
-          <GradientButton mode="outlined" onPress={() => signOut()} style={{ marginTop: 12 }}>
+        <View style={{marginVertical:32}}>
+          <GradientButton onPress={(onSignOut)} style={{width:250}}>
             Cerrar sesión
           </GradientButton>
+        </View>
+          
         </View>
 
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Alert } from 'react-native';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { HelperText, Text, useTheme } from 'react-native-paper';
 import { useAuth } from '../AuthContext';
@@ -16,8 +17,8 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('Error de ejemplo para ver los espaciados');
-  const { signUp } = useAuth();
+  const [error, setError] = useState(null);
+  const { signUp,signIn } = useAuth();
 
   const handlePasswordChange = (text) => {
     setPassword(text);
@@ -44,13 +45,12 @@ export default function LoginScreen({ navigation }) {
     }
 
     try {
-     const result = await signUp(email, nombre, password);
-      if (!result.success) {
-        setError(result.message);
-        return;
-      }     
+      await signUp(email, nombre, password);
+      Alert.alert("Éxito", "Usuario creado con éxito", [
+        { text: "OK", onPress: async () => await signIn(email,password) }
+      ]);
     } catch (e) {
-      setError('Ocurrió un error.');
+      setError(String(e?.message || 'Ocurrió un error.'));
     }
   };
 

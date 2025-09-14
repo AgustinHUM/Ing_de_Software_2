@@ -1,148 +1,114 @@
-// AuthContext.js
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import axios from 'axios';
 
 const AuthContext = createContext();
 
-// added isNewUser to initial state
-const initialState = { isLoading: true, userToken: null, isNewUser: false };
+const initialState = { isLoading: true, userToken: null };
+const signedOutState = { isLoading: false, userToken: null };
 
 function reducer(state, action) {
   switch (action.type) {
     case 'RESTORE_TOKEN':
-      return { ...state, userToken: action.token, isLoading: false, isNewUser: false };
+      return { ...state, userToken: action.token, isLoading: false };
     case 'SIGN_IN':
-      return { ...state, userToken: action.token, isNewUser: false };
-    // new case for sign up (marks user as new)
-    case 'SIGN_UP':
-      return { ...state, userToken: action.token, isNewUser: true };
+      return { ...state, userToken: action.token, isLoading: false };
     case 'SIGN_OUT':
-      return { ...state, userToken: null, isNewUser: false };
-    case 'CLEAR_NEW_USER':
-      return { ...state, isNewUser: false };
+      return { ...signedOutState };
     default:
       return state;
   }
 }
 
+const API_URL = 'http://10.54.196.178:5000';
+
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
+  // Restaura token al iniciar
   useEffect(() => {
-    // try restore token from secure storage
     (async () => {
       try {
         const token = await SecureStore.getItemAsync('userToken');
         dispatch({ type: 'RESTORE_TOKEN', token });
-      } catch (err) {
-        console.warn('restore token failed:', err?.message ?? err);
+      } catch {
         dispatch({ type: 'RESTORE_TOKEN', token: null });
       }
     })();
   }, []);
 
-  const auth = {
-    state,
+  async function signIn(email, password) {
+    const res = await fetch(`${API_URL}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
-    /**
-     * signIn
-     * returns { success: boolean, message?: string }
-     */
-    signIn: async (email, password) => {
-      try {
-        const res = await axios.post('http://localhost:5000/login', { email, password });
-        // success only if status is 2xx and token exists
-        if (res.status >= 200 && res.status < 300 && res.data?.token) {
-          const token = res.data.token;
-          await SecureStore.setItemAsync('userToken', token);
-          dispatch({ type: 'SIGN_IN', token });
-          return { success: true };
-        }
-        // unexpected but non-throwing response
-        const msg = res.data?.message || `Unexpected response (${res.status})`;
-        return { success: false, message: msg };
-      } catch (e) {
-        // axios error: check response if present
-        if (e.response) {
-          // backend responded with non-2xx
-          const status = e.response.status;
-          const serverMsg = e.response.data?.message || e.response.data || `HTTP ${status}`;
-          console.warn('login failed with status', status, serverMsg);
-          return { success: false, message: serverMsg };
-        } else {
-          // network / other error
-          console.warn('login request failed:', e.message);
-          return { success: false, message: e.message || 'Network error' };
-        }
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try { const j = await res.json(); msg = j?.error || j?.detail || msg; } catch {}
+      throw new Error(msg);
+    }
+
+    const data = await res.json();
+    const token = data?.access_token || 'session-ok';
+
+    try {
+      await SecureStore.setItemAsync('userToken', token);
+      await SecureStore.setItemAsync('lastLoginEmail', email);
+    } catch (e) {
+      console.warn('Error guardando token/email en SecureStore', e);
+    }
+
+    dispatch({ type: 'SIGN_IN', token });
+    return { data };
+  }
+
+  async function signUp(email, nombre, password) {
+    const res = await fetch(`${API_URL}/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, username: nombre, password }),
+    });
+
+    let data = null;
+    try { data = await res.json(); } catch {}
+
+    if (!res.ok) {
+      const msg = data?.error || data?.detail || `HTTP ${res.status}`;
+      throw new Error(msg);
+    }
+
+    return { status: data?.status || 'OK' };
+  }
+
+  async function signOut() {
+    dispatch({ type: 'SIGN_OUT' });
+
+    try {
+      await SecureStore.deleteItemAsync('userToken');
+
+      const email = await SecureStore.getItemAsync('lastLoginEmail');
+      if (email) {
+        const safeEmail = email.toLowerCase().replace(/[^a-z0-9._-]/g, '_');
+        const key = `firstLoginDone__${safeEmail}`;
+        await SecureStore.deleteItemAsync(key);
+        await SecureStore.deleteItemAsync('lastLoginEmail');
       }
-    },
+    } catch (e) {
+      console.warn('Error limpiando SecureStore en signOut', e);
+    }
+  }
 
-    /**
-     * signUp
-     * returns { success: boolean, message?: string }
-     * minimal change: only mark user as signed up if backend returns token (or 2xx)
-     */
-    signUp: async (email, username, password) => {
-      try {
-        const res = await axios.post('http://localhost:5000/register', {
-          email,
-          username,
-          password,
-        });
+  function guestSignIn() {
+    // token "falso" con prefijo guest_ para reconocerlo
+    const token = `guest_${Math.random().toString(36).slice(2)}_${Date.now()}`;
+    // Actualizamos el estado pero NO guardamos el token en SecureStore
+    dispatch({ type: 'SIGN_IN', token });
+    return { token };
+  }
 
-        if (res.status >= 200 && res.status < 300) {
-          // if backend returns token immediately after register use it
-          const token = res.data?.token ?? null;
-          if (token) {
-            await SecureStore.setItemAsync('userToken', token);
-            dispatch({ type: 'SIGN_UP', token });
-            return { success: true };
-          }
-          // If backend doesn't return a token but registration was successful,
-          // you might want to require the user to log in — here we don't create a token.
-          // Return success but without signing in automatically:
-          return { success: true, message: 'Registered successfully. Please log in.' };
-        }
-
-        const msg = res.data?.message || `Unexpected response (${res.status})`;
-        return { success: false, message: msg };
-      } catch (e) {
-        if (e.response) {
-          const status = e.response.status;
-          const serverMsg = e.response.data?.message || e.response.data || `HTTP ${status}`;
-          console.warn('signup failed with status', status, serverMsg);
-          return { success: false, message: serverMsg };
-        } else {
-          console.warn('signup request failed:', e.message);
-          return { success: false, message: e.message || 'Network error' };
-        }
-      }
-    },
-
-    signOut: async () => {
-      try {
-        await SecureStore.deleteItemAsync('userToken');
-      } catch (e) {
-        console.warn('delete token failed:', e?.message ?? e);
-      } finally {
-        dispatch({ type: 'SIGN_OUT' });
-      }
-    },
-
-    guestSignIn: async () => {
-      const guestToken = 'guest-token';
-      await SecureStore.setItemAsync('userToken', guestToken);
-      dispatch({ type: 'SIGN_IN', token: guestToken });
-      return { success: true };
-    },
-
-    clearNewUser: () => {
-      dispatch({ type: 'CLEAR_NEW_USER' });
-    },
-  };
-
-  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
+  const value = { state, signIn, signUp, signOut, guestSignIn };
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export const useAuth = () => useContext(AuthContext);
