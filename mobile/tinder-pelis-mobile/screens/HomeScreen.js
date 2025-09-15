@@ -89,7 +89,7 @@ export default function HomeScreen() {
     {
       id: 'm6',
       title: 'The Greatest Showman',
-      genres: ['Musical', 'Familia', 'Drama'],
+      genres: ['Musical', 'Familia', 'Drama',"superheroes","comedia musical","las aventuras de hugh jackman"],
       poster: require('../assets/greatest_showman.jpg'),
       rating: 7.6,
       year: 2017,

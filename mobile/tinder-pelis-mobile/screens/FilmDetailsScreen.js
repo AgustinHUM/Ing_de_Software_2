@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { Text, useTheme, IconButton } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
-
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { setAlpha } from '../theme';
 const fallbackMovie = {
   title: 'Película Desconocida',
   genres: [],
@@ -21,7 +22,7 @@ export default function FilmDetailsScreen() {
   const movie = route.params?.movie || fallbackMovie;
 
   return (
-    <View style={{ flex: 1, padding: '1%', flexDirection:'column'}}>
+    <View style={{ flex: 1, padding: '3%', flexDirection:'column'}}>
         <ScrollView
             style={{paddingTop:'15%', flex:0.75, backgroundColor: 'transparent'}}
             contentContainerStyle={{ flexGrow: 1, }}
@@ -30,17 +31,21 @@ export default function FilmDetailsScreen() {
             <View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 32 }}>
                     <IconButton
-                    icon="chevron-left"
-                    size={32}
+                    icon={() => (
+                        <MaterialCommunityIcons
+                        name="chevron-left"
+                        size={32}
+                        color={theme.colors.text}
+                        />
+                    )}
                     onPress={() => navigation.goBack()}
-                    color={theme.colors.primary}
                     style={{ position: 'absolute', left: 0 }}
                     />
                     <Text variant='headlineSmall' style={{ color: theme.colors.text, fontWeight: 400 }}>Details</Text>
                 </View>
 
                 <View style={{paddingTop:16, flexDirection: 'row', flexWrap: 'wrap', justifyContent:'space-between', flex:1, marginBottom: 8}}>
-                    <View style={{ alignItems: 'center', width: '50%', borderRadius:15, overflow:'hidden'}}>
+                    <View style={{ alignItems: 'center', width: '50%',aspectRatio:2/3, borderRadius:15, overflow:'hidden'}}>
                     {movie.poster && (
                         <Image
                         source={movie.poster}
@@ -71,7 +76,7 @@ export default function FilmDetailsScreen() {
                             <View
                                 key={index}
                                 style={{
-                                backgroundColor: theme.colors.primary,
+                                backgroundColor: theme.colors.secondary,
                                 borderRadius: 999,
                                 paddingHorizontal: 8,
                                 paddingVertical: 4,
@@ -81,6 +86,7 @@ export default function FilmDetailsScreen() {
                             >
                                 <Text
                                 style={{
+                                    textAlign:'center',
                                     color: theme.colors.text,
                                     fontSize: 14,
                                     fontWeight: '600',
@@ -114,7 +120,7 @@ export default function FilmDetailsScreen() {
                             )}
                         </View>
                         {movie.year ? (
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 }}>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8,alignItems:'center' }}>
                             <Image
                                 source={require('../assets/icons/calendar.png')}
                                 style={{ width:16, height: 16, marginRight: 6 }}
@@ -133,7 +139,7 @@ export default function FilmDetailsScreen() {
                         </View>
                         ) : null}
                         {movie.runtime ? (
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 }}>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8,alignItems:'center' }}>
                             <Image
                                 source={require('../assets/icons/hourglass.png')}
                                 style={{ width:16, height: 16, marginRight: 6 }}
@@ -171,7 +177,7 @@ export default function FilmDetailsScreen() {
                         </View>
                         ) : null}
                         {movie.ageRating ? (
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 }}>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8,alignItems:'center' }}>
                             <Image
                                 source={require('../assets/icons/ticket.png')}
                                 style={{ width:16, height: 16, marginRight: 6 }}
@@ -222,7 +228,6 @@ export default function FilmDetailsScreen() {
                                 marginRight: 8,
                                 marginBottom: 8,
                                 backgroundColor: theme.colors.surface,
-                                minWidth: 70,
                                 alignItems: 'center',
                             }}
                             >   

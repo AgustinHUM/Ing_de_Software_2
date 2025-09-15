@@ -56,12 +56,12 @@ const TEMAS = {
     accent:'rgba(176, 37, 226, 1)',text:'rgba(239, 185, 231, 1)',disabled:'rgba(239, 185, 231, 1)'
   },
   batman: {background:'rgba(0, 0, 0, 1)',surface:'rgba(42, 8, 8, 1)',
-    primary:'rgba(202, 7, 7, 1)',secondary:'rgba(112, 7, 7, 1)',
-    accent:'rgba(48, 28, 28, 1)',text:'rgba(97, 4, 4, 1)'
+    primary:'rgba(164, 14, 14, 1)',secondary:'rgba(91, 3, 3, 1)',
+    accent:'rgba(48, 28, 28, 1)',text:'rgba(215, 8, 8, 1)'
   },
   matrix: {background:'rgba(0, 0, 0, 1)',surface:'rgba(17, 42, 8, 1)',
-    primary:'rgba(46, 87, 35, 1)',secondary:'rgba(29, 41, 28, 1)',
-    accent:'rgba(23, 180, 11, 1)',text:'rgba(17, 175, 0, 1)'
+    primary:'rgba(51, 169, 19, 1)',secondary:'rgba(34, 66, 31, 1)',
+    accent:'rgba(23, 180, 11, 1)',text:'rgba(110, 165, 104, 1)'
   }
 };
 // -------------------------------------------------------------------
