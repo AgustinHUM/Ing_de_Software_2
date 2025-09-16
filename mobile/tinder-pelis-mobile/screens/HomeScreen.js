@@ -77,7 +77,7 @@ export default function HomeScreen() {
       id: 'm5',
       title: 'Scott Pilgrim vs. the World',
       genres: ['Ciencia ficción', 'Comedia', 'Drama'],
-      poster: require('../assets/scott_pilgrim.jpg'),
+      poster: { uri: 'https://cdn.watchmode.com/posters/01336293_poster_w342.jpg' },
       rating: 10.0,
       year: 2010,
       runtime: '112',
