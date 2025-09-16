@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Provider as PaperProvider } from 'react-native-paper';
+import { Provider as PaperProvider, useTheme } from 'react-native-paper';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,6 +19,7 @@ import FavouritesScreen from './screens/Favourites';
 import InitialFormScreen from './screens/InitialForm';
 import GenresFormScreen from './screens/SecondForm';
 import FilmDetailsScreen from './screens/FilmDetailsScreen';
+import LoadingOverlay from './components/LoadingOverlay';
 
 const Stack = createNativeStackNavigator();
 
@@ -108,35 +109,61 @@ export default function App() {
       <StatusBar style="light" />
       <PaperProvider theme={theme}>
         <AuthProvider>
-          <NavigationContainer
-            theme={theme}
-            ref={navigationRef}
-            onReady={() => {
-              try {
-                const r = navigationRef.current?.getCurrentRoute?.();
-                if (r?.name) setCurrentRoute(r.name);
-              } catch (e) {
-                console.warn('nav ready error', e);
-              }
-            }}
-            onStateChange={() => {
-              try {
-                const r = navigationRef.current?.getCurrentRoute?.();
-                if (r?.name) setCurrentRoute(r.name);
-              } catch (e) {
-                console.warn('nav state change error', e);
-              }
-            }}
-          >
-            <MainNavigator
-              setAppTheme={setAppThemeByName}
-              themesMap={TEMAS}
-              themeName={themeName}
-            />
-            <AppBar currentRouteName={currentRoute} navigationRef={navigationRef} />
-          </NavigationContainer>
+          <AppInner
+            setAppTheme={setAppThemeByName}
+            themesMap={TEMAS}
+            themeName={themeName}
+            navigationRef={navigationRef}
+            setCurrentRoute={(r) => setCurrentRoute(r)}
+          />
         </AuthProvider>
       </PaperProvider>
+    </>
+  );
+}
+
+function AppInner({ setAppTheme, themesMap, themeName, navigationRef, setCurrentRoute }) {
+  const auth = useAuth(); 
+  const [currentRoute, setCurrentRouteLocal] = useState('Home');
+  const theme = useTheme();
+
+  return (
+    <>
+      <NavigationContainer
+        theme={theme}
+        ref={navigationRef}
+        onReady={() => {
+          try {
+            const r = navigationRef.current?.getCurrentRoute?.();
+            if (r?.name) {
+              setCurrentRouteLocal(r.name);
+              setCurrentRoute?.(r.name);
+            }
+          } catch (e) {
+            console.warn('nav ready error', e);
+          }
+        }}
+        onStateChange={() => {
+          try {
+            const r = navigationRef.current?.getCurrentRoute?.();
+            if (r?.name) {
+              setCurrentRouteLocal(r.name);
+              setCurrentRoute?.(r.name);
+            }
+          } catch (e) {
+            console.warn('nav state change error', e);
+          }
+        }}
+      >
+        <MainNavigator
+          setAppTheme={setAppTheme}
+          themesMap={themesMap}
+          themeName={themeName}
+        />
+        <AppBar currentRouteName={currentRoute} navigationRef={navigationRef} />
+      </NavigationContainer>
+
+      <LoadingOverlay visible={!!auth.busy} />
     </>
   );
 }
