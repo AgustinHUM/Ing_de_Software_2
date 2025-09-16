@@ -17,9 +17,11 @@ import FriendsScreen from './screens/Friends';
 import SearchScreen from './screens/Search';
 import FavouritesScreen from './screens/Favourites';
 import InitialFormScreen from './screens/InitialForm';
-import GenresFormScreen from './screens/SecondForm';
+import GenresFormScreen from './screens/GenreForm';
 import FilmDetailsScreen from './screens/FilmDetailsScreen';
 import LoadingOverlay from './components/LoadingOverlay';
+import StreamingServicesForm from './screens/StreamingServicesForm';
+import CountriesForm from './screens/CountriesForm';
 
 const Stack = createNativeStackNavigator();
 
@@ -230,9 +232,11 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
       ) : firstLogin ? (
         <>
           <Stack.Screen name="InitialForm" component={InitialFormScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="StreamingServicesForm" component={StreamingServicesForm} options={{headerShown:false}} />
+          <Stack.Screen name="CountriesForm" component={CountriesForm} options={{headerShown:false}} />
+          <Stack.Screen name="GenreForm" component={GenresFormScreen} options={{headerShown:false}} />
           <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="FilmDetails" component={FilmDetailsScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="GenreForm" component={GenresFormScreen} options={{headerShown:false, title: 'Formulario inicial', animation:'fade_from_bottom' }} />
           <Stack.Screen name="Profile" options={{ headerShown: false }}>
             {props => (
               <ProfileScreen

@@ -124,7 +124,6 @@ export default function SelectableListForm({
             height: 5,
             borderRadius: 5,
             marginTop: 16,
-            marginBottom: 12,
           }}
         />
       </View>

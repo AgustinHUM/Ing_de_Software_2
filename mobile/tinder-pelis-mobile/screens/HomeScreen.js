@@ -4,6 +4,7 @@ import { Text, useTheme } from 'react-native-paper';
 import SearchBar from '../components/Searchbar';
 import Seleccionable from '../components/Seleccionable';
 import { useNavigation } from '@react-navigation/native';
+import FilmDisplay from '../components/FilmDisplay';
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -203,14 +204,7 @@ export default function HomeScreen() {
 
             <View style={{paddingTop:16, flexDirection: 'row', flexWrap: 'wrap', justifyContent:'space-between' }}>
               {displayedMovies.map(movie => (
-                <TouchableOpacity key={movie.id} style={{ width: '30%' }} onPress={() => navigation.navigate('FilmDetails', { movie })} activeOpacity={0.8}>
-                  <View style={{marginBottom:8, width: '100%', aspectRatio: 2/3, borderRadius:15, overflow:'hidden' }}>
-                    <Image
-                      source={movie.poster}
-                      style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
-                    />
-                  </View>
-                </TouchableOpacity>
+                <FilmDisplay id={movie.id} poster={movie.poster} onPress={() => navigation.navigate('FilmDetails', { movie })}></FilmDisplay>
               ))}
               {displayedMovies.length % 3 ===2 && (
                 <View style={{ width: '30%' }}>

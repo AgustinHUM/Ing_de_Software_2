@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import SelectableListForm from "../components/Form";
 
 export default function GenresFormScreen({ navigation }) {
-  const GENEROS = [
+  const GENRES = [
     { name: "Acción" },
     { name: "Ciencia Ficción" },
     { name: "Romance" },
@@ -37,9 +37,9 @@ export default function GenresFormScreen({ navigation }) {
 
   return (
     <SelectableListForm 
-        title="What genres do you like?"
+        title="What are your favourite genres?"
         mandatory={false}
-        items={GENEROS}
+        items={GENRES}
         buttonText="End form"
         showGoBack={true}
         onSubmit={(selectedServices)=>handleFinish()}
