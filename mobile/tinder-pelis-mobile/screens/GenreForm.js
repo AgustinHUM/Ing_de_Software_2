@@ -1,48 +1,41 @@
 import { useTheme } from "react-native-paper";
 import * as SecureStore from 'expo-secure-store';
 import SelectableListForm from "../components/Form";
+import { useRoute } from "@react-navigation/native";
 
 export default function GenresFormScreen({ navigation }) {
   const GENRES = [
-    { name: "Acción" },
-    { name: "Ciencia Ficción" },
-    { name: "Romance" },
-    { name: "Musical" },
-    { name: "Misterio" },
-    { name: "Thriller" },
-    { name: "Criminal" },
-    { name: "Policial" },
-    { name: "Superhéroes" },
-    { name: "Fantasía" },
-    { name: "Kung-Fu Panda 2" },
-    { name: "Infantil" },
-    { name: "Animación" },
-    { name: "Comedia" },
+    {id:'g1', name: "Acción" },
+    {id:'g2', name: "Ciencia Ficción" },
+    {id:'g3', name: "Romance" },
+    {id:'g4', name: "Musical" },
+    {id:'g5', name: "Misterio" },
+    {id:'g6', name: "Thriller" },
+    {id:'g7', name: "Criminal" },
+    {id:'g8', name: "Policial" },
+    {id:'g9', name: "Superhéroes" },
+    {id:'g10', name: "Fantasía" },
+    {id:'g11', name: "Kung-Fu Panda 2" },
+    {id:'g12', name: "Infantil" },
+    {id:'g13', name: "Animación" },
+    {id:'g14', name: "Comedia" },
   ];
 
   const theme = useTheme();
-
-  // Al finalizar, marcar el flag de primer login como completado y borrar el email
-  const handleFinish = async () => {
-    const email = await SecureStore.getItemAsync("lastLoginEmail");
-    if (email) {
-      const safeEmail = email.toLowerCase().replace(/[^a-z0-9._-]/g, "_");
-      const key = `firstLoginDone__${safeEmail}`;
-      await SecureStore.setItemAsync(key, "1");
-      await SecureStore.deleteItemAsync("lastLoginEmail");
-    }
-
-    navigation.replace("Home");
-  };
+  const route = useRoute();
+  const prevResults = route?.params?.formResults ?? {};
 
   return (
     <SelectableListForm 
         title="What are your favourite genres?"
         mandatory={false}
         items={GENRES}
-        buttonText="End form"
+        buttonText="Next"
         showGoBack={true}
-        onSubmit={(selectedServices)=>handleFinish()}
+        onSubmit={(selectedGenres)=>{
+        const genres = selectedGenres.map(g=>g.id);
+        navigation.navigate("DirectorsForm",{ formResults: { ...prevResults, genres } });
+        }}
         showSelectButton={false}
         />
   );

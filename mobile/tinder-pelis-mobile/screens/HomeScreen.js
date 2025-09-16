@@ -204,11 +204,11 @@ export default function HomeScreen() {
 
             <View style={{paddingTop:16, flexDirection: 'row', flexWrap: 'wrap', justifyContent:'space-between' }}>
               {displayedMovies.map(movie => (
-                <FilmDisplay id={movie.id} poster={movie.poster} onPress={() => navigation.navigate('FilmDetails', { movie })}></FilmDisplay>
+                <FilmDisplay width={'30%'} key={movie.id} movie={movie} onPress={(selected) => navigation.navigate('FilmDetails', { movie })}></FilmDisplay>
               ))}
               {displayedMovies.length % 3 ===2 && (
                 <View style={{ width: '30%' }}>
-                  <View style={{marginBottom:8, width: '100%', aspectRatio: 2/3, borderRadius:15, overflow:'hidden', backgroundColor:'transparent' }} />
+                  <View style={{marginBottom:16, width: '100%', aspectRatio: 2/3, borderRadius:15, overflow:'hidden', backgroundColor:'transparent' }} />
                 </View>
               )}
               {displayedMovies.length === 0 && (

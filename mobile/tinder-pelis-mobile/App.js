@@ -22,6 +22,8 @@ import FilmDetailsScreen from './screens/FilmDetailsScreen';
 import LoadingOverlay from './components/LoadingOverlay';
 import StreamingServicesForm from './screens/StreamingServicesForm';
 import CountriesForm from './screens/CountriesForm';
+import DirectorsFormScreen from './screens/DirectorsForm';
+import MoviesFormScreen from './screens/MoviesFormScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -235,6 +237,8 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
           <Stack.Screen name="StreamingServicesForm" component={StreamingServicesForm} options={{headerShown:false}} />
           <Stack.Screen name="CountriesForm" component={CountriesForm} options={{headerShown:false}} />
           <Stack.Screen name="GenreForm" component={GenresFormScreen} options={{headerShown:false}} />
+          <Stack.Screen name="DirectorsForm" component={DirectorsFormScreen} options={{headerShown:false}} />
+          <Stack.Screen name="MoviesForm" component={MoviesFormScreen} options={{headerShown:false}} />
           <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="FilmDetails" component={FilmDetailsScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Profile" options={{ headerShown: false }}>

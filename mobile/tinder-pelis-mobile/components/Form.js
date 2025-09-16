@@ -64,7 +64,6 @@ export default function SelectableListForm({
     }
   }, [onSubmit, selectedNames, items]);
 
-  // are all currently visible items selected?
   const allVisibleSelected =
     filteredItems.length > 0 && filteredItems.every((it) => selectedNames.includes(it.name));
 
