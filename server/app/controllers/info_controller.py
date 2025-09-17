@@ -49,7 +49,8 @@ def selected_movie_info():
                           "movie_classification": peli_check.clasificacion_edad,
                           "movie_score": peli_check.score,
                           "movie_platforms": plataformas,  #es una lista
-                          "movie_genres": generos}         #es una lista
+                          "movie_genres": generos,         #es una lista
+                          "movie_poster_url": peli_check.url_poster}         
         
         #El front recibe algo tal cual como lo de arriba
         
