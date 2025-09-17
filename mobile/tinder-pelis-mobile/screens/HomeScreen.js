@@ -204,7 +204,7 @@ export default function HomeScreen() {
 
             <View style={{paddingTop:16, flexDirection: 'row', flexWrap: 'wrap', justifyContent:'space-between' }}>
               {displayedMovies.map(movie => (
-                <FilmDisplay width={'30%'} key={movie.id} movie={movie} onPress={(selected) => navigation.navigate('FilmDetails', { movie })}></FilmDisplay>
+                <FilmDisplay width={'30%'} key={movie.id} movie={movie} onPress={(selected) => navigation.navigate('FilmDetails', { movie })} ></FilmDisplay>
               ))}
               {displayedMovies.length % 3 ===2 && (
                 <View style={{ width: '30%' }}>
