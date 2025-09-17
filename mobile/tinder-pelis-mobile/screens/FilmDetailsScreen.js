@@ -1,16 +1,19 @@
 import React from 'react';
 import { View, Image, TouchableOpacity, ScrollView, Modal, Platform } from 'react-native';
-import { Text, useTheme, IconButton } from 'react-native-paper';
+import { Text, useTheme, IconButton, Icon } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Octicons from '@expo/vector-icons/Octicons';
+import Fontisto from '@expo/vector-icons/Fontisto';
 import { setAlpha } from '../theme';
 import FilmDisplay from '../components/FilmDisplay';
 import FilmDetail from '../components/FilmDetail';
 import { useState } from 'react';
+import Seleccionable from '../components/Seleccionable';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
 const fallbackMovie = {
@@ -24,15 +27,49 @@ const fallbackMovie = {
   description: 'No description available.'
 };
 
+
 export default function FilmDetailsScreen() {
-  const theme = useTheme();
-  const route = useRoute();
-  const navigation = useNavigation();
-  const movie = route.params?.movie || fallbackMovie;
-  const [showMore, setShowMore] = useState(false);
-  const [showGenresModal, setShowGenresModal] = React.useState(false);
-  const visible_genres = 3; 
-  const VISIBLE_GENRES_COUNT = 3;
+    const theme = useTheme();
+    const route = useRoute();
+    const navigation = useNavigation();
+    const movie = route.params?.movie || fallbackMovie;
+    const [showMore, setShowMore] = useState(false);
+    const [showGenresModal, setShowGenresModal] = React.useState(false);
+    const [isFavourite, setIsFavourite] = useState(false);
+    const [seen, setSeen] = useState(false);
+    const insets = useSafeAreaInsets();
+    const insetBottom = 10; 
+    const height = 80; 
+    const radiusBottom = 40; 
+    const radiusTop = 10; 
+    const visible_genres = 3; 
+    const VISIBLE_GENRES_COUNT = 3;
+
+    const containerStyle = {
+        position: 'absolute',
+        right: 16, 
+        bottom: insetBottom + (insets.bottom || 0) + height + 10, 
+        height: 60, 
+        width: 60, 
+        borderRadius: 30, 
+        backgroundColor: theme.colors.primary, 
+        justifyContent: 'center',
+        alignItems: 'center',
+        boxShadow: [{
+            offsetX: 0,
+            offsetY: 0,
+            blurRadius: 24,
+            spread: 0,
+            color: setAlpha(theme.colors.primary, 0.6),
+        }],
+    };
+
+  const toggleFavourite = () => {
+    setIsFavourite((prev) => !prev);
+  };
+  const toggleSeen = () => {
+    setSeen((prev) => !prev);
+  };
 
   return (
     <View style={{ flex: 1, flexDirection:'column'}}>
@@ -55,6 +92,18 @@ export default function FilmDetailsScreen() {
                     style={{ position: 'absolute', left: 0 }}
                     />
                     <Text variant='headlineSmall' style={{ color: theme.colors.text, fontWeight: 400 }}>Details</Text>
+                    <View style={{ position: 'absolute', right: 0 }}>
+                        <IconButton
+                            icon={() => (
+                                <MaterialCommunityIcons
+                                    name={isFavourite ? 'heart' : 'heart-outline'}
+                                    size={28}
+                                    color={isFavourite ? theme.colors.primary : theme.colors.text} 
+                                />
+                            )}
+                            onPress={toggleFavourite} 
+                        />
+                    </View>
                 </View>
 
                 <View style={{paddingTop:16, flexDirection: 'row', flexWrap: 'wrap', justifyContent:'space-between', flex:1}}>
@@ -271,6 +320,20 @@ export default function FilmDetailsScreen() {
                 </ScrollView>
             </View>
         </Modal>
+        {seen ? null : (
+            <View style={containerStyle}>
+                <IconButton
+                    icon={() => (
+                        <Octicons
+                            name={seen ? [{}] : 'device-camera-video'}
+                            size={28}
+                            color={seen ? [{}] : theme.colors.text} 
+                        />
+                    )}
+                onPress={toggleSeen}
+                />
+            </View>
+        )}
     </View>
-  );
+  );    
 }
