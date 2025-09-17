@@ -1,65 +1,58 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View, StyleSheet, Text, FlatList } from 'react-native';
+import { SafeAreaView, View, StyleSheet, Text, FlatList, Alert } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import SearchBar from '../components/Searchbar';
 import MovieSearchItem from '../components/MovieSearchItem';
 import SearchEmptyState from '../components/SearchEmptyState';
 import SearchNoResults from '../components/SearchNoResults';
+import LoadingOverlay from '../components/LoadingOverlay';
 import { useTheme } from 'react-native-paper';
+import { getMovies } from '../src/services/api';
 
 export default function Search() {
   const route = useRoute();
   const theme = useTheme();
   const routeQuery = route.params?.query ?? '';
   const [query, setQuery] = useState(routeQuery);
+  const [movies, setMovies] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setQuery(routeQuery);
   }, [routeQuery]);
 
-  // Datos de prueba para la maquetación
-  const sampleMovies = [
-    {
-      movie_id: 1,
-      movie_name: 'Spiderman',
-      movie_release: '2002',
-      genre: 'Acción',
-      movie_length: 139,
-      streaming_service: 'Netflix',
-      poster_url: 'https://via.placeholder.com/150x200/FF0000/FFFFFF?text=Spider-Man'
-    },
-    {
-      movie_id: 2,
-      movie_name: 'Spider-Man: No Way Home',
-      movie_release: '2021',
-      genre: 'Acción',
-      movie_length: 139,
-      streaming_service: 'Disney+',
-      poster_url: 'https://via.placeholder.com/150x200/0000FF/FFFFFF?text=No+Way+Home'
-    },
-    {
-      movie_id: 3,
-      movie_name: 'Avengers: Endgame',
-      movie_release: '2019',
-      genre: 'Acción',
-      movie_length: 181,
-      streaming_service: 'Disney+',
-      poster_url: 'https://via.placeholder.com/150x200/800080/FFFFFF?text=Endgame'
+  useEffect(() => {
+    loadMovies();
+  }, []);
+
+  const loadMovies = async () => {
+    try {
+      setLoading(true);
+      const moviesData = await getMovies();
+      setMovies(moviesData);
+    } catch (error) {
+      console.error('Error loading movies:', error);
+      Alert.alert('Error', 'No se pudieron cargar las películas');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const results = query
-    ? sampleMovies.filter(movie => 
+    ? movies.filter(movie => 
         movie.movie_name.toLowerCase().includes(query.toLowerCase())
       )
     : [];
 
   const handleMoviePress = (movie) => {
-    console.log('Película seleccionada:', movie);
     // Aquí irá la navegación a detalles cuando conectemos con el backend
   };
 
   const renderContent = () => {
+    if (loading && movies.length === 0) {
+      return <SearchEmptyState />;
+    }
+
     if (!query) {
       return <SearchEmptyState />;
     }
@@ -78,8 +71,10 @@ export default function Search() {
             onPress={handleMoviePress}
           />
         )}
+        numColumns={2}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={styles.galleryContainer}
+        columnWrapperStyle={styles.row}
       />
     );
   };
@@ -99,6 +94,8 @@ export default function Search() {
       <View style={styles.content}>
         {renderContent()}
       </View>
+
+      <LoadingOverlay visible={loading} />
     </SafeAreaView>
   );
 }
@@ -124,7 +121,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
   },
-  listContainer: {
+  galleryContainer: {
     paddingBottom: 20,
+    paddingHorizontal: 8,
+  },
+  row: {
+    justifyContent: 'space-around',
   },
 });
