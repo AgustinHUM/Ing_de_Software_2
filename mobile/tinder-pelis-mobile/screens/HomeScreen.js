@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Modal, TouchableOpacity, FlatList, ScrollView, Image } from 'react-native';
+import { View, StyleSheet, Modal, TouchableOpacity, FlatList, ScrollView, Image, Platform } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import SearchBar from '../components/Searchbar';
 import Seleccionable from '../components/Seleccionable';
@@ -130,7 +130,7 @@ export default function HomeScreen() {
   // ---- Filtrado de películas ----------------------------------------------------------------
   const displayedMovies = activeFilters.length === 0
     ? movies
-    : movies.filter(movie => movie.genres.some(g => activeFilters.includes(g)));
+    : movies.filter(movie => activeFilters.every(f => movie.genres.includes(f)));
   // --------------------------------------------------------------------------------------------
 
   return (
@@ -187,7 +187,7 @@ export default function HomeScreen() {
                   }}
                 >
                   <Text style={{ color: theme.colors.placeholderText, fontSize:12, fontWeight: '600' }}>
-                    Ver más...
+                    More...
                   </Text>
                 </TouchableOpacity>
                 </View>
@@ -231,7 +231,7 @@ export default function HomeScreen() {
         onRequestClose={() => setShowMore(false)}
         transparent={false}
       >
-        <View style={{ flex: 1, padding: 25, backgroundColor: theme.colors.background }}>
+        <View style={{ flex: 1, padding: 25, paddingVertical: Platform.OS === 'ios' ? 70 : 35, backgroundColor: theme.colors.background }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
             <Text variant="headlineSmall" style={{ color: theme.colors.text, fontWeight: 700 }}>Todos los géneros</Text>
             <TouchableOpacity onPress={() => setShowMore(false)} style={{ padding: 8 }}>
@@ -240,7 +240,7 @@ export default function HomeScreen() {
           </View>
 
           <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
-            {moreGenres.map(genre => (
+            {allGenres.map(genre => (
               <View key={genre} style={{ marginBottom: 12 }}>
                 <Seleccionable
                   label={genre}

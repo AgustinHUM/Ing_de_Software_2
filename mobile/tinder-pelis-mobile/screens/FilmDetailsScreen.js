@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Image, TouchableOpacity, ScrollView, Modal } from 'react-native';
+import { View, Image, TouchableOpacity, ScrollView, Modal, Platform } from 'react-native';
 import { Text, useTheme, IconButton } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -35,9 +35,9 @@ export default function FilmDetailsScreen() {
   const VISIBLE_GENRES_COUNT = 3;
 
   return (
-    <View style={{ flex: 1, padding: '3%', flexDirection:'column'}}>
+    <View style={{ flex: 1, flexDirection:'column'}}>
         <ScrollView
-            style={{paddingTop:'15%', flex:0.75, backgroundColor: 'transparent'}}
+            style={{paddingTop:'15%', flex:0.75, padding:'3%', backgroundColor: 'transparent'}}
             contentContainerStyle={{ flexGrow: 1, }}
             showsVerticalScrollIndicator={false}
         >
@@ -58,9 +58,7 @@ export default function FilmDetailsScreen() {
                 </View>
 
                 <View style={{paddingTop:16, flexDirection: 'row', flexWrap: 'wrap', justifyContent:'space-between', flex:1}}>
-                    <FilmDisplay width={'50%'} key={movie.id} movie={movie} onPress={null} glow={false}>
-                    </FilmDisplay>
-
+                    <FilmDisplay width={'50%'} key={movie.id} movie={movie} onPress={null} glow={true} />
                     <View style={{ width: '47%' }}>
                         <Text
                             style={{
@@ -200,6 +198,7 @@ export default function FilmDetailsScreen() {
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'flex-start', flex: 1, marginBottom: 16 }}>
                             {movie.platforms.map((platform) => (
                                 <FilmDetail
+                                    key={platform}
                                     value={platform}
                                     textStyle={{ color: theme.colors.primary, fontSize: 14, fontWeight: '600', marginLeft: 0 }}
                                     containerStyle={{
@@ -236,7 +235,7 @@ export default function FilmDetailsScreen() {
             onRequestClose={() => setShowGenresModal(false)}
             transparent={false}
         >
-            <View style={{ flex: 1, padding: 25, backgroundColor: theme.colors.background }}>
+            <View style={{ flex: 1, padding: 25, paddingVertical: Platform.OS === 'ios' ? 70 : 35, backgroundColor: theme.colors.background }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
                     <Text variant="headlineSmall" style={{ color: theme.colors.text, fontWeight: 700 }}>All Genres</Text>
                     <TouchableOpacity onPress={() => setShowGenresModal(false)} style={{ padding: 8 }}>
