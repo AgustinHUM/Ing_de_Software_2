@@ -210,15 +210,6 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
     checkFirstLogin();
     return () => { isMounted = false; };
   }, [state.userToken]);
-
-  if (state.isLoading || !checkedFirstLogin) {
-    return (
-      <Stack.Navigator>
-        <Stack.Screen name="Loading" component={() => null} options={{ headerShown: false }} />
-      </Stack.Navigator>
-    );
-  }
-
   return (
     <Stack.Navigator
       screenOptions={{

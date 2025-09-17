@@ -32,7 +32,7 @@ export default function HomeScreen() {
       runtime: '181',
       director: 'Anthony Russo, Joe Russo',
       ageRating: 'PG-13',
-      platforms: ['Disney+', 'Prime Video'],
+      platforms: ['Disney+', 'Prime Video','aaaaaaaaaaa','bbbbbbbbbbbbbbbbbbb','cccccc','DirectTV','ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd'],
       description: 'After the devastating events of Avengers: Infinity War, the universe is in ruins. The Avengers assemble once more to undo Thanos’ actions and restore balance to the universe.'
     },
     {
