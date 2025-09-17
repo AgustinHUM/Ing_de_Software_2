@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Provider as PaperProvider } from 'react-native-paper';
+import { Provider as PaperProvider, useTheme } from 'react-native-paper';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,8 +17,13 @@ import FriendsScreen from './screens/Friends';
 import SearchScreen from './screens/Search';
 import FavouritesScreen from './screens/Favourites';
 import InitialFormScreen from './screens/InitialForm';
-import GenresFormScreen from './screens/SecondForm';
+import GenresFormScreen from './screens/GenreForm';
 import FilmDetailsScreen from './screens/FilmDetailsScreen';
+import LoadingOverlay from './components/LoadingOverlay';
+import StreamingServicesForm from './screens/StreamingServicesForm';
+import CountriesForm from './screens/CountriesForm';
+import DirectorsFormScreen from './screens/DirectorsForm';
+import MoviesFormScreen from './screens/MoviesFormScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -108,35 +113,61 @@ export default function App() {
       <StatusBar style="light" />
       <PaperProvider theme={theme}>
         <AuthProvider>
-          <NavigationContainer
-            theme={theme}
-            ref={navigationRef}
-            onReady={() => {
-              try {
-                const r = navigationRef.current?.getCurrentRoute?.();
-                if (r?.name) setCurrentRoute(r.name);
-              } catch (e) {
-                console.warn('nav ready error', e);
-              }
-            }}
-            onStateChange={() => {
-              try {
-                const r = navigationRef.current?.getCurrentRoute?.();
-                if (r?.name) setCurrentRoute(r.name);
-              } catch (e) {
-                console.warn('nav state change error', e);
-              }
-            }}
-          >
-            <MainNavigator
-              setAppTheme={setAppThemeByName}
-              themesMap={TEMAS}
-              themeName={themeName}
-            />
-            <AppBar currentRouteName={currentRoute} navigationRef={navigationRef} />
-          </NavigationContainer>
+          <AppInner
+            setAppTheme={setAppThemeByName}
+            themesMap={TEMAS}
+            themeName={themeName}
+            navigationRef={navigationRef}
+            setCurrentRoute={(r) => setCurrentRoute(r)}
+          />
         </AuthProvider>
       </PaperProvider>
+    </>
+  );
+}
+
+function AppInner({ setAppTheme, themesMap, themeName, navigationRef, setCurrentRoute }) {
+  const auth = useAuth(); 
+  const [currentRoute, setCurrentRouteLocal] = useState('Home');
+  const theme = useTheme();
+
+  return (
+    <>
+      <NavigationContainer
+        theme={theme}
+        ref={navigationRef}
+        onReady={() => {
+          try {
+            const r = navigationRef.current?.getCurrentRoute?.();
+            if (r?.name) {
+              setCurrentRouteLocal(r.name);
+              setCurrentRoute?.(r.name);
+            }
+          } catch (e) {
+            console.warn('nav ready error', e);
+          }
+        }}
+        onStateChange={() => {
+          try {
+            const r = navigationRef.current?.getCurrentRoute?.();
+            if (r?.name) {
+              setCurrentRouteLocal(r.name);
+              setCurrentRoute?.(r.name);
+            }
+          } catch (e) {
+            console.warn('nav state change error', e);
+          }
+        }}
+      >
+        <MainNavigator
+          setAppTheme={setAppTheme}
+          themesMap={themesMap}
+          themeName={themeName}
+        />
+        <AppBar currentRouteName={currentRoute} navigationRef={navigationRef} />
+      </NavigationContainer>
+
+      <LoadingOverlay visible={!!auth.busy} />
     </>
   );
 }
@@ -203,9 +234,13 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
       ) : firstLogin ? (
         <>
           <Stack.Screen name="InitialForm" component={InitialFormScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="StreamingServicesForm" component={StreamingServicesForm} options={{headerShown:false}} />
+          <Stack.Screen name="CountriesForm" component={CountriesForm} options={{headerShown:false}} />
+          <Stack.Screen name="GenreForm" component={GenresFormScreen} options={{headerShown:false}} />
+          <Stack.Screen name="DirectorsForm" component={DirectorsFormScreen} options={{headerShown:false}} />
+          <Stack.Screen name="MoviesForm" component={MoviesFormScreen} options={{headerShown:false}} />
           <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="FilmDetails" component={FilmDetailsScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="GenreForm" component={GenresFormScreen} options={{headerShown:true, title: 'Formulario inicial', animation:'fade_from_bottom' }} />
           <Stack.Screen name="Profile" options={{ headerShown: false }}>
             {props => (
               <ProfileScreen

@@ -3,7 +3,6 @@ import { View, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { Text, useTheme, IconButton } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { setAlpha } from '../theme';
 const fallbackMovie = {
   title: 'Película Desconocida',
   genres: [],

@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+// AuthContext.js
+import React, { createContext, useContext, useReducer, useEffect, useState, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
 
 const AuthContext = createContext();
@@ -19,12 +20,22 @@ function reducer(state, action) {
   }
 }
 
-const API_URL = 'http://172.20.10.10:5000';
+const API_URL = 'http://192.168.1.9:5000';
 
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  // Restaura token al iniciar
+  const [busy, setBusy] = useState(false);
+
+  const withBusy = useCallback(async (fn) => {
+    setBusy(true);
+    try {
+      return await fn();
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
   useEffect(() => {
     (async () => {
       try {
@@ -37,77 +48,81 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function signIn(email, password) {
-    const res = await fetch(`${API_URL}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+    return withBusy(async () => {
+      const res = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        let msg = `HTTP ${res.status}`;
+        try { const j = await res.json(); msg = j?.error || j?.detail || msg; } catch {}
+        throw new Error(msg);
+      }
+
+      const data = await res.json();
+      const token = data?.access_token || 'session-ok';
+
+      try {
+        await SecureStore.setItemAsync('userToken', token);
+        await SecureStore.setItemAsync('lastLoginEmail', email);
+      } catch (e) {
+        console.warn('Error guardando token/email en SecureStore', e);
+      }
+
+      dispatch({ type: 'SIGN_IN', token });
+      return { data };
     });
-
-    if (!res.ok) {
-      let msg = `HTTP ${res.status}`;
-      try { const j = await res.json(); msg = j?.error || j?.detail || msg; } catch {}
-      throw new Error(msg);
-    }
-
-    const data = await res.json();
-    const token = data?.access_token || 'session-ok';
-
-    try {
-      await SecureStore.setItemAsync('userToken', token);
-      await SecureStore.setItemAsync('lastLoginEmail', email);
-    } catch (e) {
-      console.warn('Error guardando token/email en SecureStore', e);
-    }
-
-    dispatch({ type: 'SIGN_IN', token });
-    return { data };
   }
 
   async function signUp(email, nombre, password) {
-    const res = await fetch(`${API_URL}/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, username: nombre, password }),
+    return withBusy(async () => {
+      const res = await fetch(`${API_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, username: nombre, password }),
+      });
+
+      let data = null;
+      try { data = await res.json(); } catch {}
+
+      if (!res.ok) {
+        const msg = data?.error || data?.detail || `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
+
+      return { status: data?.status || 'OK' };
     });
-
-    let data = null;
-    try { data = await res.json(); } catch {}
-
-    if (!res.ok) {
-      const msg = data?.error || data?.detail || `HTTP ${res.status}`;
-      throw new Error(msg);
-    }
-
-    return { status: data?.status || 'OK' };
   }
 
   async function signOut() {
-    dispatch({ type: 'SIGN_OUT' });
+    return withBusy(async () => {
+      dispatch({ type: 'SIGN_OUT' });
 
-    try {
-      await SecureStore.deleteItemAsync('userToken');
+      try {
+        await SecureStore.deleteItemAsync('userToken');
 
-      const email = await SecureStore.getItemAsync('lastLoginEmail');
-      if (email) {
-        const safeEmail = email.toLowerCase().replace(/[^a-z0-9._-]/g, '_');
-        const key = `firstLoginDone__${safeEmail}`;
-        await SecureStore.deleteItemAsync(key);
-        await SecureStore.deleteItemAsync('lastLoginEmail');
+        const email = await SecureStore.getItemAsync('lastLoginEmail');
+        if (email) {
+          const safeEmail = email.toLowerCase().replace(/[^a-z0-9._-]/g, '_');
+          const key = `firstLoginDone__${safeEmail}`;
+          await SecureStore.deleteItemAsync(key);
+          await SecureStore.deleteItemAsync('lastLoginEmail');
+        }
+      } catch (e) {
+        console.warn('Error limpiando SecureStore en signOut', e);
       }
-    } catch (e) {
-      console.warn('Error limpiando SecureStore en signOut', e);
-    }
+    });
   }
 
   function guestSignIn() {
-    // token "falso" con prefijo guest_ para reconocerlo
     const token = `guest_${Math.random().toString(36).slice(2)}_${Date.now()}`;
-    // Actualizamos el estado pero NO guardamos el token en SecureStore
     dispatch({ type: 'SIGN_IN', token });
     return { token };
   }
 
-  const value = { state, signIn, signUp, signOut, guestSignIn };
+  const value = { state, busy, setBusy, withBusy, signIn, signUp, signOut, guestSignIn };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

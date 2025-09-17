@@ -4,6 +4,7 @@ import { Text, useTheme } from 'react-native-paper';
 import SearchBar from '../components/Searchbar';
 import Seleccionable from '../components/Seleccionable';
 import { useNavigation } from '@react-navigation/native';
+import FilmDisplay from '../components/FilmDisplay';
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -77,7 +78,7 @@ export default function HomeScreen() {
       id: 'm5',
       title: 'Scott Pilgrim vs. the World',
       genres: ['Ciencia ficción', 'Comedia', 'Drama'],
-      poster: require('../assets/scott_pilgrim.jpg'),
+      poster: { uri: 'https://cdn.watchmode.com/posters/01336293_poster_w342.jpg' },
       rating: 10.0,
       year: 2010,
       runtime: '112',
@@ -203,18 +204,11 @@ export default function HomeScreen() {
 
             <View style={{paddingTop:16, flexDirection: 'row', flexWrap: 'wrap', justifyContent:'space-between' }}>
               {displayedMovies.map(movie => (
-                <TouchableOpacity key={movie.id} style={{ width: '30%' }} onPress={() => navigation.navigate('FilmDetails', { movie })} activeOpacity={0.8}>
-                  <View style={{marginBottom:8, width: '100%', aspectRatio: 2/3, borderRadius:15, overflow:'hidden' }}>
-                    <Image
-                      source={movie.poster}
-                      style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
-                    />
-                  </View>
-                </TouchableOpacity>
+                <FilmDisplay width={'30%'} key={movie.id} movie={movie} onPress={(selected) => navigation.navigate('FilmDetails', { movie })}></FilmDisplay>
               ))}
               {displayedMovies.length % 3 ===2 && (
                 <View style={{ width: '30%' }}>
-                  <View style={{marginBottom:8, width: '100%', aspectRatio: 2/3, borderRadius:15, overflow:'hidden', backgroundColor:'transparent' }} />
+                  <View style={{marginBottom:16, width: '100%', aspectRatio: 2/3, borderRadius:15, overflow:'hidden', backgroundColor:'transparent' }} />
                 </View>
               )}
               {displayedMovies.length === 0 && (
