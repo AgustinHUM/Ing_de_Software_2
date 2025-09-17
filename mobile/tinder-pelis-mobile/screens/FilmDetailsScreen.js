@@ -1,17 +1,27 @@
 import React from 'react';
-import { View, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Image, TouchableOpacity, ScrollView, Modal, Platform } from 'react-native';
 import { Text, useTheme, IconButton } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import Feather from '@expo/vector-icons/Feather';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'
+import Ionicons from '@expo/vector-icons/Ionicons';
+import Octicons from '@expo/vector-icons/Octicons';
+import { setAlpha } from '../theme';
+import FilmDisplay from '../components/FilmDisplay';
+import FilmDetail from '../components/FilmDetail';
+import { useState } from 'react';
+
+
 const fallbackMovie = {
-  title: 'Película Desconocida',
+  title: 'Unkown Film',
   genres: [],
   poster: null,
   year: '',
   duration: '',
   director: '',
   rating: '',
-  description: 'No hay descripción disponible.'
+  description: 'No description available.'
 };
 
 export default function FilmDetailsScreen() {
@@ -19,11 +29,15 @@ export default function FilmDetailsScreen() {
   const route = useRoute();
   const navigation = useNavigation();
   const movie = route.params?.movie || fallbackMovie;
+  const [showMore, setShowMore] = useState(false);
+  const [showGenresModal, setShowGenresModal] = React.useState(false);
+  const visible_genres = 3; 
+  const VISIBLE_GENRES_COUNT = 3;
 
   return (
-    <View style={{ flex: 1, padding: '3%', flexDirection:'column'}}>
+    <View style={{ flex: 1, flexDirection:'column'}}>
         <ScrollView
-            style={{paddingTop:'15%', flex:0.75, backgroundColor: 'transparent'}}
+            style={{paddingTop:'15%', flex:0.75, padding:'3%', backgroundColor: 'transparent'}}
             contentContainerStyle={{ flexGrow: 1, }}
             showsVerticalScrollIndicator={false}
         >
@@ -43,20 +57,8 @@ export default function FilmDetailsScreen() {
                     <Text variant='headlineSmall' style={{ color: theme.colors.text, fontWeight: 400 }}>Details</Text>
                 </View>
 
-                <View style={{paddingTop:16, flexDirection: 'row', flexWrap: 'wrap', justifyContent:'space-between', flex:1, marginBottom: 8}}>
-                    <View style={{ alignItems: 'center', width: '50%',aspectRatio:2/3, borderRadius:15, overflow:'hidden'}}>
-                    {movie.poster && (
-                        <Image
-                        source={movie.poster}
-                        style={{
-                            width: '100%',
-                            height: '100%',
-                            resizeMode: 'cover'
-                        }}
-                        />
-                    )}
-                    </View>
-
+                <View style={{paddingTop:16, flexDirection: 'row', flexWrap: 'wrap', justifyContent:'space-between', flex:1}}>
+                    <FilmDisplay width={'50%'} key={movie.id} movie={movie} onPress={null} interactable={false} />
                     <View style={{ width: '47%' }}>
                         <Text
                             style={{
@@ -69,178 +71,154 @@ export default function FilmDetailsScreen() {
                             {movie.title}
                         </Text>
 
+                        
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 }}>
                             {movie.genres && movie.genres.length > 0 ? (
-                            movie.genres.map((genre, index) => (
-                            <View
-                                key={index}
-                                style={{
-                                backgroundColor: theme.colors.secondary,
-                                borderRadius: 999,
-                                paddingHorizontal: 8,
-                                paddingVertical: 4,
-                                marginRight: 4,
-                                marginBottom: 8,
-                                }}
-                            >
-                                <Text
-                                style={{
-                                    textAlign:'center',
-                                    color: theme.colors.text,
-                                    fontSize: 14,
-                                    fontWeight: '600',
-                                }}
-                                >
-                                {genre}
-                                </Text>
-                            </View>
-                            ))
+                                movie.genres.slice(0, VISIBLE_GENRES_COUNT).map((genre, index) => (
+                                    <View
+                                        key={index}
+                                        style={{
+                                            backgroundColor: theme.colors.secondary,
+                                            borderRadius: 999,
+                                            paddingHorizontal: 8,
+                                            paddingVertical: 4,
+                                            marginRight: 4,
+                                            marginBottom: 8,
+                                        }}
+                                    >
+                                        <Text
+                                            style={{
+                                                textAlign: 'center',
+                                                color: theme.colors.text,
+                                                fontSize: 14,
+                                                fontWeight: '600',
+                                            }}
+                                        >
+                                            {genre}
+                                        </Text>
+                                    </View>
+                                ))
                             ) : (
-                            <View
-                            style={{
-                                backgroundColor: theme.colors.primary,
-                                borderRadius: 999,
-                                paddingHorizontal: 8,
-                                paddingVertical: 4,
-                                marginRight: 8,
-                                marginBottom: 16,
-                            }}
-                            >
-                            <Text
-                                style={{
-                                color: theme.colors.text,
-                                fontSize: 14,
-                                fontWeight: '600',
-                                }}
-                            >
-                                Sin géneros
-                            </Text>
-                            </View>
+                                <View
+                                    style={{
+                                        backgroundColor: theme.colors.primary,
+                                        borderRadius: 999,
+                                        paddingHorizontal: 8,
+                                        paddingVertical: 4,
+                                        marginRight: 8,
+                                        marginBottom: 16,
+                                    }}
+                                >
+                                    <Text
+                                        style={{
+                                            color: theme.colors.text,
+                                            fontSize: 14,
+                                            fontWeight: '600',
+                                        }}
+                                    >
+                                        Sin géneros
+                                    </Text>
+                                </View>
+                            )}
+
+                            {movie.genres && movie.genres.length > VISIBLE_GENRES_COUNT && (
+                                <TouchableOpacity
+                                    onPress={() => setShowGenresModal(true)}
+                                    activeOpacity={0.8}
+                                    style={{
+                                        backgroundColor: theme.colors.secondary,
+                                        borderRadius: 999,
+                                        paddingHorizontal: 8,
+                                        paddingVertical: 4,
+                                        marginRight: 4,
+                                        marginBottom: 8,
+                                    }}
+                                >
+                                    <Text
+                                        style={{
+                                            textAlign: 'center',
+                                            color: theme.colors.text,
+                                            fontSize: 14,
+                                            fontWeight: '600',
+                                        }}
+                                    >
+                                        More...
+                                    </Text>
+                                </TouchableOpacity>
                             )}
                         </View>
                         {movie.year ? (
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8,alignItems:'center' }}>
-                            <Image
-                                source={require('../assets/icons/calendar.png')}
-                                style={{ width:16, height: 16, marginRight: 6 }}
-                                resizeMode="contain"
-                                tintColor={theme.colors.text}
+                            <FilmDetail 
+                                icon={<Feather name="calendar" size={16} color={theme.colors.text} />}
+                                value={movie.year}
                             />
-
-                            <Text style={{
-                                color: theme.colors.text,
-                                fontSize: 14,
-                                fontWeight: '500',
-                            }}
-                            >
-                            {movie.year}
-                            </Text>
-                        </View>
                         ) : null}
                         {movie.runtime ? (
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8,alignItems:'center' }}>
-                            <Image
-                                source={require('../assets/icons/hourglass.png')}
-                                style={{ width:16, height: 16, marginRight: 6 }}
-                                resizeMode="contain"
-                                tintColor={theme.colors.text}
+                            <FilmDetail 
+                                icon={<Octicons name="hourglass" size={16} color={theme.colors.text} />}
+                                value={`${movie.runtime} min`}
                             />
-                            <Text style={{
-                                color: theme.colors.text,
-                                fontSize: 14,
-                                fontWeight: '600',
-                            }}
-                            >
-                            {movie.runtime} minutes
-                            </Text>
-                        </View>
                         ) : null}
                         {movie.director ? (
-                        <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8, width: '85%' }}>
-                            <Image
-                                source={require('../assets/icons/person.png')}
-                                style={{ width: 16, height: 16, marginRight: 6, marginTop: 2 }}
-                                resizeMode="contain"
-                                tintColor={theme.colors.text}
+                            <FilmDetail 
+                                icon={<Ionicons name="person-outline" size={16} color={theme.colors.text} />}
+                                label="Director"
+                                value={movie.director}
                             />
-                            <Text
-                            style={{
-                                color: theme.colors.text,
-                                fontSize: 14,
-                                fontWeight: '600',
-                                flexWrap: 'wrap',
-                            }}
-                            >
-                            Director: {movie.director}
-                            </Text>
-                        </View>
                         ) : null}
                         {movie.ageRating ? (
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8,alignItems:'center' }}>
-                            <Image
-                                source={require('../assets/icons/ticket.png')}
-                                style={{ width:16, height: 16, marginRight: 6 }}
-                                resizeMode="contain"
-                                tintColor={theme.colors.text}
+                            <FilmDetail 
+                                icon={<Ionicons name="ticket-outline" size={16} color={theme.colors.text} />}
+                                label="Rated"
+                                value={movie.ageRating}
                             />
-                            <Text style={{
-                                color: theme.colors.text,
-                                fontSize: 14,
-                                fontWeight: '600',
-                            }}
-                            >
-                            {movie.ageRating} Rated
-                            </Text>
-                        </View>
                         ) : null}
                     </View>
                 </View>
                 
+
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems:'flex-start', justifyContent:'space-between', flex:1, marginBottom:16 }}>
                     {movie.rating ? (
-                        <View style={{
-                            flexDirection: 'row',
+                        <FilmDetail
+                            icon= {<MaterialIcons name='star-outline' size={16} color={theme.colors.primary} />}
+                            value={movie.rating.toFixed(1)}
+                            textStyle={{ color: theme.colors.primary, fontSize: 14, fontWeight: '600', marginLeft: 6}}
+                            containerStyle={{flexDirection: 'row',
                             paddingVertical: 10,
                             paddingHorizontal: 12,
                             borderRadius: 8,
                             marginRight: 8,
                             marginBottom: 8,
                             backgroundColor: theme.colors.surface,
-                            minWidth: 70,
-                            alignItems: 'center',
-                        }}
-                        >   
-                            <Image source={require('../assets/icons/star.png')} style={{ width:16, height: 16, marginRight: 6}} resizeMode="contain" tintColor={theme.colors.primary}/>
-                            <Text style={{ color: theme.colors.primary, fontSize: 14, fontWeight: '600' }}>
-                                {movie.rating.toFixed(1) || 'N/A'}
-                            </Text>
-                    </View> 
-                    ) : null}   
+                            alignItems: 'center'}}>
+                        </FilmDetail>
+                    ) : null}
+                    
                     {movie.platforms ? (
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems:'flex-start', justifyContent:'flex-start', flex:1, marginBottom:16 }}>
-                        {movie.platforms.map((platform, index) => (
-                            <View key={index} style={{
-                                flexDirection: 'row',
-                                paddingVertical: 10,
-                                paddingHorizontal: 12,
-                                borderRadius: 8,
-                                marginRight: 8,
-                                marginBottom: 8,
-                                backgroundColor: theme.colors.surface,
-                                alignItems: 'center',
-                            }}
-                            >   
-                            <Text style={{ color: theme.colors.primary, fontSize: 14, fontWeight: '600' }}>
-                                {platform}
-                            </Text>
-                            </View>
-                        ))}
-                    </View>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'flex-start', flex: 1, marginBottom: 16 }}>
+                            {movie.platforms.map((platform) => (
+                                <FilmDetail
+                                    key={platform}
+                                    value={platform}
+                                    textStyle={{ color: theme.colors.primary, fontSize: 14, fontWeight: '600', marginLeft: 0 }}
+                                    containerStyle={{
+                                        flexDirection: 'row',
+                                        paddingVertical: 10,
+                                        paddingHorizontal: 12,
+                                        borderRadius: 8,
+                                        marginRight: 8,
+                                        marginBottom: 8,
+                                        backgroundColor: theme.colors.surface,
+                                        alignItems: 'center',
+                                    }}
+                                />
+                            ))}
+                        </View>
                     ) : null}
                 </View>
 
 
-                <View>
+                <View style={{marginBottom:256}}>
                     <Text style={{ color: theme.colors.text, fontSize: 20, fontWeight: 'bold', marginBottom: 8 }}>
                         Synopsis
                     </Text>
@@ -250,6 +228,49 @@ export default function FilmDetailsScreen() {
                 </View>
             </View>
         </ScrollView>
+
+        <Modal
+            visible={showGenresModal}
+            animationType="slide"
+            onRequestClose={() => setShowGenresModal(false)}
+            transparent={false}
+        >
+            <View style={{ flex: 1, padding: 25, paddingVertical: Platform.OS === 'ios' ? 70 : 35, backgroundColor: theme.colors.background }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+                    <Text variant="headlineSmall" style={{ color: theme.colors.text, fontWeight: 700 }}>All Genres</Text>
+                    <TouchableOpacity onPress={() => setShowGenresModal(false)} style={{ padding: 8 }}>
+                        <Text style={{ color: theme.colors.text }}>Close</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+                    {movie.genres.map((genre, index) => (
+                        <View
+                            key={index}
+                            style={{
+                                backgroundColor: theme.colors.secondary,
+                                borderRadius: 999,
+                                paddingHorizontal: 8,
+                                paddingVertical: 4,
+                                marginRight: 4,
+                                marginBottom: 8,
+                            }}
+                        >
+                            <Text
+                                style={{
+                                    textAlign: 'center',
+                                    color: theme.colors.text,
+                                    fontSize: 14,
+                                    fontWeight: '600',
+                                }}
+                            >
+                                {genre}
+                            </Text>
+                        </View>
+                    ))}
+                </ScrollView>
+            </View>
+        </Modal>
     </View>
   );
 }
