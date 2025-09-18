@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Alert } from 'react-native';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { HelperText, Text, useTheme } from 'react-native-paper';
 import { useAuth } from '../AuthContext';
@@ -9,8 +10,6 @@ export default function LoginScreen({ navigation }) {
   const { width } = Dimensions.get('window');
 
   const theme = useTheme();
-  const spacingS = theme.tokens?.spacing?.s ?? 16;
-  const spacingL = theme.tokens?.spacing?.l ?? 24;
   const buttonMaxWidth = 420;
   const btnWidth = Math.min(width * 0.8, buttonMaxWidth);
 
@@ -18,8 +17,8 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('Error de ejemplo para ver los espaciados');
-  const { signUp } = useAuth();
+  const [error, setError] = useState(null);
+  const { signUp,signIn } = useAuth();
 
   const handlePasswordChange = (text) => {
     setPassword(text);
@@ -47,8 +46,11 @@ export default function LoginScreen({ navigation }) {
 
     try {
       await signUp(email, nombre, password);
+      Alert.alert("Éxito", "Usuario creado con éxito", [
+        { text: "OK", onPress: async () => await signIn(email,password) }
+      ]);
     } catch (e) {
-      setError('Ocurrió un error.');
+      setError(String(e?.message || 'Ocurrió un error.'));
     }
   };
 
