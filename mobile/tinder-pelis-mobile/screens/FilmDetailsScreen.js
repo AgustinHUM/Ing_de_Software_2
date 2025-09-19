@@ -319,6 +319,7 @@ export default function FilmDetailsScreen() {
         
         <View style={containerStyle}>
             <IconButton
+                
                 icon={() => (
                     <MaterialCommunityIcons
                         name={rated ? 'video-check-outline' : 'video-outline'}
@@ -327,6 +328,7 @@ export default function FilmDetailsScreen() {
                     />
                 )}
             onPress={toggleRated}
+            style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
             />
         </View>
     </View>
