@@ -4,15 +4,15 @@ import * as SecureStore from 'expo-secure-store';
 
 const AuthContext = createContext();
 
-const initialState = { isLoading: true, userToken: null };
-const signedOutState = { isLoading: false, userToken: null };
+const initialState = { isLoading: true, userToken: null, user: null };
+const signedOutState = { isLoading: false, userToken: null, user: null };
 
 function reducer(state, action) {
   switch (action.type) {
     case 'RESTORE_TOKEN':
-      return { ...state, userToken: action.token, isLoading: false };
+      return { ...state, userToken: action.token, user: action.user, isLoading: false };
     case 'SIGN_IN':
-      return { ...state, userToken: action.token, isLoading: false };
+      return { ...state, userToken: action.token, user: action.user, isLoading: false };
     case 'SIGN_OUT':
       return { ...signedOutState };
     default:
@@ -20,7 +20,7 @@ function reducer(state, action) {
   }
 }
 
-const API_URL = 'http://172.20.10.10:5000';
+const API_URL = 'http://192.168.68.56:5050';
 
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -40,9 +40,12 @@ export function AuthProvider({ children }) {
     (async () => {
       try {
         const token = await SecureStore.getItemAsync('userToken');
-        dispatch({ type: 'RESTORE_TOKEN', token });
+        const email = await SecureStore.getItemAsync('lastLoginEmail');
+        const name = await SecureStore.getItemAsync('userName');
+        const user = email ? { email, name: name || email.split('@')[0] } : null;
+        dispatch({ type: 'RESTORE_TOKEN', token, user });
       } catch {
-        dispatch({ type: 'RESTORE_TOKEN', token: null });
+        dispatch({ type: 'RESTORE_TOKEN', token: null, user: null });
       }
     })();
   }, []);
@@ -63,15 +66,20 @@ export function AuthProvider({ children }) {
 
       const data = await res.json();
       const token = data?.access_token || 'session-ok';
+      const user = {
+        email: email,
+        name: data?.nombre_cuenta || email.split('@')[0]
+      };
 
       try {
         await SecureStore.setItemAsync('userToken', token);
         await SecureStore.setItemAsync('lastLoginEmail', email);
+        await SecureStore.setItemAsync('userName', user.name);
       } catch (e) {
         console.warn('Error guardando token/email en SecureStore', e);
       }
 
-      dispatch({ type: 'SIGN_IN', token });
+      dispatch({ type: 'SIGN_IN', token, user });
       return { data };
     });
   }
@@ -118,7 +126,8 @@ export function AuthProvider({ children }) {
 
   function guestSignIn() {
     const token = `guest_${Math.random().toString(36).slice(2)}_${Date.now()}`;
-    dispatch({ type: 'SIGN_IN', token });
+    const user = { email: 'guest@tinderpelis.com', name: 'Invitado' };
+    dispatch({ type: 'SIGN_IN', token, user });
     return { token };
   }
 
