@@ -1,59 +1,131 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View, StyleSheet, Text, FlatList } from 'react-native';
+import { SafeAreaView, View, StyleSheet, Text, FlatList, Alert } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import SearchBar from '../components/Searchbar';
+import MovieSearchItem from '../components/MovieSearchItem';
+import SearchEmptyState from '../components/SearchEmptyState';
+import SearchNoResults from '../components/SearchNoResults';
+import LoadingOverlay from '../components/LoadingOverlay';
 import { useTheme } from 'react-native-paper';
+import { getMovies } from '../src/services/api';
 
 export default function Search() {
   const route = useRoute();
+  const theme = useTheme();
   const routeQuery = route.params?.query ?? '';
   const [query, setQuery] = useState(routeQuery);
+  const [movies, setMovies] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setQuery(routeQuery);
   }, [routeQuery]);
 
-  // Datos de prueba para mostrar resultados filtrados (sólo para testing obvio)
-  const sampleItems = ['Matrix','Scott Pilgrim','Buscando a Nemo','IT','Avengers: Endgame','Iron-Man 3',
-    'Spider-Man 1','Spider-Man 2','Spider-Man 3','The Amazing Spider-Man','The Amazing Spider-Man 2',
-    'Spider-Man: Homecoming','Spider-Man: Far from home','Spider-Man: No way home'];
+  useEffect(() => {
+    loadMovies();
+  }, []);
+
+  const loadMovies = async () => {
+    try {
+      setLoading(true);
+      const moviesData = await getMovies();
+      setMovies(moviesData);
+    } catch (error) {
+      console.error('Error loading movies:', error);
+      Alert.alert('Error', 'No se pudieron cargar las películas');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const results = query
-    ? sampleItems.filter(item => item.toLowerCase().includes(query.toLowerCase()))
+    ? movies.filter(movie => 
+        movie.movie_name.toLowerCase().includes(query.toLowerCase())
+      )
     : [];
-    const theme = useTheme();
+
+  const handleMoviePress = (movie) => {
+    // Aquí irá la navegación a detalles cuando conectemos con el backend
+  };
+
+  const renderContent = () => {
+    if (loading && movies.length === 0) {
+      return <SearchEmptyState />;
+    }
+
+    if (!query) {
+      return <SearchEmptyState />;
+    }
+
+    if (results.length === 0) {
+      return <SearchNoResults query={query} />;
+    }
+
+    return (
+      <FlatList
+        data={results}
+        keyExtractor={(item) => item.movie_id.toString()}
+        renderItem={({ item }) => (
+          <MovieSearchItem 
+            movie={item} 
+            onPress={handleMoviePress}
+          />
+        )}
+        numColumns={2}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.galleryContainer}
+        columnWrapperStyle={styles.row}
+      />
+    );
+  };
+
   return (
-    <SafeAreaView style={{flex:1,padding:16}}>
-        <View style={{flex:0.25,alignItems:'center',justifyContent:'center'}}>
-            <Text style={{fontSize:25, textAlign: 'center', color: theme.colors.text, fontWeight: '500' }}>Películas</Text>
-        </View>
-        
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: theme.colors.text }]}>
+          Buscar peliculas
+        </Text>
+      </View>
+      
+      <View style={styles.searchContainer}>
         <SearchBar initialQuery={query} />
+      </View>
 
-        <View style={{flex:1,padding:16}}>
-            {query ? (
-            <>
-                <Text style={{color:theme.colors.text,fontSize:18}}>Buscaste: 
-                    <Text style={{color:theme.colors.primary,fontSize:18}}> {query}</Text>
-                </Text>
-                
+      <View style={styles.content}>
+        {renderContent()}
+      </View>
 
-                <Text style={{color:theme.colors.text,fontSize:18}}>Resultados (testing):</Text>
-
-                {results.length > 0 ? (
-                <FlatList
-                    data={results}
-                    keyExtractor={(item) => item}
-                    renderItem={({ item }) => <Text style={{color:theme.colors.secondary,fontSize:14}}>{item}</Text>}
-                />
-                ) : (
-                <Text style={{color:theme.colors.text,fontSize:16}}>No hay resultados para "{query}".</Text>
-                )}
-            </>
-            ) : (
-            <Text style={{marginTop: 12,color: theme.colors.disabled}}>Escribe algo en la barra de búsqueda y presiona buscar para ver los resultados aquí.</Text>
-            )}
-        </View>
+      <LoadingOverlay visible={loading} />
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  galleryContainer: {
+    paddingBottom: 20,
+    paddingHorizontal: 8,
+  },
+  row: {
+    justifyContent: 'space-around',
+  },
+});

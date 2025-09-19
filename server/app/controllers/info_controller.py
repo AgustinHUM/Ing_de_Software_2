@@ -6,9 +6,9 @@ from ..db import db
 def request_movie_info():
     if request.method == "GET":
 
-        peliculas = Pelicula.query.with_entities(Pelicula.id_pelicula, Pelicula.titulo).all()
+        peliculas = Pelicula.query.with_entities(Pelicula.id_pelicula, Pelicula.titulo, Pelicula.url_poster).all()
 
-        lista_peliculas = [ {"movie_id": val[0], "movie_name": val[1]} for val in peliculas]
+        lista_peliculas = [ {"movie_id": val[0], "movie_name": val[1], "movie_poster_url": val[2]} for val in peliculas]
 
         return jsonify(lista_peliculas)
 """"
