@@ -2,13 +2,37 @@ from flask import request, redirect, jsonify
 from ..models.models import *
 from ..config import Config
 from ..db import db
+from sqlalchemy import func
 
 def request_movie_info():
     if request.method == "GET":
+        if request.is_json:
+            info = request.get_json()
+        else:
+            info = request.form
 
-        peliculas = Pelicula.query.with_entities(Pelicula.id_pelicula, Pelicula.titulo).all()
+        nombre_peli = info.get("movie_name")
 
-        lista_peliculas = [ {"movie_id": val[0], "movie_name": val[1]} for val in peliculas]
+        peli_busqueda = f"{nombre_peli}:*"
+
+# usa GIN para buscar usando un vector de texto para encontrar similitudes
+        peliculas = (
+            db.session.query(PeliculaCompleta)
+            .filter(
+                func.to_tsvector('english', PeliculaCompleta.titulo).op('@@')(
+                    func.to_tsquery('english', peli_busqueda)
+                )
+            )
+            .order_by(PeliculaCompleta.titulo)
+            .limit(50)
+        ).all()
+
+        lista_peliculas = [ {"movie_id": peli.id_pelicula, 
+                             "movie_name": peli.titulo, 
+                             "movie_poster_url": peli.url_poster, 
+                             "movie_genres": peli.generos,
+                             "movie_platforms": peli.plataformas 
+                             } for peli in peliculas]
 
         return jsonify(lista_peliculas)
 """"
