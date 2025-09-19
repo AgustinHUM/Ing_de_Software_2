@@ -103,7 +103,7 @@ export default function FilmDetailsScreen() {
                 </View>
 
                 <View style={{paddingTop:16, flexDirection: 'row', flexWrap: 'wrap', justifyContent:'space-between', flex:1}}>
-                    <FilmDisplay width={'50%'} key={movie.id} movie={movie} onPress={null} glow={true} />
+                    <FilmDisplay width={'50%'} key={movie.id} movie={movie} onPress={null} interactable={false} />
                     <View style={{ width: '47%' }}>
                         <Text
                             style={{
@@ -263,7 +263,7 @@ export default function FilmDetailsScreen() {
                 </View>
 
 
-                <View>
+                <View style={{marginBottom:256}}>
                     <Text style={{ color: theme.colors.text, fontSize: 20, fontWeight: 'bold', marginBottom: 8 }}>
                         Synopsis
                     </Text>
