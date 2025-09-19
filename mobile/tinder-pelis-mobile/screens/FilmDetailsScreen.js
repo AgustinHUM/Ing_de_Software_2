@@ -33,17 +33,13 @@ export default function FilmDetailsScreen() {
     const route = useRoute();
     const navigation = useNavigation();
     const movie = route.params?.movie || fallbackMovie;
-    const [showMore, setShowMore] = useState(false);
     const [showGenresModal, setShowGenresModal] = React.useState(false);
     const [isFavourite, setIsFavourite] = useState(false);
-    const [seen, setSeen] = useState(false);
+    const [rated, setRated] = useState(false);
     const insets = useSafeAreaInsets();
     const insetBottom = 10; 
     const height = 80; 
-    const radiusBottom = 40; 
-    const radiusTop = 10; 
     const visible_genres = 3; 
-    const VISIBLE_GENRES_COUNT = 3;
 
     const containerStyle = {
         position: 'absolute',
@@ -67,8 +63,8 @@ export default function FilmDetailsScreen() {
   const toggleFavourite = () => {
     setIsFavourite((prev) => !prev);
   };
-  const toggleSeen = () => {
-    setSeen((prev) => !prev);
+  const toggleRated = () => {
+    setRated((prev) => !prev);
   };
 
   return (
@@ -123,7 +119,7 @@ export default function FilmDetailsScreen() {
                         
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 }}>
                             {movie.genres && movie.genres.length > 0 ? (
-                                movie.genres.slice(0, VISIBLE_GENRES_COUNT).map((genre, index) => (
+                                movie.genres.slice(0, visible_genres).map((genre, index) => (
                                     <View
                                         key={index}
                                         style={{
@@ -170,7 +166,7 @@ export default function FilmDetailsScreen() {
                                 </View>
                             )}
 
-                            {movie.genres && movie.genres.length > VISIBLE_GENRES_COUNT && (
+                            {movie.genres && movie.genres.length > visible_genres && (
                                 <TouchableOpacity
                                     onPress={() => setShowGenresModal(true)}
                                     activeOpacity={0.8}
@@ -320,20 +316,19 @@ export default function FilmDetailsScreen() {
                 </ScrollView>
             </View>
         </Modal>
-        {seen ? null : (
-            <View style={containerStyle}>
-                <IconButton
-                    icon={() => (
-                        <Octicons
-                            name={seen ? [{}] : 'device-camera-video'}
-                            size={28}
-                            color={seen ? [{}] : theme.colors.text} 
-                        />
-                    )}
-                onPress={toggleSeen}
-                />
-            </View>
-        )}
+        
+        <View style={containerStyle}>
+            <IconButton
+                icon={() => (
+                    <MaterialCommunityIcons
+                        name={rated ? 'video-check-outline' : 'video-outline'}
+                        size={32}
+                        color={theme.colors.text}
+                    />
+                )}
+            onPress={toggleRated}
+            />
+        </View>
     </View>
   );    
 }
