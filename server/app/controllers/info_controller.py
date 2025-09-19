@@ -2,7 +2,7 @@ from flask import request, redirect, jsonify
 from ..models.models import *
 from ..config import Config
 from ..db import db
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 def request_movie_info():
     if request.method == "GET":
@@ -19,13 +19,19 @@ def request_movie_info():
         peliculas = (
             db.session.query(PeliculaCompleta)
             .filter(
-                func.to_tsvector('english', PeliculaCompleta.titulo).op('@@')(
-                    func.to_tsquery('english', peli_busqueda)
+                or_(
+                    # usando GIN
+                    func.to_tsvector('english', PeliculaCompleta.titulo).op('@@')(
+                        func.to_tsquery('english', peli_busqueda)
+                    ),
+                    # usando con trigram (ILIKE)
+                    PeliculaCompleta.titulo.ilike(f"%{nombre_peli}%")
                 )
             )
             .order_by(PeliculaCompleta.titulo)
             .limit(50)
-        ).all()
+            .all()
+        )
 
         lista_peliculas = [ {"movie_id": peli.id_pelicula, 
                              "movie_name": peli.titulo, 
@@ -35,14 +41,7 @@ def request_movie_info():
                              } for peli in peliculas]
 
         return jsonify(lista_peliculas)
-""""
-devuelve algo así
-    [
-        {"id_pelicula": 1, "nombre_pelicula": "nombre1"},
-        {"id_pelicula": 2, "name_pelicula": "nombre2"},
-    ]
-necesito que me devuelvan el id cuando se elije la peli
-"""
+
 
 
 def selected_movie_info():
