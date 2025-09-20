@@ -1,5 +1,5 @@
 // src/services/api.js
-const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.68.56:5050"; // Local server
+const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://172.20.10.10:5000"; // Local server
 
 async function request(path, { method = "GET", body, headers = {} } = {}) {
   const controller = new AbortController();

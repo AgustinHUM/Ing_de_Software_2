@@ -8,11 +8,13 @@ import SearchNoResults from '../components/SearchNoResults';
 import LoadingOverlay from '../components/LoadingOverlay';
 import { useTheme } from 'react-native-paper';
 import { getMovies } from '../src/services/api';
+import { useNavigation } from '@react-navigation/native';
 
 export default function Search() {
   const route = useRoute();
   const theme = useTheme();
   const routeQuery = route.params?.query ?? '';
+  const navigation = useNavigation();
   const [query, setQuery] = useState(routeQuery);
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -46,6 +48,7 @@ export default function Search() {
 
   const handleMoviePress = (movie) => {
     // Aquí irá la navegación a detalles cuando conectemos con el backend
+    navigation.navigate('FilmDetails', { movie })
   };
 
   const renderContent = () => {

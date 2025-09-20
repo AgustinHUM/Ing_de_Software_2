@@ -222,7 +222,7 @@ export default function FilmDetailsScreen() {
                 </View>
                 
 
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems:'flex-start', justifyContent:'space-between', flex:1, marginBottom:16 }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems:'flex-start', flex:1, marginBottom:16 }}>
                     {movie.rating ? (
                         <FilmDetail
                             icon= {<MaterialIcons name='star-outline' size={16} color={theme.colors.primary} />}
@@ -240,7 +240,7 @@ export default function FilmDetailsScreen() {
                     ) : null}
                     
                     {movie.platforms ? (
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'flex-start', flex: 1, marginBottom: 16 }}>
+                            <>
                             {movie.platforms.map((platform) => (
                                 <FilmDetail
                                     key={platform}
@@ -258,7 +258,7 @@ export default function FilmDetailsScreen() {
                                     }}
                                 />
                             ))}
-                        </View>
+                        </>
                     ) : null}
                 </View>
 
