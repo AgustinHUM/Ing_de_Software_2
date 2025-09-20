@@ -1,7 +1,7 @@
 // AuthContext.js
 import React, { createContext, useContext, useReducer, useEffect, useState, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
-
+import { API_URL } from './src/services/api';
 const AuthContext = createContext();
 
 const initialState = { isLoading: true, userToken: null, user: null };
@@ -20,7 +20,6 @@ function reducer(state, action) {
   }
 }
 
-const API_URL = 'http://192.168.68.56:5050';
 
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);

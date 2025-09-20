@@ -6,14 +6,20 @@ from sqlalchemy import func, or_
 
 def request_movie_info():
     if request.method == "GET":
-        if request.is_json:
-            info = request.get_json()
-        else:
-            info = request.form
+        if (not request.args) or (not request.args.get("query")):
+            return jsonify({"error": "no se recibió query"}), 400
+        
+        nombre_peli = request.args.get("query")
 
-        nombre_peli = info.get("movie_name")
+        # paginación: tamaño fijo 50, asume página 0 si no se recibió o es inválida
+        page_arg = request.args.get("page")
+        try:
+            page = int(page_arg) if page_arg is not None else 0
+            if page < 0:
+                page = 0
+        except (ValueError, TypeError):
+            page = 0
 
-        peli_busqueda = f"{nombre_peli}:*"
 
 # usa GIN para buscar usando un vector de texto para encontrar similitudes
         peliculas = (
@@ -22,22 +28,29 @@ def request_movie_info():
                 or_(
                     # usando GIN
                     func.to_tsvector('english', PeliculaCompleta.titulo).op('@@')(
-                        func.to_tsquery('english', peli_busqueda)
+                        func.plainto_tsquery('english', nombre_peli)
                     ),
                     # usando con trigram (ILIKE)
                     PeliculaCompleta.titulo.ilike(f"%{nombre_peli}%")
                 )
             )
             .order_by(PeliculaCompleta.titulo)
-            .limit(50)
+            .limit(20)
+            .offset(page * 20)
             .all()
         )
 
-        lista_peliculas = [ {"movie_id": peli.id_pelicula, 
-                             "movie_name": peli.titulo, 
-                             "movie_poster_url": peli.url_poster, 
-                             "movie_genres": peli.generos,
-                             "movie_platforms": peli.plataformas 
+        lista_peliculas = [ {"id": peli.id_pelicula, 
+                             "title": peli.titulo, 
+                             "poster": peli.url_poster, 
+                             "genres": peli.generos,
+                             "platforms": peli.plataformas,
+                             "year": peli.anio_lanzamiento,
+                             "runtime":peli.duracion,
+                             "director":"Director no implementado",
+                             "rating":peli.score,
+                             "description":peli.trama,
+                             "ageRating":peli.clasificacion_edad
                              } for peli in peliculas]
 
         return jsonify(lista_peliculas)
