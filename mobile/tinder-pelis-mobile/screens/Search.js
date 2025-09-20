@@ -19,6 +19,7 @@ export default function Search() {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
+  const [morePages, setMorePages] = useState(false);
   const PAGE_SIZE = 20;
 
   const scrollRef = useRef(null);
@@ -33,32 +34,40 @@ export default function Search() {
     }
   }, [routeQuery]);
 
-  const fetchMovies = async (q, p) => {
-    const trimmed = (q ?? '').trim();
-    if (!trimmed) {
-      setMovies([]);
-      return;
-    }
+const fetchMovies = async (q, p) => {
+  const trimmed = (q ?? '').trim();
+  if (!trimmed) {
+    setMovies([]);
+    setMorePages(false);
+    return;
+  }
 
-    setLoading(true);
-    try {
-      const resp = await getMovies(trimmed, p);
-      console.log(resp);
-      setMovies(Array.isArray(resp) ? resp : []);
+  setLoading(true);
+  try {
+    const resp = await getMovies(trimmed, p);
+    const arr = Array.isArray(resp) ? resp : [];
 
-      requestAnimationFrame(() => {
+    // El back devuelve PAGE_SIZE + 1 si hay más páginas
+    const hasMore = arr.length > PAGE_SIZE;
+
+    setMorePages(hasMore);
+    setMovies(hasMore ? arr.slice(0, PAGE_SIZE) : arr);
+
+    requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         scrollRef.current?.scrollTo?.({ y: 0, animated: true });
       });
     });
-    } catch (err) {
-      console.warn('Error fetching movies:', err);
-      Alert.alert('Error', 'Ocurrió un error al buscar películas.');
-      setMovies([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (err) {
+    console.warn('Error fetching movies:', err);
+    Alert.alert('Error', 'Ocurrió un error al buscar películas.');
+    setMovies([]);
+    setMorePages(false);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleSearchSubmit = (q) => {
     const trimmed = (q ?? '').trim();
@@ -81,8 +90,9 @@ export default function Search() {
   };
 
   const renderContent = () => {
-    if (loading && movies.length === 0) {
-      return <SearchEmptyState />;
+    
+    if (loading) {
+      return <LoadingOverlay visible={loading} background='transparent' />;
     }
 
     if (!query) {
@@ -117,7 +127,7 @@ export default function Search() {
             </View>
           ))}
         </View>
-        {!(movies.length < PAGE_SIZE & page==0) ? (<View
+        {(morePages || (!morePages && page !== 0)) ? (<View
           style={{
             flexDirection: 'row',
             justifyContent: 'space-between',
@@ -139,7 +149,7 @@ export default function Search() {
           <GradientButton
             mode="text"
             onPress={handleNextPage}
-            disabled={movies.length < PAGE_SIZE}
+            disabled={!morePages}
             style={{ minWidth: 110 }}
           >
             Next page
@@ -174,7 +184,6 @@ export default function Search() {
         {renderContent()}
       </View>
 
-      <LoadingOverlay visible={loading} />
     </View>
   );
 }

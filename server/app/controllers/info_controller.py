@@ -11,7 +11,7 @@ def request_movie_info():
         
         nombre_peli = request.args.get("query")
 
-        # paginación: tamaño fijo 50, asume página 0 si no se recibió o es inválida
+        # paginación: tamaño fijo 20, asume página 0 si no se recibió o es inválida
         page_arg = request.args.get("page")
         try:
             page = int(page_arg) if page_arg is not None else 0
@@ -35,7 +35,7 @@ def request_movie_info():
                 )
             )
             .order_by(PeliculaCompleta.titulo)
-            .limit(20)
+            .limit(21)
             .offset(page * 20)
             .all()
         )
