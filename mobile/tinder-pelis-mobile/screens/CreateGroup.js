@@ -2,14 +2,18 @@ import React, { useState } from "react";
 import { View, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native";
 import { Text } from "react-native-paper";
 import { useTheme } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-
-// Usa TUS componentes existentes:
 import GradientButton from "../components/GradientButton";
-import Input from "../components/TextInput"; // es tu wrapper de input
+import Input from "../components/TextInput";
+
+const APPBAR_HEIGHT = 60;
+const APPBAR_BOTTOM_INSET = 10;
 
 export default function CreateGroup({ navigation }) {
   const theme = useTheme();
+  const { top, bottom } = useSafeAreaInsets();
+  const textColor = theme.colors?.text ?? "#fff";
   const [groupName, setGroupName] = useState("");
 
   return (
@@ -17,35 +21,39 @@ export default function CreateGroup({ navigation }) {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={{ flex: 1, backgroundColor: theme.colors.background }}
     >
-      <View style={{ flex: 1, paddingHorizontal: 20 }}>
-        {/* Header simple con back */}
-        <View style={{ flexDirection: "row", alignItems: "center", height: 56 }}>
+      <View
+        style={{
+          flex: 1,
+          paddingHorizontal: 20,
+          paddingTop: top + 8,
+          paddingBottom: bottom + APPBAR_BOTTOM_INSET + APPBAR_HEIGHT + 16,
+        }}
+      >
+        {/* Header simple */}
+        <View style={{ flexDirection: "row", alignItems: "center", height: 48 }}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 8 }}>
-            <MaterialCommunityIcons name="chevron-left" size={28} color="white" />
+            <MaterialCommunityIcons name="chevron-left" size={28} color={textColor} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
-            <Text style={{ textAlign: "center", fontSize: 22, fontWeight: "700" }}>
+            <Text style={{ textAlign: "center", fontSize: 22, fontWeight: "700", color: textColor }}>
               Create a Group
             </Text>
           </View>
           <View style={{ width: 36 }} />
         </View>
 
-        <View style={{ height: 40 }} />
+        <View style={{ height: 32 }} />
 
-        {/* Título grande */}
-        <Text style={{ fontSize: 28, fontWeight: "800", lineHeight: 34 }}>
+        <Text style={{ fontSize: 28, fontWeight: "800", lineHeight: 34, color: textColor }}>
           What should we{"\n"}name this group?
         </Text>
 
         <View style={{ height: 24 }} />
 
-        {/* Input: usa tu componente / sin inventar estilos raros */}
         <Input
           value={groupName}
           onChangeText={setGroupName}
           placeholder=""
-          // si tu Input acepta 'mode' y 'underlineColor', genial; si no, lo ignora sin romper
           mode="flat"
           underlineColor="rgba(255,255,255,0.9)"
           style={{ backgroundColor: "transparent" }}
@@ -53,12 +61,11 @@ export default function CreateGroup({ navigation }) {
 
         <View style={{ height: 40 }} />
 
-        {/* Botón con tu GradientButton */}
         <GradientButton
           onPress={() => {
-            // por ahora no llamamos al backend
-            // cuando conectemos: POST /groups con { group_name: groupName } + token
+            // luego: POST /groups con { group_name: groupName } y token
           }}
+          disabled={!groupName.trim()}
         >
           Create Group
         </GradientButton>
