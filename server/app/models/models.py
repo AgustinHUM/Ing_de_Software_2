@@ -2,6 +2,7 @@ from datetime import datetime
 from ..db import db
 from sqlalchemy.orm import relationship
 from sqlalchemy import DateTime
+from sqlalchemy.dialects.postgresql import JSON
 
 
 grupos_de_usuario = db.Table("USUARIO_GRUPO",
@@ -170,6 +171,24 @@ class Pelicula(db.Model):
     fav_usuario = db.relationship("Usuario", secondary=pelis_favoritas, back_populates="favoritas")
 
     generos = db.relationship("Genero", secondary=genero_pelicula, back_populates="pelis_genero")
+
+
+class PeliculaCompleta(db.Model):
+    __tablename__ = "MV_PELICULAS_COMPLETA"
+
+    id_pelicula = db.Column(db.Integer, primary_key=True)
+    titulo = db.Column(db.String)
+    trama = db.Column(db.String)
+    anio_lanzamiento = db.Column(db.Integer)
+    duracion = db.Column(db.Integer)
+    clasificacion_edad = db.Column(db.String)
+    url_poster = db.Column(db.String)
+    score = db.Column(db.Integer)
+    generos = db.Column(JSON)
+    plataformas = db.Column(JSON)
+
+    def __repr__(self):
+        return f"<PeliculaCompleta {self.titulo}>"
 
 
 class Genero(db.Model):

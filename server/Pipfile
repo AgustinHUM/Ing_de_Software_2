@@ -15,6 +15,7 @@ boto3 = "*"
 cp = "*"
 flask = "*"
 flask-migrate = "*"
+pyjwt = "*"
 
 [dev-packages]
 
