@@ -25,7 +25,7 @@ const routes = [
   {
     key: 'Friends',
     label: 'Friends',
-    route: 'Friends',
+    route: 'GroupsHome',
     icon: { filled: 'account-group', outline: 'account-group-outline' },
     filledLib: 'MaterialCommunityIcons',
     outlineLib: 'MaterialCommunityIcons',

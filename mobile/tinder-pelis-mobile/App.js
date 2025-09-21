@@ -13,7 +13,12 @@ import HomeScreen from './screens/HomeScreen';
 import { makeTheme } from './theme';
 import AppBar from './components/Appbar';
 import ProfileScreen from './screens/Profile';
-import FriendsScreen from './screens/Friends';
+
+// import FriendsScreen from './screens/Friends';
+import GroupsHome from './screens/GroupsHome';
+import CreateGroup from './screens/CreateGroup';
+import JoinGroup from './screens/JoinGroup';
+
 import SearchScreen from './screens/Search';
 import FavouritesScreen from './screens/Favourites';
 import InitialFormScreen from './screens/InitialForm';
@@ -214,7 +219,10 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
               />
             )}
           </Stack.Screen>
-          <Stack.Screen name="Friends" component={FriendsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="GroupsHome" component={GroupsHome} options={{ headerShown: false }} />
+          <Stack.Screen name="CreateGroup" component={CreateGroup} options={{ headerShown: false }} />
+          <Stack.Screen name="JoinGroup" component={JoinGroup} options={{ headerShown: false }} />
+
           <Stack.Screen name="Search" component={SearchScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Favourites" component={FavouritesScreen} options={{ headerShown: false }} />
         </>
@@ -231,7 +239,10 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
               />
             )}
           </Stack.Screen>
-          <Stack.Screen name="Friends" component={FriendsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="GroupsHome" component={GroupsHome} options={{ headerShown: false }} />
+          <Stack.Screen name="CreateGroup" component={CreateGroup} options={{ headerShown: false }} />
+          <Stack.Screen name="JoinGroup" component={JoinGroup} options={{ headerShown: false }} />
+          
           <Stack.Screen name="Search" component={SearchScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Favourites" component={FavouritesScreen} options={{ headerShown: false }} />
         </>
