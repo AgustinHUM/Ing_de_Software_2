@@ -64,7 +64,7 @@ def add_user_to_group():
         if not mail_usuario:
             return jsonify({"Error": "No se pudo obtener email del token"}), 401
         
-        usuario_agregado = Usuario.query.filter_by(mail=mail_usuario)
+        usuario_agregado = Usuario.query.filter_by(mail=mail_usuario).first()
 
         if not usuario_agregado:
             return jsonify({"Error": "No se encuentra al usuario"})

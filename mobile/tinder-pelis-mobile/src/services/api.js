@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const API_URL = "http://192.168.1.9:5050"; // Local server
+export const API_URL = "http://192.168.0.189:5000"; // Local server
 
 const api = axios.create({
   baseURL: API_URL,
@@ -65,3 +65,17 @@ export function getMovieDetails(movieId) {
   return post("/movies/selected", { movie_id: movieId });
 }
 
+
+// Crea un grupo y devuelve { group_join_id }
+export function createGroup(groupName, token) {
+  return post('/groups', { group_name: groupName }, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+// Se une a un grupo con el código y devuelve { message }
+export function joinGroup(groupJoinId, token) {
+  return post('/groups/join', { group_join_id: groupJoinId }, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}

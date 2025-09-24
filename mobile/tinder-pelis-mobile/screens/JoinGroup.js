@@ -7,6 +7,13 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import GradientButton from "../components/GradientButton";
 import Input from "../components/TextInput";
 
+
+// Para conectar al back
+import { Alert } from 'react-native';
+import { useAuth } from '../AuthContext';
+import { joinGroup } from '../src/services/api';
+
+
 const APPBAR_HEIGHT = 60;
 const APPBAR_BOTTOM_INSET = 10;
 
@@ -15,6 +22,32 @@ export default function JoinGroup({ navigation }) {
   const { top, bottom } = useSafeAreaInsets();
   const textColor = theme.colors?.text ?? "#fff";
   const [joinCode, setJoinCode] = useState("");
+
+  // OBTENER TOKEN
+  const { state } = useAuth();
+  const token = state?.userToken;
+
+  // FUNCIÓN QUE LLAMA AL BACK
+  async function handleJoin() {
+    if (!token) {
+      Alert.alert('Sesión', 'Necesitás iniciar sesión para unirte a un grupo.');
+      return;
+    }
+    const code = Number(joinCode);
+    if (!code || Number.isNaN(code)) {
+      Alert.alert('Código inválido', 'Ingresá un número válido.');
+      return;
+    }
+
+    try {
+      const data = await joinGroup(code, token); // { message: "..." }
+      Alert.alert('Listo', data?.message || 'Te uniste al grupo', [
+        { text: 'OK', onPress: () => navigation.navigate('Groups') },
+      ]);
+    } catch (e) {
+      Alert.alert('Error', e.message || 'No te pudimos unir al grupo');
+    }
+  }
 
   const onChangeCode = (value) => setJoinCode(value.replace(/\D/g, ""));
   const canSubmit = joinCode.trim().length > 0;
@@ -69,9 +102,7 @@ export default function JoinGroup({ navigation }) {
         <View style={{ height: 40 }} />
 
         <GradientButton
-          onPress={() => {
-            // luego: POST /groups/join con { group_join_id: Number(joinCode) } + token
-          }}
+          onPress={handleJoin}
           disabled={!canSubmit}
         >
           Join Group

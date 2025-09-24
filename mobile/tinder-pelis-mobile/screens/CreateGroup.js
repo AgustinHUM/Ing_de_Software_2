@@ -7,6 +7,11 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import GradientButton from "../components/GradientButton";
 import Input from "../components/TextInput";
 
+// Para conectar al back
+import { useAuth } from '../AuthContext';
+import { createGroup } from '../src/services/api';
+import { Alert } from 'react-native';
+
 const APPBAR_HEIGHT = 60;
 const APPBAR_BOTTOM_INSET = 10;
 
@@ -15,6 +20,32 @@ export default function CreateGroup({ navigation }) {
   const { top, bottom } = useSafeAreaInsets();
   const textColor = theme.colors?.text ?? "#fff";
   const [groupName, setGroupName] = useState("");
+
+  // OBTENER TOKEN DEL CONTEXTO
+  const { state } = useAuth();
+  const token = state?.userToken;
+
+  // FUNCIÓN QUE LLAMA AL BACK
+  async function handleCreate() {
+    const name = (groupName || '').trim();
+    if (!name) return;
+
+    if (!token) {
+      Alert.alert('Sesión', 'Necesitás iniciar sesión para crear un grupo.');
+      return;
+    }
+
+    try {
+      const data = await createGroup(name, token); // { group_join_id: N }
+      Alert.alert(
+        'Grupo creado',
+        `Compartí este código para que se unan:\n${data.group_join_id}`,
+        [{ text: 'OK', onPress: () => navigation.navigate('Groups') }]
+      );
+    } catch (e) {
+      Alert.alert('Error', e.message || 'No se pudo crear el grupo');
+    }
+  }
 
   return (
     <KeyboardAvoidingView
@@ -62,9 +93,7 @@ export default function CreateGroup({ navigation }) {
         <View style={{ height: 40 }} />
 
         <GradientButton
-          onPress={() => {
-            // luego: POST /groups con { group_name: groupName } y token
-          }}
+          onPress={handleCreate}
           disabled={!groupName.trim()}
         >
           Create Group
