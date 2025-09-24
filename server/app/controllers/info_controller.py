@@ -92,3 +92,62 @@ def selected_movie_info():
         
         return jsonify(pelicula_select), 200
         
+def show_form():
+    if request.method == "GET":
+        
+        paises = Pais.query.all()
+        
+        lista_paises = [{"country_id": pais.id_pais,
+                         "country_name": pais.nombre_pais} for pais in paises]
+
+        plataformas = Plataforma.query.all()
+
+        lista_plataformas = [{"platform_id": plataforma.id_plataforma,
+                            "platform_name": plataforma.nombre_platafoma} for plataforma in plataformas]
+        
+        generos = Genero.query.all()
+        lista_genero = [{"genre_id": genero.id_genero,
+                        "genre_name": genero.nombre_genero} for genero in generos]
+        
+        
+        res = {"countries": lista_paises, "platforms": lista_plataformas, "genres": lista_genero}
+        return jsonify(res), 200
+
+def save_user_form(mail_usuario):
+    if request.method == "POST":
+        if request.is_json:
+            info = request.get_json()
+        else:
+            info = request.form
+
+        usuario = Usuario.query.filter_by(mail=mail_usuario).first()
+        if not usuario:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+
+        countries = info.get("countries", [])
+        if countries:
+            pais = Pais.query.filter_by(nombre_pais=countries[0]).first()  
+            if pais:
+                usuario.pais = pais
+
+        genres = info.get("genres", [])
+        usuario.generos_fav = [
+            Genero.query.filter_by(nombre_genero=g).first()
+            for g in genres if Genero.query.filter_by(nombre_genero=g).first()
+        ]
+
+        movies = info.get("movies", [])
+        usuario.favoritas = [
+            Pelicula.query.filter_by(id_pelicula=int(m[1:])).first()
+            for m in movies if Pelicula.query.filter_by(id_pelicula=int(m[1:])).first()
+        ]
+
+        services = info.get("services", [])
+        usuario.plataformas = [
+            Plataforma.query.filter_by(id_plataforma=int(s[1:])).first()
+            for s in services if Plataforma.query.filter_by(id_plataforma=int(s[1:])).first()
+        ]
+
+        db.session.commit()
+
+        return jsonify({"msg": "Formulario guardado con éxito"}), 200
