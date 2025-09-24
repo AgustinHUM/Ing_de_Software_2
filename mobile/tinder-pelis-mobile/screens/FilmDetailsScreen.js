@@ -11,6 +11,8 @@ import { setAlpha } from '../theme';
 import FilmDisplay from '../components/FilmDisplay';
 import FilmDetail from '../components/FilmDetail';
 import { useState } from 'react';
+import DetailList from '../components/DetailList';
+import TitleDisplay from '../components/TitleDisplay';
 
 
 const fallbackMovie = {
@@ -31,8 +33,9 @@ export default function FilmDetailsScreen() {
   const movie = route.params?.movie || fallbackMovie;
   const [showMore, setShowMore] = useState(false);
   const [showGenresModal, setShowGenresModal] = React.useState(false);
-  const visible_genres = 3; 
-  const VISIBLE_GENRES_COUNT = 3;
+  const [showAllPlatforms, setShowAllPlatforms] = useState(false);
+  const visible_genres = 2;
+  const visible_platforms = showAllPlatforms ? 30 : 5;
 
   return (
     <View style={{ flex: 1, flexDirection:'column'}}>
@@ -60,92 +63,16 @@ export default function FilmDetailsScreen() {
                 <View style={{paddingTop:16, flexDirection: 'row', flexWrap: 'wrap', justifyContent:'space-between', flex:1}}>
                     <FilmDisplay width={'50%'} key={movie.id} movie={movie} onPress={null} interactable={false} />
                     <View style={{ width: '47%' }}>
-                        <Text
-                            style={{
-                            color:theme.colors.text,
-                            fontSize: 28,
-                            fontWeight: 'bold',
-                            marginBottom: 8,
-                            }}
-                        >
-                            {movie.title}
-                        </Text>
+
+                        <TitleDisplay title={movie.title} style={{color:theme.colors.text, fontSize: 28, fontWeight: 'bold', marginBottom: 8,}} numberOfLines={2}/>
 
                         
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 }}>
-                            {movie.genres && movie.genres.length > 0 ? (
-                                movie.genres.slice(0, VISIBLE_GENRES_COUNT).map((genre, index) => (
-                                    <View
-                                        key={index}
-                                        style={{
-                                            backgroundColor: theme.colors.secondary,
-                                            borderRadius: 999,
-                                            paddingHorizontal: 8,
-                                            paddingVertical: 4,
-                                            marginRight: 4,
-                                            marginBottom: 8,
-                                        }}
-                                    >
-                                        <Text
-                                            style={{
-                                                textAlign: 'center',
-                                                color: theme.colors.text,
-                                                fontSize: 14,
-                                                fontWeight: '600',
-                                            }}
-                                        >
-                                            {genre}
-                                        </Text>
-                                    </View>
-                                ))
-                            ) : (
-                                <View
-                                    style={{
-                                        backgroundColor: theme.colors.primary,
-                                        borderRadius: 999,
-                                        paddingHorizontal: 8,
-                                        paddingVertical: 4,
-                                        marginRight: 8,
-                                        marginBottom: 16,
-                                    }}
-                                >
-                                    <Text
-                                        style={{
-                                            color: theme.colors.text,
-                                            fontSize: 14,
-                                            fontWeight: '600',
-                                        }}
-                                    >
-                                        Sin géneros
-                                    </Text>
-                                </View>
-                            )}
-
-                            {movie.genres && movie.genres.length > VISIBLE_GENRES_COUNT && (
-                                <TouchableOpacity
-                                    onPress={() => setShowGenresModal(true)}
-                                    activeOpacity={0.8}
-                                    style={{
-                                        backgroundColor: theme.colors.secondary,
-                                        borderRadius: 999,
-                                        paddingHorizontal: 8,
-                                        paddingVertical: 4,
-                                        marginRight: 4,
-                                        marginBottom: 8,
-                                    }}
-                                >
-                                    <Text
-                                        style={{
-                                            textAlign: 'center',
-                                            color: theme.colors.text,
-                                            fontSize: 14,
-                                            fontWeight: '600',
-                                        }}
-                                    >
-                                        More...
-                                    </Text>
-                                </TouchableOpacity>
-                            )}
+                        <DetailList 
+                            list={movie.genres} 
+                            visibleCount={visible_genres}
+                            onShowMore={() => setShowGenresModal(true)}
+                        />
                         </View>
                         {movie.year ? (
                             <FilmDetail 
@@ -177,7 +104,7 @@ export default function FilmDetailsScreen() {
                 </View>
                 
 
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems:'flex-start', justifyContent:'space-between', flex:1, marginBottom:16 }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems:'flex-start', flex:1, marginBottom:16 }}>
                     {movie.rating ? (
                         <FilmDetail
                             icon= {<MaterialIcons name='star-outline' size={16} color={theme.colors.primary} />}
@@ -193,15 +120,16 @@ export default function FilmDetailsScreen() {
                             alignItems: 'center'}}>
                         </FilmDetail>
                     ) : null}
+
                     
+
                     {movie.platforms ? (
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'flex-start', flex: 1, marginBottom: 16 }}>
-                            {movie.platforms.map((platform) => (
-                                <FilmDetail
-                                    key={platform}
-                                    value={platform}
-                                    textStyle={{ color: theme.colors.primary, fontSize: 14, fontWeight: '600', marginLeft: 0 }}
-                                    containerStyle={{
+                        <>
+                            
+                            <DetailList
+                                list={movie.platforms}
+                                visibleCount={visible_platforms}
+                                containerStyle={{
                                         flexDirection: 'row',
                                         paddingVertical: 10,
                                         paddingHorizontal: 12,
@@ -209,11 +137,20 @@ export default function FilmDetailsScreen() {
                                         marginRight: 8,
                                         marginBottom: 8,
                                         backgroundColor: theme.colors.surface,
-                                        alignItems: 'center',
-                                    }}
-                                />
-                            ))}
-                        </View>
+                                        alignItems: 'center',}}
+                                textStyle={{ color: theme.colors.primary, fontSize: 14, fontWeight: '600', marginLeft: 0 }}
+                                onShowMore={() => setShowAllPlatforms(!showAllPlatforms)}
+                            />
+
+                            {showAllPlatforms ? (
+                                <TouchableOpacity onPress={() => setShowAllPlatforms(false)} >
+                                    <FilmDetail
+                                        icon={<MaterialIcons value="Show Less" name='expand-less' size={16} color={theme.colors.primary} />}
+                                        textStyle={{ color: theme.colors.primary, fontSize: 14, fontWeight: '600', marginLeft: 6 }}
+                                        value={'Show Less'}/>
+                                </TouchableOpacity>
+                                ) : null}
+                        </>
                     ) : null}
                 </View>
 
@@ -248,7 +185,7 @@ export default function FilmDetailsScreen() {
                         <View
                             key={index}
                             style={{
-                                backgroundColor: theme.colors.secondary,
+                                backgroundColor: theme.colors.primary,
                                 borderRadius: 999,
                                 paddingHorizontal: 8,
                                 paddingVertical: 4,

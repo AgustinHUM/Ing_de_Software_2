@@ -7,6 +7,8 @@ import Feather from '@expo/vector-icons/Feather';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Octicons from '@expo/vector-icons/Octicons';
+import DetailList from "./DetailList";
+import TitleDisplay from "./TitleDisplay";
 
 const POSTER_ASPECT = 2 / 3; // width / height
 
@@ -24,8 +26,7 @@ export default function FilmDisplay({
   const theme = useTheme();
   const [selected, setSelected] = useState(initialSelected);
   const poster = movie.poster;
-  const VISIBLE_GENRES_COUNT = 2;
-  const VISIBLE_PLATFORMS_COUNT = 2;
+  const visible_genres = 3;
 
   useEffect(() => {
     setSelected(initialSelected);
@@ -104,13 +105,8 @@ export default function FilmDisplay({
             posterHeight ? { height: posterHeight } : {},
           ]}
         >
-            <Text
-                numberOfLines={1}
-                ellipsizeMode="tail"
-                style={{ fontSize: 18, fontWeight: "700", marginBottom: 16, color: theme.colors.text }}
-            >
-                {movie.title}
-            </Text>
+            <TitleDisplay title={movie.title} numberOfLines={2} style={{marginBottom:8}} />
+
             <View style={{flexDirection:'row', gap:16}}>
                     <MovieDetail 
                     icon={<Feather name="calendar" size={16} color={theme.colors.text} />} 
@@ -122,172 +118,13 @@ export default function FilmDisplay({
             <MovieDetail 
                     icon={<Ionicons name="ticket-outline" size={16} color={theme.colors.text} />}
                     value={`Rated: ${movie.ageRating ?? 'N/A'}`} />
-            <View style={{ flexDirection: 'row', flexShrink: 0, marginVertical: 8 }}>
-                {movie.genres && movie.genres.length > 0 ? (
-                    <>
-                    {movie.genres.slice(0, VISIBLE_GENRES_COUNT).map((genre, index) => {
-                        const isLastVisible =
-                        index === Math.min(movie.genres.length, VISIBLE_GENRES_COUNT) - 1;
-
-                        return (
-                        <View
-                            key={index}
-                            style={{
-                            backgroundColor: theme.colors.primary,
-                            borderRadius: 999,
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            marginRight: 8,
-                            marginBottom: 8,
-                            ...(isLastVisible ? { flexShrink: 1, minWidth: 0 } : { flexShrink: 0 }),
-                            }}
-                        >
-                            <Text
-                            numberOfLines={1}
-                            ellipsizeMode="tail"
-                            style={{
-                                textAlign: 'center',
-                                color: theme.colors.text,
-                                fontSize: 14,
-                                fontWeight: '600',
-                            }}
-                            >
-                            {genre}
-                            </Text>
-                        </View>
-                        );
-                    })}
-                    {movie.genres.length > VISIBLE_GENRES_COUNT && (
-                        <View
-                        style={{
-                            backgroundColor: theme.colors.primary,
-                            borderRadius: 999,
-                            paddingHorizontal: 8,
-                            paddingVertical: 4,
-                            marginRight: 8,
-                            marginBottom: 8,
-                            flexShrink: 0,
-                        }}
-                        >
-                        <Text
-                            style={{
-                            textAlign: 'center',
-                            color: theme.colors.text,
-                            fontSize: 14,
-                            fontWeight: '600',
-                            }}
-                        >
-                            ...
-                        </Text>
-                        </View>
-                    )}
-                    </>
-                ) : (
-                    <View
-                    style={{
-                        backgroundColor: theme.colors.primary,
-                        borderRadius: 999,
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        marginRight: 8,
-                        marginBottom: 16,
-                    }}
-                    >
-                    <Text
-                        style={{
-                        color: theme.colors.text,
-                        fontSize: 14,
-                        fontWeight: '600',
-                        }}
-                    >
-                        No genres.
-                    </Text>
-                    </View>
-                )}
-                </View>
-
-            <View style={{ flexDirection: 'row', flexWrap: 'nowrap' }}>
-            {movie.platforms && movie.platforms.length > 0 ? (
-            <>
-            {movie.platforms.slice(0, VISIBLE_PLATFORMS_COUNT).map((platform, index) => {
-                const isLastVisible =
-                index === Math.min(movie.platforms.length, VISIBLE_PLATFORMS_COUNT) - 1;
-                    return (
-                    <View
-                        key={index}
-                        style={{
-                        backgroundColor: theme.colors.secondary,
-                        borderRadius: 999,
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        marginRight: 8,
-                        marginBottom: 8,
-                        ...(isLastVisible ? { flexShrink: 1, minWidth: 0 } : { flexShrink: 0 }),
-                        }}
-                    >
-                        <Text
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                        style={{
-                            textAlign: 'center',
-                            color: theme.colors.text,
-                            fontSize: 14,
-                            fontWeight: '600',
-                        }}
-                        >
-                        {platform}
-                        </Text>
-                    </View>
-                    );
-                })}
-                {movie.platforms.length > VISIBLE_PLATFORMS_COUNT && (
-                    <View
-                    style={{
-                        backgroundColor: theme.colors.secondary,
-                        borderRadius: 999,
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        marginRight: 8,
-                        marginBottom: 8,
-                        flexShrink: 0,
-                    }}
-                    >
-                    <Text
-                        style={{
-                        textAlign: 'center',
-                        color: theme.colors.text,
-                        fontSize: 14,
-                        fontWeight: '600',
-                        }}
-                    >
-                        ...
-                    </Text>
-                    </View>
-                )}
-                </>
-            ) : (
-                <View
-                style={{
-                    backgroundColor: theme.colors.secondary,
-                    borderRadius: 999,
-                    paddingHorizontal: 8,
-                    paddingVertical: 4,
-                    marginRight: 8,
-                    marginBottom: 16,
-                }}
-                >
-                <Text
-                    style={{
-                    color: theme.colors.text,
-                    fontSize: 14,
-                    fontWeight: '600',
-                    }}
-                >
-                    No platforms.
-                </Text>
-                </View>
-            )}
-        </View>
+            
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 }}>
+            <DetailList
+                list={movie.genres}
+                visibleCount={visible_genres}
+            />
+            </View>
 
 
         </View>
