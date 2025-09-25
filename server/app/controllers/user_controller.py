@@ -128,7 +128,7 @@ def add_user_to_group():
         grupo.usuarios.append(usuario_agregado)
         db.session.commit()
 
-        return jsonify({"message": "el usuario ses egregó con éxito"}), 200
+        return jsonify({"message": "el usuario se agregó con éxito"}), 200
 
 
 def generate_id():
