@@ -86,4 +86,31 @@ def generate_id():
 
         if not Grupo.query.get(id_random):
             return id_random
-        
+
+def get_user_groups():
+    if request.method == "GET":
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        if not token:
+            return jsonify({"Error": "No se recibió token"}), 401
+
+        try:
+            payload = jwt.decode(token, options={"verify_signature": False})
+            mail_usuario = payload.get("email")
+        except jwt.DecodeError:
+            return jsonify({"Error": "Token inválido"}), 401
+
+        if not mail_usuario:
+            return jsonify({"Error": "No se pudo obtener email del token"}), 401
+
+        usuario = Usuario.query.filter_by(mail=mail_usuario).first()
+
+        if not usuario:
+            return jsonify({"Error": "No se encuentra al usuario"}), 404
+
+        lista_grupos = [
+            {"id": grupo.id_grupo, "name": grupo.nombre_grupo, "members": len(grupo.usuarios)}
+            for grupo in usuario.grupos
+        ]
+
+        return jsonify(lista_grupos), 200
+

@@ -11,6 +11,7 @@ import Input from "../components/TextInput";
 import { useAuth } from '../AuthContext';
 import { createGroup } from '../src/services/api';
 import { Alert } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 
 const APPBAR_HEIGHT = 60;
 const APPBAR_BOTTOM_INSET = 10;
@@ -21,14 +22,14 @@ export default function CreateGroup({ navigation }) {
   const textColor = theme.colors?.text ?? "#fff";
   const [groupName, setGroupName] = useState("");
 
-  // OBTENER TOKEN DEL CONTEXTO
-  const { state } = useAuth();
-  const token = state?.userToken;
-
   // FUNCIÓN QUE LLAMA AL BACK
   async function handleCreate() {
     const name = (groupName || '').trim();
     if (!name) return;
+
+    const token = await SecureStore.getItemAsync("userToken");
+
+    console.log("Token sent:", token);
 
     if (!token) {
       Alert.alert('Sesión', 'Necesitás iniciar sesión para crear un grupo.');

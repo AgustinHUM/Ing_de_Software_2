@@ -64,7 +64,7 @@ export function AuthProvider({ children }) {
       }
 
       const data = await res.json();
-      const token = data?.id_token ?? data?.token ?? data?.access_token;
+      const token = data?.id_token || data?.access_token || 'session-ok';
       const user = {
         email: email,
         name: data?.nombre_cuenta || email.split('@')[0]

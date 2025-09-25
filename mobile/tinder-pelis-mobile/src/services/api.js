@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const API_URL = "http://192.168.0.189:5000"; // Local server
+export const API_URL = "http://192.168.68.53:5000"; // Local server
 
 const api = axios.create({
   baseURL: API_URL,
@@ -76,6 +76,13 @@ export function createGroup(groupName, token) {
 // Se une a un grupo con el código y devuelve { message }
 export function joinGroup(groupJoinId, token) {
   return post('/groups/join', { group_join_id: groupJoinId }, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function getUserGroups(token) {
+  return request('/groups', {
+    method: 'GET',
     headers: { Authorization: `Bearer ${token}` },
   });
 }
