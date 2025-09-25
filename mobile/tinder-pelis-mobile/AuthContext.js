@@ -1,5 +1,5 @@
 // AuthContext.js
-import React, { createContext, useContext, useReducer, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useState, useCallback, useRef } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { API_URL } from './src/services/api';
 const AuthContext = createContext();
@@ -20,11 +20,33 @@ function reducer(state, action) {
   }
 }
 
-
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   const [busy, setBusy] = useState(false);
+
+  const [formPending, setFormPendingState] = useState(false);
+  const pendingResolvers = useRef([]);
+
+  const setFormPending = useCallback(() => {
+    console.log(`Setting formPending to ${!formPending}`);
+    setFormPendingState(prev=>!prev);
+  }, []);
+
+  const setFormPendingAsync = useCallback(() => {
+    return new Promise((resolve) => {
+      pendingResolvers.current.push(resolve);
+      setFormPendingState(prev => !prev);
+    });
+  }, []);
+
+    useEffect(() => {
+    if (pendingResolvers.current.length === 0) return;
+    while (pendingResolvers.current.length) {
+      const r = pendingResolvers.current.shift();
+      try { r(formPending); } catch (e) { console.warn("Error resolving formPending promise", e);}
+    }
+  }, [formPending]);
 
   const withBusy = useCallback(async (fn) => {
     setBusy(true);
@@ -50,6 +72,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function signIn(email, password) {
+    console.log("Form pending at signIn:", formPending);
     return withBusy(async () => {
       const res = await fetch(`${API_URL}/login`, {
         method: 'POST',
@@ -64,7 +87,7 @@ export function AuthProvider({ children }) {
       }
 
       const data = await res.json();
-      const token = data?.access_token || 'session-ok';
+      const token = data?.id_token || data?.access_token || 'session-ok';
       const user = {
         email: email,
         name: data?.nombre_cuenta || email.split('@')[0]
@@ -84,6 +107,7 @@ export function AuthProvider({ children }) {
   }
 
   async function signUp(email, nombre, password) {
+    console.log("Form pending at signUp:", formPending);
     return withBusy(async () => {
       const res = await fetch(`${API_URL}/register`, {
         method: 'POST',
@@ -98,12 +122,12 @@ export function AuthProvider({ children }) {
         const msg = data?.error || data?.detail || `HTTP ${res.status}`;
         throw new Error(msg);
       }
-
       return { status: data?.status || 'OK' };
     });
   }
 
   async function signOut() {
+    console.log("Form pending at signOut:", formPending);
     return withBusy(async () => {
       dispatch({ type: 'SIGN_OUT' });
 
@@ -112,9 +136,6 @@ export function AuthProvider({ children }) {
 
         const email = await SecureStore.getItemAsync('lastLoginEmail');
         if (email) {
-          const safeEmail = email.toLowerCase().replace(/[^a-z0-9._-]/g, '_');
-          const key = `firstLoginDone__${safeEmail}`;
-          await SecureStore.deleteItemAsync(key);
           await SecureStore.deleteItemAsync('lastLoginEmail');
         }
       } catch (e) {
@@ -130,7 +151,20 @@ export function AuthProvider({ children }) {
     return { token };
   }
 
-  const value = { state, busy, setBusy, withBusy, signIn, signUp, signOut, guestSignIn };
+  const value = {
+    state,
+    busy,
+    setBusy,
+    withBusy,
+    signIn,
+    signUp,
+    signOut,
+    guestSignIn,
+    formPending,
+    setFormPending,
+    setFormPendingAsync
+  };
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
