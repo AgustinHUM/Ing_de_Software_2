@@ -209,28 +209,6 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
           <Stack.Screen name="GenreForm" component={GenresFormScreen} options={{headerShown:false}} />
           <Stack.Screen name="DirectorsForm" component={DirectorsFormScreen} options={{headerShown:false}} />
           <Stack.Screen name="MoviesForm" component={MoviesFormScreen} options={{headerShown:false}} />
-<<<<<<< HEAD
-          <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="FilmDetails" component={FilmDetailsScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Profile" options={{ headerShown: false }}>
-            {props => (
-              <ProfileScreen
-                {...props}
-                setAppTheme={setAppTheme}
-                themesMap={themesMap}
-                currentThemeName={themeName}
-              />
-            )}
-          </Stack.Screen>
-          <Stack.Screen name="Groups" component={Groups} options={{ headerShown: false }} />
-          <Stack.Screen name="CreateGroup" component={CreateGroup} options={{ headerShown: false }} />
-          <Stack.Screen name="JoinGroup" component={JoinGroup} options={{ headerShown: false }} />
-
-          <Stack.Screen name="Search" component={SearchScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Favourites" component={FavouritesScreen} options={{ headerShown: false }} />
-=======
-
->>>>>>> 76a6c6daf527697d0b4515663a71bcb0fd800914
         </>
       ) : (
         <>

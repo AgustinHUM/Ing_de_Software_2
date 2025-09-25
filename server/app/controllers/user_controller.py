@@ -137,7 +137,6 @@ def generate_id():
 
         if not Grupo.query.get(id_random):
             return id_random
-<<<<<<< HEAD
 
 def get_user_groups():
     if request.method == "GET":
@@ -165,8 +164,4 @@ def get_user_groups():
         ]
 
         return jsonify(lista_grupos), 200
-=======
-        
-
->>>>>>> 76a6c6daf527697d0b4515663a71bcb0fd800914
 
