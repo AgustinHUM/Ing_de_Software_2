@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
+import { setAlpha } from '../theme';
 
 const ICON_LIBS = {
   MaterialCommunityIcons,
@@ -23,9 +24,9 @@ const routes = [
     outlineLib: 'MaterialDesignIcons',
   },
   {
-    key: 'Friends',
-    label: 'Friends',
-    route: 'Friends',
+    key: 'Groups',
+    label: 'Groups',
+    route: 'Groups',
     icon: { filled: 'account-group', outline: 'account-group-outline' },
     filledLib: 'MaterialCommunityIcons',
     outlineLib: 'MaterialCommunityIcons',
@@ -66,7 +67,7 @@ export default function AppBar({ currentRouteName = 'Home', navigationRef }) {
   const radiusBottom = 40;
   const radiusTop = 10;
 
-  const visibleRouteNames = routes.map((r) => r.route);
+  const visibleRouteNames = [...routes.map((r) => r.route), 'FilmDetails', 'CreateGroup', 'JoinGroup'];
   const shouldShow = visibleRouteNames.includes(currentRouteName);
 
   if (!shouldShow) return null;
@@ -82,10 +83,13 @@ export default function AppBar({ currentRouteName = 'Home', navigationRef }) {
     borderTopLeftRadius: radiusTop,
     borderTopRightRadius: radiusTop,
     overflow: 'hidden',
-    elevation: 8,
-    shadowColor: theme.colors.primary,
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
+    boxShadow: [{
+                    offsetX: 0,
+                    offsetY: 0,
+                    blurRadius: 24,
+                    spread: 0,
+                    color: setAlpha(theme.colors.primary,0.6),
+                    }]
   };
 
   return (

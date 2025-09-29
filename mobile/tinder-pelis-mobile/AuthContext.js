@@ -1,17 +1,18 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+// AuthContext.js
+import React, { createContext, useContext, useReducer, useEffect, useState, useCallback, useRef } from 'react';
 import * as SecureStore from 'expo-secure-store';
-
+import { API_URL } from './src/services/api';
 const AuthContext = createContext();
 
-const initialState = { isLoading: true, userToken: null };
-const signedOutState = { isLoading: false, userToken: null };
+const initialState = { isLoading: true, userToken: null, user: null };
+const signedOutState = { isLoading: false, userToken: null, user: null };
 
 function reducer(state, action) {
   switch (action.type) {
     case 'RESTORE_TOKEN':
-      return { ...state, userToken: action.token, isLoading: false };
+      return { ...state, userToken: action.token, user: action.user, isLoading: false };
     case 'SIGN_IN':
-      return { ...state, userToken: action.token, isLoading: false };
+      return { ...state, userToken: action.token, user: action.user, isLoading: false };
     case 'SIGN_OUT':
       return { ...signedOutState };
     default:
@@ -19,95 +20,151 @@ function reducer(state, action) {
   }
 }
 
-const API_URL = 'http://192.168.1.9:5000';
-
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  // Restaura token al iniciar
+  const [busy, setBusy] = useState(false);
+
+  const [formPending, setFormPendingState] = useState(false);
+  const pendingResolvers = useRef([]);
+
+  const setFormPending = useCallback(() => {
+    console.log(`Setting formPending to ${!formPending}`);
+    setFormPendingState(prev=>!prev);
+  }, []);
+
+  const setFormPendingAsync = useCallback(() => {
+    return new Promise((resolve) => {
+      pendingResolvers.current.push(resolve);
+      setFormPendingState(prev => !prev);
+    });
+  }, []);
+
+    useEffect(() => {
+    if (pendingResolvers.current.length === 0) return;
+    while (pendingResolvers.current.length) {
+      const r = pendingResolvers.current.shift();
+      try { r(formPending); } catch (e) { console.warn("Error resolving formPending promise", e);}
+    }
+  }, [formPending]);
+
+  const withBusy = useCallback(async (fn) => {
+    setBusy(true);
+    try {
+      return await fn();
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
   useEffect(() => {
     (async () => {
       try {
         const token = await SecureStore.getItemAsync('userToken');
-        dispatch({ type: 'RESTORE_TOKEN', token });
+        const email = await SecureStore.getItemAsync('lastLoginEmail');
+        const name = await SecureStore.getItemAsync('userName');
+        const user = email ? { email, name: name || email.split('@')[0] } : null;
+        dispatch({ type: 'RESTORE_TOKEN', token, user });
       } catch {
-        dispatch({ type: 'RESTORE_TOKEN', token: null });
+        dispatch({ type: 'RESTORE_TOKEN', token: null, user: null });
       }
     })();
   }, []);
 
   async function signIn(email, password) {
-    const res = await fetch(`${API_URL}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+    console.log("Form pending at signIn:", formPending);
+    return withBusy(async () => {
+      const res = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        let msg = `HTTP ${res.status}`;
+        try { const j = await res.json(); msg = j?.error || j?.detail || msg; } catch {}
+        throw new Error(msg);
+      }
+
+      const data = await res.json();
+      const token = data?.id_token || data?.access_token || 'session-ok';
+      const user = {
+        email: email,
+        name: data?.nombre_cuenta || email.split('@')[0]
+      };
+
+      try {
+        await SecureStore.setItemAsync('userToken', token);
+        await SecureStore.setItemAsync('lastLoginEmail', email);
+        await SecureStore.setItemAsync('userName', user.name);
+      } catch (e) {
+        console.warn('Error guardando token/email en SecureStore', e);
+      }
+
+      dispatch({ type: 'SIGN_IN', token, user });
+      return { data };
     });
-
-    if (!res.ok) {
-      let msg = `HTTP ${res.status}`;
-      try { const j = await res.json(); msg = j?.error || j?.detail || msg; } catch {}
-      throw new Error(msg);
-    }
-
-    const data = await res.json();
-    const token = data?.access_token || 'session-ok';
-
-    try {
-      await SecureStore.setItemAsync('userToken', token);
-      await SecureStore.setItemAsync('lastLoginEmail', email);
-    } catch (e) {
-      console.warn('Error guardando token/email en SecureStore', e);
-    }
-
-    dispatch({ type: 'SIGN_IN', token });
-    return { data };
   }
 
   async function signUp(email, nombre, password) {
-    const res = await fetch(`${API_URL}/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, username: nombre, password }),
+    console.log("Form pending at signUp:", formPending);
+    return withBusy(async () => {
+      const res = await fetch(`${API_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, username: nombre, password }),
+      });
+
+      let data = null;
+      try { data = await res.json(); } catch {}
+
+      if (!res.ok) {
+        const msg = data?.error || data?.detail || `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
+      return { status: data?.status || 'OK' };
     });
-
-    let data = null;
-    try { data = await res.json(); } catch {}
-
-    if (!res.ok) {
-      const msg = data?.error || data?.detail || `HTTP ${res.status}`;
-      throw new Error(msg);
-    }
-
-    return { status: data?.status || 'OK' };
   }
 
   async function signOut() {
-    dispatch({ type: 'SIGN_OUT' });
+    console.log("Form pending at signOut:", formPending);
+    return withBusy(async () => {
+      dispatch({ type: 'SIGN_OUT' });
 
-    try {
-      await SecureStore.deleteItemAsync('userToken');
+      try {
+        await SecureStore.deleteItemAsync('userToken');
 
-      const email = await SecureStore.getItemAsync('lastLoginEmail');
-      if (email) {
-        const safeEmail = email.toLowerCase().replace(/[^a-z0-9._-]/g, '_');
-        const key = `firstLoginDone__${safeEmail}`;
-        await SecureStore.deleteItemAsync(key);
-        await SecureStore.deleteItemAsync('lastLoginEmail');
+        const email = await SecureStore.getItemAsync('lastLoginEmail');
+        if (email) {
+          await SecureStore.deleteItemAsync('lastLoginEmail');
+        }
+      } catch (e) {
+        console.warn('Error limpiando SecureStore en signOut', e);
       }
-    } catch (e) {
-      console.warn('Error limpiando SecureStore en signOut', e);
-    }
+    });
   }
 
   function guestSignIn() {
-    // token "falso" con prefijo guest_ para reconocerlo
     const token = `guest_${Math.random().toString(36).slice(2)}_${Date.now()}`;
-    // Actualizamos el estado pero NO guardamos el token en SecureStore
-    dispatch({ type: 'SIGN_IN', token });
+    const user = { email: 'guest@tinderpelis.com', name: 'Invitado' };
+    dispatch({ type: 'SIGN_IN', token, user });
     return { token };
   }
 
-  const value = { state, signIn, signUp, signOut, guestSignIn };
+  const value = {
+    state,
+    busy,
+    setBusy,
+    withBusy,
+    signIn,
+    signUp,
+    signOut,
+    guestSignIn,
+    formPending,
+    setFormPending,
+    setFormPendingAsync
+  };
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
