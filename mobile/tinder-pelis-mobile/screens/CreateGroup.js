@@ -37,11 +37,14 @@ export default function CreateGroup({ navigation }) {
 
     try {
       const data = await createGroup(name, token); // { group_join_id: N }
-      Alert.alert(
-        'Grupo creado',
-        `Compartí este código para que se unan:\n${data.group_join_id}`,
-        [{ text: 'OK', onPress: () => navigation.navigate('Groups') }]
-      );
+      // Alert.alert(
+      //   'Grupo creado',
+      //   `Compartí este código para que se unan:\n${data.group_join_id}`,
+      //   [{ text: 'OK', onPress: () => navigation.navigate('Groups') }]
+      // );
+
+      navigation.navigate('GroupCode', { code: data.group_join_id, groupName: name})
+      
     } catch (e) {
       Alert.alert('Error', e.message || 'No se pudo crear el grupo');
     }

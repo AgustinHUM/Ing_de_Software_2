@@ -67,7 +67,7 @@ export default function AppBar({ currentRouteName = 'Home', navigationRef }) {
   const radiusBottom = 40;
   const radiusTop = 10;
 
-  const visibleRouteNames = [...routes.map((r) => r.route), 'FilmDetails', 'CreateGroup', 'JoinGroup'];
+  const visibleRouteNames = [...routes.map((r) => r.route), 'FilmDetails', 'CreateGroup', 'JoinGroup', 'GroupCode'];
   const shouldShow = visibleRouteNames.includes(currentRouteName);
 
   if (!shouldShow) return null;
