@@ -165,10 +165,10 @@ export default function Favorites() {
       </View>
 
       <View style={{ marginBottom: 4, marginTop:10, height: 300  }}>
-        <Text style={{ color: theme.colors.text, fontWeight: 700, fontSize: 28, marginBottom: 12, marginTop:10 }}>
+        <Text style={{ color: theme.colors.text, fontWeight: 700, fontSize: 25, marginBottom: 12, marginTop:10 }}>
           To watch:
         </Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
                 {toWatch.length > 0 ? (
                     toWatch.map((movie, idx) => (
