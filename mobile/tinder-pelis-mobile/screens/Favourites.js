@@ -105,7 +105,6 @@ export default function Favorites() {
   useEffect(() => {
     // Ejemplo: agregar 5 películas a "watched" y a "toWatch"
     setWatched([movies[0], movies[1], movies[2], movies[4], movies[5]]);
-    setToWatch([movies[3], movies[0], movies[1], movies[2], movies[4]]);
   }, []);
 
   return (
@@ -205,7 +204,10 @@ export default function Favorites() {
                         </View> 
                     ))
                 ) : (
-                    <Text style={{ color: theme.colors.text }}>Nothing here... Add some movies!</Text>  
+                    <View>
+                        <Text style={{ color: theme.colors.text, fontSize:40, fontWeight:'700' }}>Nothing here...</Text>  
+                        <Text style={{ color: theme.colors.text, fontSize:20, fontWeight: '400' }}>Try searching for a movie you want to see and save it</Text>
+                    </View>
                 )}
             </View>
         </ScrollView>
