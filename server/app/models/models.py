@@ -2,23 +2,18 @@ from datetime import datetime
 from ..db import db
 from sqlalchemy.orm import relationship
 from sqlalchemy import DateTime
+from sqlalchemy.dialects.postgresql import JSON
 
 
 grupos_de_usuario = db.Table("USUARIO_GRUPO",
                             db.Column("mail_usuario", db.String(128), db.ForeignKey("USUARIO.mail"), primary_key=True),
                             db.Column("id_grupo", db.Integer, db.ForeignKey("GRUPO.id_grupo"), primary_key=True))
 
-plataforma_pais = db.Table("PLATAFORMA_PAIS",
-                           db.Column("id_plataforma", db.Integer, db.ForeignKey("PLATAFORMA.id_plataforma"), primary_key=True),
-                           db.Column("id_pais", db.Integer, db.ForeignKey("PAIS.id_pais"), primary_key=True))
 
 usuario_plataforma = db.Table("USUARIO_PLATAFORMA", 
                             db.Column("mail_usuario", db.String(128), db.ForeignKey("USUARIO.mail"), primary_key=True),
                             db.Column("id_plataforma", db.Integer, db.ForeignKey("PLATAFORMA.id_plataforma"), primary_key=True))
 
-pelicula_plataforma = db.Table("PELICULA_PLATAFORMA",
-                            db.Column("id_plataforma", db.Integer, db.ForeignKey("PLATAFORMA.id_plataforma"), primary_key=True),
-                            db.Column("id_pelicula", db.Integer, db.ForeignKey("PELICULA.id_pelicula"), primary_key=True))
 
 usuario_vio_peli = db.Table("USUARIO_VIO_PELI",
                             db.Column("mail_usuario", db.String(128), db.ForeignKey("USUARIO.mail"), primary_key=True),
@@ -53,6 +48,8 @@ class Usuario(Cuenta):
     __tablename__= "USUARIO"
 
     mail = db.Column(db.String(128), db.ForeignKey("CUENTA.mail"), primary_key=True)
+    id_icono = db.Column(db.Integer, nullable=True)
+    formulario_pendiente = db.Column(db.Boolean, default=False, nullable=False)
     #Verificar el backpopulates
     grupos = db.relationship("Grupo", secondary=grupos_de_usuario, back_populates="usuarios")
 
@@ -133,22 +130,24 @@ class Pais(db.Model):
 
     id_pais = db.Column(db.Integer, primary_key=True)
     nombre_pais = db.Column(db.String(128), unique=True, nullable=False)
+    codigo_pais = db.Column(db.String(128), unique=True, nullable=False)
+    url_bandera = db.Column(db.String(128), nullable=False)
 
     usuario_del_pais = db.relationship("Usuario", back_populates="pais", cascade="all, delete-orphan")
 
-    plataformas = db.relationship("Plataforma", secondary=plataforma_pais, back_populates="paises")
+    pelis_plataformas = db.relationship("PeliculaPlataformaPais", back_populates="pais")
 
 class Plataforma(db.Model):
     __tablename__ = "PLATAFORMA"
 
     id_plataforma = db.Column(db.Integer, primary_key=True)
     nombre_plataforma = db.Column(db.String(128), unique=True, nullable=False)
-
-    paises = db.relationship("Pais", secondary=plataforma_pais, back_populates="plataformas")
+    url_logo = db.Column(db.String(128), nullable=False)
 
     usuarios_plat = db.relationship("Usuario", secondary=usuario_plataforma, back_populates="plataformas")
 
-    peliculas = db.relationship("Pelicula", secondary=pelicula_plataforma, back_populates="plataformas")
+    pelis_paises = db.relationship("PeliculaPlataformaPais", back_populates="plataforma")
+
 
 
 class Pelicula(db.Model):
@@ -161,15 +160,40 @@ class Pelicula(db.Model):
     duracion = db.Column(db.Integer, nullable=False)
     clasificacion_edad = db.Column(db.String(128), nullable=False)
     url_poster = db.Column(db.String(128), nullable=False)
-    score = db.Column(db.Integer, nullable=True)
+    score_critica = db.Column(db.Float, nullable=True)
+    score_usuarios = db.Column(db.Float, nullable=False, default=0.0)
+    popularidad_percentil = db.Column(db.Float, nullable=False, default=0.0)
+    directores = db.Column(db.String(128), nullable=False)
 
-    plataformas = db.relationship("Plataforma", secondary=pelicula_plataforma, back_populates="peliculas")
+
+    plataformas_paises = db.relationship("PeliculaPlataformaPais", back_populates="pelicula")
 
     visto_por_usuarios = db.relationship("Usuario", secondary=usuario_vio_peli, back_populates="pelis_vistas")
 
     fav_usuario = db.relationship("Usuario", secondary=pelis_favoritas, back_populates="favoritas")
 
     generos = db.relationship("Genero", secondary=genero_pelicula, back_populates="pelis_genero")
+
+
+class PeliculaCompleta(db.Model):
+    __tablename__ = "MV_PELICULAS_COMPLETA"
+
+    id_pelicula = db.Column(db.Integer, primary_key=True)
+    titulo = db.Column(db.String)
+    trama = db.Column(db.String)
+    anio_lanzamiento = db.Column(db.Integer)
+    directores = directores = db.Column(db.String(128), nullable=False)
+    duracion = db.Column(db.Integer)
+    clasificacion_edad = db.Column(db.String)
+    url_poster = db.Column(db.String)
+    score_critica = db.Column(db.Float, nullable=True)
+    score_usuarios = db.Column(db.Float, nullable=False, default=0.0)
+    popularidad_percentil = db.Column(db.Float, nullable=False, default=0.0)
+    generos = db.Column(JSON)
+    plataformas = db.Column(JSON)
+
+    def __repr__(self):
+        return f"<PeliculaCompleta {self.titulo}>"
 
 
 class Genero(db.Model):
@@ -183,4 +207,13 @@ class Genero(db.Model):
     usuarios = db.relationship("Usuario", secondary=genero_favorito, back_populates="generos_fav")
 
 
+class PeliculaPaisPlataforma(db.Model):
+    __tablename__ = "PELICULA_PLATAFORMA_PAIS"
 
+    id_plataforma = db.Column(db.Integer, db.ForeignKey("PLATAFORMA.id_plataforma"), primary_key=True)
+    id_pelicula = db.Column(db.Integer, db.ForeignKey("PELICULA.id_pelicula"), primary_key=True)
+    id_pais = db.Column(db.Integer, db.ForeignKey("PAIS.id_pais"), primary_key=True)
+
+    plataforma = db.relationship("Plataforma", back_populates="pelis_paises")
+    pelicula = db.relationship("Pelicula", back_populates="plataformas_paises")
+    pais = db.relationship("Pais", back_populates="pelis_plataformas")

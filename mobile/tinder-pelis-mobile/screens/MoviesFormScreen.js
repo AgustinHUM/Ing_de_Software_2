@@ -7,12 +7,14 @@ import GradientButton from "../components/GradientButton";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import FilmDisplay from "../components/FilmDisplay";
 import * as SecureStore from "expo-secure-store";
+import { saveForm } from "../src/services/api";
+import { useAuth } from "../AuthContext";
 
 export default function MoviesFormScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
   const route = useRoute();
-
+  const { setFormPendingAsync, withBusy } = useAuth();
   const MOVIES = useMemo(
     () => [
       { id: "m1", title: "Avengers: Endgame", poster: require("../assets/avengers_endgame.jpg") },
@@ -33,20 +35,27 @@ export default function MoviesFormScreen() {
   const [filteredItems, setFilteredItems] = useState(MOVIES);
   const [selectedIds, setSelectedIds] = useState([]);
 
-  const handleFinish = async () => {
-    const email = await SecureStore.getItemAsync("lastLoginEmail");
-    if (email) {
-      const safeEmail = email.toLowerCase().replace(/[^a-z0-9._-]/g, "_");
-      const key = `firstLoginDone__${safeEmail}`;
-      await SecureStore.setItemAsync(key, "1");
-      await SecureStore.deleteItemAsync("lastLoginEmail");
-    }
+const handleFinish = async () => {
+  try {
+    await withBusy(async () => {
+      const email = await SecureStore.getItemAsync("lastLoginEmail");
+      if (email) {
+        await SecureStore.deleteItemAsync("lastLoginEmail");
+      }
+      const token = await SecureStore.getItemAsync("userToken");
+      const formResults = { ...prevResults, movies: selectedIds };
+      console.log("Form results: ", formResults);
 
-    const formResults = {...prevResults, movies: selectedIds};
+      await saveForm(formResults, token);
 
-    console.log("Form results: ", formResults);
-    navigation.replace("Home");
-  };
+      await setFormPendingAsync();
+    });
+
+    console.log("Formulario guardado y formPending actualizado");
+  } catch (err) {
+    console.log("Error saving form:", err);
+  }
+};
 
   const normalize = (str = "") =>
     String(str)

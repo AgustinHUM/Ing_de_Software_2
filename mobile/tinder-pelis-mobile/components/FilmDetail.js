@@ -27,10 +27,13 @@ export default function MovieDetail({
                     fontWeight: '600',
                     marginLeft: 8,
                     ...textStyle,
+                    
                 }}
+                
             >
                 {label && `${label}: `}{value}
             </Text>
         </View>
     );
+
 }

@@ -13,7 +13,12 @@ import HomeScreen from './screens/HomeScreen';
 import { makeTheme } from './theme';
 import AppBar from './components/Appbar';
 import ProfileScreen from './screens/Profile';
-import FriendsScreen from './screens/Friends';
+
+// import FriendsScreen from './screens/Friends';
+import Groups from './screens/Groups';
+import CreateGroup from './screens/CreateGroup';
+import JoinGroup from './screens/JoinGroup';
+
 import SearchScreen from './screens/Search';
 import FavouritesScreen from './screens/Favourites';
 import InitialFormScreen from './screens/InitialForm';
@@ -176,40 +181,14 @@ function AppInner({ setAppTheme, themesMap, themeName, navigationRef, setCurrent
 
 
 function MainNavigator({ setAppTheme, themesMap, themeName }) {
-  const { state } = useAuth();
+  const { state,formPending } = useAuth();
   const [firstLogin, setFirstLogin] = useState(false);
-  const [checkedFirstLogin, setCheckedFirstLogin] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
-    setCheckedFirstLogin(false);
-    async function checkFirstLogin() {
-      if (!state.userToken) {
-        if (isMounted) {
-          setFirstLogin(false);
-          setCheckedFirstLogin(true);
-        }
-        return;
-      }
-      const email = await SecureStore.getItemAsync('lastLoginEmail');
-      if (!email) {
-        if (isMounted) {
-          setFirstLogin(false);
-          setCheckedFirstLogin(true);
-        }
-        return;
-      }
-      const safeEmail = email.toLowerCase().replace(/[^a-z0-9._-]/g, '_');
-      const key = `firstLoginDone__${safeEmail}`;
-      const seen = await SecureStore.getItemAsync(key);
-      if (isMounted) {
-        setFirstLogin(!seen);
-        setCheckedFirstLogin(true);
-      }
-    }
-    checkFirstLogin();
-    return () => { isMounted = false; };
-  }, [state.userToken]);
+   setFirstLogin(formPending);
+   console.log(`En app.js, formPending cambió a ${formPending}`)
+  }, [formPending]);
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -230,21 +209,6 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
           <Stack.Screen name="GenreForm" component={GenresFormScreen} options={{headerShown:false}} />
           <Stack.Screen name="DirectorsForm" component={DirectorsFormScreen} options={{headerShown:false}} />
           <Stack.Screen name="MoviesForm" component={MoviesFormScreen} options={{headerShown:false}} />
-          <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="FilmDetails" component={FilmDetailsScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Profile" options={{ headerShown: false }}>
-            {props => (
-              <ProfileScreen
-                {...props}
-                setAppTheme={setAppTheme}
-                themesMap={themesMap}
-                currentThemeName={themeName}
-              />
-            )}
-          </Stack.Screen>
-          <Stack.Screen name="Friends" component={FriendsScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Search" component={SearchScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Favourites" component={FavouritesScreen} options={{ headerShown: false }} />
         </>
       ) : (
         <>
@@ -260,7 +224,10 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
               />
             )}
           </Stack.Screen>
-          <Stack.Screen name="Friends" component={FriendsScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Groups" component={Groups} options={{ headerShown: false }} />
+          <Stack.Screen name="CreateGroup" component={CreateGroup} options={{ headerShown: false }} />
+          <Stack.Screen name="JoinGroup" component={JoinGroup} options={{ headerShown: false }} />
+          
           <Stack.Screen name="Search" component={SearchScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Favourites" component={FavouritesScreen} options={{ headerShown: false }} />
         </>
