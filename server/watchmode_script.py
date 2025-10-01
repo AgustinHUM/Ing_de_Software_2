@@ -109,13 +109,16 @@ def seed_watchmode():
         "Zee5"
     ]
 
-    # Platform name mapping to handle API inconsistencies
     platform_name_mapping = {
         "Amazon": "Prime Video",
         "AppleTV": "AppleTV+",
         "HBO Max": "Max",
         "HBO": "Max",
-        # Add more mappings as needed
+        "YouTube": "YouTube Premium",
+        "Disney": "Disney+",
+        "Disney Plus": "Disney+",
+        "Hulu Plus": "Hulu",
+        "Showtime": "Paramount+"
     }
 
     # Plataformas
@@ -123,10 +126,8 @@ def seed_watchmode():
     platforms_data = platforms_response.json()
     for platform in platforms_data:
         api_platform_name = platform.get('name')
-        # Map API name to our standardized name
         platform_name = platform_name_mapping.get(api_platform_name, api_platform_name)
         
-        # Only add platforms that are in our cleaned platforms list
         if platform_name in plataformas_limpiadas and not Plataforma.query.filter_by(nombre_plataforma=platform_name).first():
             new_platform = Plataforma(
                 id_plataforma=platform.get('id'),
@@ -138,14 +139,12 @@ def seed_watchmode():
     session.commit()
     print("Successfully added platforms from cleaned list")
     
-    # Get platform details once for efficiency
     platform_details_response = requests.get(f'{base_url}sources/?apiKey={api_key}')
     platform_details_data = platform_details_response.json() if platform_details_response.status_code == 200 else []
     
     
 
     # Peliculas
-    # Fetch 10 movies in a single call
     params = {
         'apiKey': api_key,
         'types': 'movie',
@@ -166,14 +165,12 @@ def seed_watchmode():
 
     title_ids = [movie['id'] for movie in all_movies] 
     for title_id in title_ids:
-        # Check if movie already exists
         existing_movie = Pelicula.query.get(title_id)
         if existing_movie:
             print(f"Movie with ID {title_id} already exists. Updating...")
         else:
             print(f"Creating new movie with ID {title_id}")
 
-        # buscar detalles de la pelicula
         details_url = f'{base_url}title/{title_id}/details/?apiKey={api_key}'
         details_response = requests.get(details_url)
         if details_response.status_code != 200:
@@ -181,52 +178,31 @@ def seed_watchmode():
             continue
         details = details_response.json()
 
-        # Skip movies without US rating
         if not details.get('us_rating'):
             print(f"Skipping movie {details.get('title', 'Unknown')} - no US rating available")
             continue
 
-        # Buscar data de streaming
         sources_url = f'{base_url}title/{title_id}/sources/?apiKey={api_key}'
         sources_response = requests.get(sources_url)
         sources = sources_response.json() if sources_response.status_code == 200 else []
 
-        # Get cast and crew to extract directors
         cast_crew_url = f'{base_url}title/{title_id}/cast-crew/?apiKey={api_key}'
         cast_crew_response = requests.get(cast_crew_url)
         directors = []
         if cast_crew_response.status_code == 200:
             cast_crew_data = cast_crew_response.json()
-            # Handle both list and dict responses
-            if isinstance(cast_crew_data, list):
-                # If it's a list, filter for directors directly
-                for person in cast_crew_data:
-                    # Check both 'job' and 'role' fields as the API might use either
+            for person in cast_crew_data:
                     job = person.get('job', '') or person.get('role', '')
-                    # Check if "Director" is one of the roles (handle comma-separated roles)
-                    roles = [role.strip() for role in job.split(',')]
-                    if 'Director' in roles:
-                        directors.append(person.get('name', person.get('full_name', '')))
-            elif isinstance(cast_crew_data, dict):
-                # If it's a dict, look for crew key
-                crew = cast_crew_data.get('crew', [])
-                for person in crew:
-                    # Check both 'job' and 'role' fields as the API might use either
-                    job = person.get('job', '') or person.get('role', '')
-                    # Check if "Director" is one of the roles (handle comma-separated roles)
                     roles = [role.strip() for role in job.split(',')]
                     if 'Director' in roles:
                         directors.append(person.get('name', person.get('full_name', '')))
         
         directors_str = ', '.join(directors) if directors else 'Unknown'
 
-        # Convert critic score from 0-100 to 0-10 scale
         critic_score = details.get('critic_score')
         critic_score_converted = critic_score / 10.0 if critic_score is not None else None
 
-        # Create or update movie in database
         if existing_movie:
-            # Update existing movie
             existing_movie.trama = details.get('plot_overview', '')
             existing_movie.anio_lanzamiento = details.get('year')
             existing_movie.titulo = details.get('title')
@@ -240,7 +216,6 @@ def seed_watchmode():
             current_movie = existing_movie
             print(f"Updating existing movie: {current_movie.titulo}")
         else:
-            # Create new movie
             current_movie = Pelicula(
                 id_pelicula=details['id'],
                 trama=details.get('plot_overview', ''),
@@ -257,14 +232,12 @@ def seed_watchmode():
             session.add(current_movie)
             print(f"Creating new movie: {current_movie.titulo}")
         
-        # agregar generos
         for genre_id in details.get('genres', []):
             genero = Genero.query.get(genre_id)
             if genero and genero not in current_movie.generos:
                 current_movie.generos.append(genero)
             
-        # First add and commit the movie to the database
-        if not existing_movie:  # Only add to session if it's a new movie
+        if not existing_movie: 
             session.add(current_movie)
         try:
             session.commit()
@@ -274,39 +247,32 @@ def seed_watchmode():
             session.rollback()
             continue
 
-        # Update ternary relationships: movie-platform-country
-        # First, delete existing relationships for this movie to ensure data is current
+
         existing_relationships = PeliculaPaisPlataforma.query.filter_by(id_pelicula=current_movie.id_pelicula).all()
         if existing_relationships:
             print(f"Removing {len(existing_relationships)} existing relationships for {current_movie.titulo}")
             for rel in existing_relationships:
                 session.delete(rel)
 
-        # Now create new relationships based on current streaming availability
         new_relationships_count = 0
-        processed_combinations = set()  # Track platform-country combinations to avoid duplicates
+        processed_combinations = set()  
         
         for src in sources:
-            # First try to find by source_id
             plataforma = Plataforma.query.filter_by(id_plataforma=src['source_id']).first()
             
-            # If not found by ID, try to find by mapped name
             if not plataforma:
                 api_platform_name = src.get('name', '')
                 mapped_platform_name = platform_name_mapping.get(api_platform_name, api_platform_name)
                 plataforma = Plataforma.query.filter_by(nombre_plataforma=mapped_platform_name).first()
                 
             if plataforma:
-                # Get the specific region for this source
                 region_code = src.get('region')
                 if region_code:
                     pais = Pais.query.filter_by(codigo_pais=region_code).first()
                     if pais:
-                        # Create unique combination key to prevent duplicates
                         combination_key = (plataforma.id_plataforma, pais.id_pais)
                         
                         if combination_key not in processed_combinations:
-                            # Create the ternary relationship
                             nueva_relacion = PeliculaPaisPlataforma(
                                 id_pelicula=current_movie.id_pelicula,
                                 id_plataforma=plataforma.id_plataforma,
@@ -325,7 +291,6 @@ def seed_watchmode():
         
         print(f"Created {new_relationships_count} new relationships for {current_movie.titulo}")
 
-        # Commit the relationships
         try:
             session.commit()
             print(f"Successfully added relationships for movie {current_movie.titulo}")
