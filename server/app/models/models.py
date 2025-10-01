@@ -9,15 +9,9 @@ grupos_de_usuario = db.Table("USUARIO_GRUPO",
                             db.Column("mail_usuario", db.String(128), db.ForeignKey("USUARIO.mail"), primary_key=True),
                             db.Column("id_grupo", db.Integer, db.ForeignKey("GRUPO.id_grupo"), primary_key=True))
 
-
 usuario_plataforma = db.Table("USUARIO_PLATAFORMA", 
                             db.Column("mail_usuario", db.String(128), db.ForeignKey("USUARIO.mail"), primary_key=True),
                             db.Column("id_plataforma", db.Integer, db.ForeignKey("PLATAFORMA.id_plataforma"), primary_key=True))
-
-
-usuario_vio_peli = db.Table("USUARIO_VIO_PELI",
-                            db.Column("mail_usuario", db.String(128), db.ForeignKey("USUARIO.mail"), primary_key=True),
-                            db.Column("id_pelicula", db.Integer, db.ForeignKey("PELICULA.id_pelicula"), primary_key=True))
 
 pelis_favoritas = db.Table("PELICULAS_FAVORITAS",
                             db.Column("mail_usuario", db.String(128), db.ForeignKey("USUARIO.mail"), primary_key=True),
@@ -61,7 +55,7 @@ class Usuario(Cuenta):
     plataformas = db.relationship("Plataforma", secondary=usuario_plataforma, back_populates="usuarios_plat")
 
     #Usuario vio pelis
-    pelis_vistas = db.relationship("Pelicula", secondary=usuario_vio_peli, back_populates="visto_por_usuarios")
+    pelis_vistas = db.relationship("UsuarioVioPeli", back_populates="usuario")
 
     #Favoritas de usuario
     favoritas = db.relationship("Pelicula", secondary=pelis_favoritas, back_populates="fav_usuario")
@@ -168,7 +162,7 @@ class Pelicula(db.Model):
 
     plataformas_paises = db.relationship("PeliculaPlataformaPais", back_populates="pelicula")
 
-    visto_por_usuarios = db.relationship("Usuario", secondary=usuario_vio_peli, back_populates="pelis_vistas")
+    vista_usuarios = db.relationship("UsuarioVioPeli", back_populates="pelicula")
 
     fav_usuario = db.relationship("Usuario", secondary=pelis_favoritas, back_populates="favoritas")
 
@@ -217,3 +211,17 @@ class PeliculaPaisPlataforma(db.Model):
     plataforma = db.relationship("Plataforma", back_populates="pelis_paises")
     pelicula = db.relationship("Pelicula", back_populates="plataformas_paises")
     pais = db.relationship("Pais", back_populates="pelis_plataformas")
+
+
+class UsuarioVioPeli(db.Model):
+    __tablename__ = "USUARIO_VIO_PELI"
+
+    mail_usuario = db.Column(db.String(128), db.ForeignKey("USUARIO.mail"), primary_key=True)
+    id_pelicula = db.Column(db.Integer, db.ForeignKey("PELICULA.id_pelicula"), primary_key=True)
+
+    # Campo extra: rating personal del usuario
+    rating = db.Column(db.Float, nullable=True)
+
+    # Relaciones bidireccionales
+    usuario = db.relationship("Usuario", back_populates="pelis_vistas")
+    pelicula = db.relationship("Pelicula", back_populates="vista_usuarios")
