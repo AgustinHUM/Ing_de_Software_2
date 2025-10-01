@@ -8,7 +8,6 @@ import LoadingOverlay from '../components/LoadingOverlay';
 import { Divider, useTheme } from 'react-native-paper';
 import GradientButton from '../components/GradientButton';
 import { getMovies } from '../src/services/api';
-import { useNavigation } from '@react-navigation/native';
 import FilmDisplay from '../components/FilmDisplay';
 
 export default function Search() {
@@ -16,7 +15,6 @@ export default function Search() {
   const route = useRoute();
   const theme = useTheme();
   const routeQuery = route.params?.query ?? '';
-  const navigation = useNavigation();
   const [query, setQuery] = useState(routeQuery);
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);
