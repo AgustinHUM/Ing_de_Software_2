@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Image, TouchableOpacity, ScrollView, Modal, Platform } from 'react-native';
+import { View, Image, TouchableOpacity, ScrollView, Modal, Platform, Dimensions } from 'react-native';
 import { Text, useTheme, IconButton } from 'react-native-paper';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -7,13 +7,16 @@ import Feather from '@expo/vector-icons/Feather';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Octicons from '@expo/vector-icons/Octicons';
-import { setAlpha } from '../theme';
 import FilmDisplay from '../components/FilmDisplay';
 import FilmDetail from '../components/FilmDetail';
 import { useState } from 'react';
 import DetailList from '../components/DetailList';
 import TitleDisplay from '../components/TitleDisplay';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const { width } = Dimensions.get('window');
 
 const fallbackMovie = {
   title: 'Unkown Film',
@@ -31,17 +34,29 @@ export default function FilmDetailsScreen() {
   const route = useRoute();
   const navigation = useNavigation();
   const movie = route.params?.movie || fallbackMovie;
-  const [showMore, setShowMore] = useState(false);
   const [showGenresModal, setShowGenresModal] = React.useState(false);
   const [showAllPlatforms, setShowAllPlatforms] = useState(false);
   const visible_genres = 2;
   const visible_platforms = showAllPlatforms ? 30 : 5;
 
+  // --- SOLO para posicionar el texto y el botón (sin tocar el scroll) ---
+  const { bottom } = useSafeAreaInsets();
+  const APPBAR_HEIGHT = 60;
+  const APPBAR_BOTTOM_INSET = 10;
+  const FAB_SIZE = 64;
+  const FAB_MARGIN = 24;
+  const POPUP_GAP = 12;
+
+  const fabBottom = FAB_MARGIN + APPBAR_BOTTOM_INSET + APPBAR_HEIGHT + bottom;
+  const hintRight = FAB_MARGIN + FAB_SIZE + POPUP_GAP;
+  // subir el texto para que quede centrado con el botón:
+  const hintBottom = fabBottom + (FAB_SIZE / 2) - 12; // ajuste fino
+
   return (
     <View style={{ flex: 1, flexDirection:'column'}}>
         <ScrollView
             style={{paddingTop:'15%', flex:0.75, padding:'3%', backgroundColor: 'transparent'}}
-            contentContainerStyle={{ flexGrow: 1, }}
+            contentContainerStyle={{ flexGrow: 1 }}
             showsVerticalScrollIndicator={false}
         >
             <View>
@@ -66,13 +81,12 @@ export default function FilmDetailsScreen() {
 
                         <TitleDisplay title={movie.title} style={{color:theme.colors.text, fontSize: 28, fontWeight: 'bold', marginBottom: 8,}} numberOfLines={2}/>
 
-                        
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 }}>
-                        <DetailList 
-                            list={movie.genres} 
-                            visibleCount={visible_genres}
-                            onShowMore={() => setShowGenresModal(true)}
-                        />
+                          <DetailList 
+                              list={movie.genres} 
+                              visibleCount={visible_genres}
+                              onShowMore={() => setShowGenresModal(true)}
+                          />
                         </View>
                         {movie.year ? (
                             <FilmDetail 
@@ -103,7 +117,6 @@ export default function FilmDetailsScreen() {
                     </View>
                 </View>
                 
-
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems:'flex-start', flex:1, marginBottom:16 }}>
                     {movie.rating ? (
                         <FilmDetail
@@ -121,11 +134,8 @@ export default function FilmDetailsScreen() {
                         </FilmDetail>
                     ) : null}
 
-                    
-
                     {movie.platforms ? (
                         <>
-                            
                             <DetailList
                                 list={movie.platforms}
                                 visibleCount={visible_platforms}
@@ -153,7 +163,6 @@ export default function FilmDetailsScreen() {
                         </>
                     ) : null}
                 </View>
-
 
                 <View style={{marginBottom:256}}>
                     <Text style={{ color: theme.colors.text, fontSize: 20, fontWeight: 'bold', marginBottom: 8 }}>
@@ -208,6 +217,54 @@ export default function FilmDetailsScreen() {
                 </ScrollView>
             </View>
         </Modal>
+
+        {/* --- SOLO overlay: texto + botón --- */}
+        <View
+          style={{
+            position: 'absolute',
+            right: hintRight,
+            bottom: hintBottom,
+            paddingHorizontal: 12,
+            maxWidth: width * 0.6,
+          }}
+        >
+          <Text style={{ textAlign: 'right', color: theme.colors.text, fontSize: 16, fontWeight: '700' }}>
+            Seen this one?
+          </Text>
+          <Text style={{ textAlign: 'right', color: theme.colors.text, opacity: 0.9, marginTop: 2 }}>
+            Rate it and mark it as watched
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          activeOpacity={0.95}
+          onPress={() => navigation.navigate('RateFilm', { movie })}
+          style={{
+            position: 'absolute',
+            right: FAB_MARGIN,
+            bottom: fabBottom,
+          }}
+        >
+          <LinearGradient
+            colors={[theme.colors.primary, theme.colors.secondary ?? theme.colors.accent ?? theme.colors.primary]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              width: FAB_SIZE,
+              height: FAB_SIZE,
+              borderRadius: FAB_SIZE / 2,
+              alignItems: 'center',
+              justifyContent: 'center',
+              elevation: 6,
+              shadowColor: '#000',
+              shadowOpacity: 0.25,
+              shadowRadius: 8,
+              shadowOffset: { width: 0, height: 4 },
+            }}
+          >
+            <MaterialIcons name="movie" size={28} color="white" />
+          </LinearGradient>
+        </TouchableOpacity>
     </View>
   );
 }

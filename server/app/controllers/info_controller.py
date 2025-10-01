@@ -47,8 +47,8 @@ def request_movie_info():
                              "platforms": peli.plataformas,
                              "year": peli.anio_lanzamiento,
                              "runtime":peli.duracion,
-                             "director":"Director no implementado",
-                             "rating":peli.score,
+                             "director":peli.directores,
+                             "rating":peli.score_critica,
                              "description":peli.trama,
                              "ageRating":peli.clasificacion_edad
                              } for peli in peliculas]
@@ -71,7 +71,6 @@ def selected_movie_info():
         if not peli_check:
             return jsonify({"Error": "La pelicula no existe"}), 401
         
-        #Aun no paso el poster porque no sabemos que hacer con eso aún
         generos = [genero.nombre_genero for genero in peli_check.generos]
 
         plataformas = [plat.nombre_plataforma for plat in peli_check.plataformas]
@@ -83,12 +82,38 @@ def selected_movie_info():
                           "movie_length": peli_check.duracion,
                           "movie_release": peli_check.anio_lanzamiento,
                           "movie_classification": peli_check.clasificacion_edad,
-                          "movie_score": peli_check.score,
+                          "movie_score_critica": peli_check.score_critica,
                           "movie_platforms": plataformas,  #es una lista
                           "movie_genres": generos,         #es una lista
-                          "movie_poster_url": peli_check.url_poster}         
+                          "movie_poster_url": peli_check.url_poster,
+                          "movie_score_usuarios": peli_check.score_usuarios,
+                          "movie_director": peli_check.directores,
+                          "movie_popularidad": peli_check.popularidad_percentil}         
         
         #El front recibe algo tal cual como lo de arriba
         
         return jsonify(pelicula_select), 200
+
+     
+def show_form():
+    if request.method == "GET":
         
+        paises = Pais.query.all()
+        
+        lista_paises = [{"country_id": pais.id_pais,
+                         "country_name": pais.nombre_pais} for pais in paises]
+
+        plataformas = Plataforma.query.all()
+
+        lista_plataformas = [{"platform_id": plataforma.id_plataforma,
+                            "platform_name": plataforma.nombre_platafoma} for plataforma in plataformas]
+        
+        generos = Genero.query.all()
+        lista_genero = [{"genre_id": genero.id_genero,
+                        "genre_name": genero.nombre_genero} for genero in generos]
+        
+        
+        res = {"countries": lista_paises, "platforms": lista_plataformas, "genres": lista_genero}
+        return jsonify(res), 200
+
+

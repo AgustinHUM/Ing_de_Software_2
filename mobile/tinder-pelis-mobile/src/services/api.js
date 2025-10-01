@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const API_URL = "http://192.168.1.27:5000"; // Local server
+export const API_URL = "http://172.20.10.2:5000"; // Local server
 
 const api = axios.create({
   baseURL: API_URL,
@@ -79,3 +79,22 @@ export function joinGroup(groupJoinId, token) {
     headers: { Authorization: `Bearer ${token}` },
   });
 }
+
+export function getUserGroups(token) {
+  return request('/groups', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+export function saveForm(data, token) {
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  return post("/saveUserForm", data, { headers });
+}
+
+
+// Ver funcion ya creada en la otra rama
+// export function rateMovie(movieId, rating, token) {
+//   return post('/movies/rate', { movie_id: movieId, rating }, {
+//     headers: { Authorization: `Bearer ${token}` },
+//   });
+// }

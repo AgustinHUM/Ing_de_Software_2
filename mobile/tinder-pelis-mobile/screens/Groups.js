@@ -1,11 +1,13 @@
 import React, { useState } from "react";
-import { View, Modal, Pressable, TouchableOpacity, Dimensions, FlatList } from "react-native";
+import { View, Modal, Pressable, TouchableOpacity, Dimensions, FlatList, Alert } from "react-native";
 import { Text, TextInput as PaperTextInput, useTheme as usePaperTheme } from "react-native-paper";
-import { useTheme } from "@react-navigation/native";
+import { useTheme, useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { LinearGradient } from "expo-linear-gradient";
 import GradientButton from "../components/GradientButton";
+import { getUserGroups } from "../src/services/api";
+import * as SecureStore from 'expo-secure-store';
 
 const { width } = Dimensions.get("window");
 
@@ -85,14 +87,30 @@ export default function GroupsHome({ navigation }) {
 
   const [showPopup, setShowPopup] = useState(false);
   const [search, setSearch] = useState("");
+  const [groups, setGroups] = useState([]);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchGroups = async () => {
+        try {
+          const token = await SecureStore.getItemAsync("userToken");
+          if (token) {
+            const userGroups = await getUserGroups(token);
+            setGroups(userGroups || []);
+          }
+        } catch (error) {
+          Alert.alert("Error", "Could not fetch groups.");
+          console.error(error);
+        }
+      };
 
-  // Cambiá este array para ver vacío vs con grupos
-  const [groups] = useState([
-    //{ id: 1, name: "Viernes de Pelis", members: 4 },
-    //{ id: 2, name: "Amigos de la Facu", members: 6 },
-    //{ id: 3, name: "Familia", members: 3 },
-  ]);
+      fetchGroups();
+
+      return () => {
+        // Optional cleanup
+      };
+    }, [])
+  );
 
 
   const availableWidth = width - 2 * OUTER_PAD - 2 * CONTENT_PAD;

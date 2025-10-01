@@ -4,6 +4,7 @@ from .register_route import register_bp
 from .pantalla_principal_route import pantalla_principal_bp
 from .general_info_route import movie_info_bp
 from .group_routes import grupo_bp
+from .form_routes import forms_bp
 
 def register_routes(app):
     app.register_blueprint(login_bp)
@@ -11,3 +12,4 @@ def register_routes(app):
     app.register_blueprint(pantalla_principal_bp)
     app.register_blueprint(movie_info_bp)
     app.register_blueprint(grupo_bp)
+    app.register_blueprint(forms_bp)
