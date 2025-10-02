@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const API_URL = "http://192.168.68.53:5000"; // Local server
+export const API_URL = "http://192.168.1.7:5000"; // Local server
 
 const api = axios.create({
   baseURL: API_URL,
