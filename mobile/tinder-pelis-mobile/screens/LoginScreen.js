@@ -23,19 +23,12 @@ export default function LoginScreen({ navigation }) {
     setError(null);
     try {
       await signIn(email, password);
-      
-      // Check formPending from the user object after login
-      if (state.user?.formPending) {
-        navigation.navigate('CompleteProfile');
-      } else {
-        navigation.navigate('MainApp');
-      }
+      // App.js maneja automaticamente navigation con el formPending
     } catch (e) {
       setError(String(e?.message || 'No se pudo iniciar sesión'));
     }
   }
 
-  // Navegación automática según primer login eliminada, ahora se maneja directo en onLogin
 
   return (
     <View style={styles.container}>

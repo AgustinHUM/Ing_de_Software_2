@@ -7,15 +7,15 @@ import GradientButton from "../components/GradientButton";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import FilmDisplay from "../components/FilmDisplay";
 import * as SecureStore from "expo-secure-store";
-import { saveForm } from "../src/services/api";
+import { getMovies, saveForm } from "../src/services/api";
 import { useAuth } from "../AuthContext";
 
-export default function MoviesFormScreen() {
+export default function MoviesFormScreen({ navigation, route }) {
   const theme = useTheme();
-  const navigation = useNavigation();
-  const route = useRoute();
   const { setFormPendingAsync, withBusy } = useAuth();
-  const MOVIES = useMemo(
+  const [MOVIES, setMovies] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const MOVIES_FAKE = useMemo(
     () => [
       { id: "m1", title: "Avengers: Endgame", poster: require("../assets/avengers_endgame.jpg") },
       { id: "m2", title: "Los tipos malos 2", poster: require("../assets/the_bad_guys_2.jpg") },
@@ -27,7 +27,27 @@ export default function MoviesFormScreen() {
     []
   );
 
-  const prevResults = route?.params?.formResults ?? {};
+  useEffect(() => {
+    const fetchMovies = async () => {
+      setLoading(true);
+      try {
+        const result = await getMovies("a", 0);
+        setMovies(Array.isArray(result) ? result.map(m => ({
+            ...m,
+            poster: m.poster ? { uri: m.poster } : undefined })) 
+            : MOVIES_FAKE);
+      } catch (err) {
+        console.error("Error fetching movies:", err);
+        setMovies([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMovies();
+  }, []);
+
+  const prevResults = route.params.formResults ?? {};
+
 
   const title = "Movies you've loved";
   const buttonText = "End form";
@@ -52,8 +72,8 @@ const handleFinish = async () => {
     });
 
     console.log("Formulario guardado y formPending actualizado");
-    
-    navigation.navigate("MainApp");
+
+    // App.js maneja automatico navigation cuando formPending cambia a false
   } catch (err) {
     console.log("Error saving form:", err);
   }

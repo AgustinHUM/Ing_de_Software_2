@@ -30,26 +30,26 @@ def save_user_form():
 
         countries = info.get("countries", [])
         if countries:
-            pais = Pais.query.filter_by(nombre_pais=countries[0]).first()  
+            pais = Pais.query.filter_by(id_pais=int(countries[0])).first()  
             if pais:
                 usuario.pais = pais
 
         genres = info.get("genres", [])
         usuario.generos_fav = [
-            Genero.query.filter_by(nombre_genero=g).first()
-            for g in genres if Genero.query.filter_by(nombre_genero=g).first()
+            Genero.query.filter_by(id_genero=int(g)).first()
+            for g in genres if Genero.query.filter_by(id_genero=int(g)).first()
         ]
 
         movies = info.get("movies", [])
         usuario.favoritas = [
-            Pelicula.query.filter_by(id_pelicula=int(m[1:])).first()
-            for m in movies if Pelicula.query.filter_by(id_pelicula=int(m[1:])).first()
+            Pelicula.query.filter_by(id_pelicula=int(m)).first()
+            for m in movies if Pelicula.query.filter_by(id_pelicula=int(m)).first()
         ]
 
         services = info.get("services", [])
         usuario.plataformas = [
-            Plataforma.query.filter_by(id_plataforma=int(s[1:])).first()
-            for s in services if Plataforma.query.filter_by(id_plataforma=int(s[1:])).first()
+            Plataforma.query.filter_by(id_plataforma=int(s)).first()
+            for s in services if Plataforma.query.filter_by(id_plataforma=int(s)).first()
         ]
 
         usuario.formulario_pendiente = False

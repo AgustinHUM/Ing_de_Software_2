@@ -1,10 +1,9 @@
 import { useTheme } from "react-native-paper";
 import * as SecureStore from 'expo-secure-store';
 import SelectableListForm from "../components/Form";
-import { useRoute } from "@react-navigation/native";
 
-export default function GenresFormScreen({ navigation }) {
-  const GENRES = [
+export default function GenresFormScreen({ navigation , route}) {
+  const GENRES_FAKE = [
     {id:'g1', name: "Acción" },
     {id:'g2', name: "Ciencia Ficción" },
     {id:'g3', name: "Romance" },
@@ -22,8 +21,9 @@ export default function GenresFormScreen({ navigation }) {
   ];
 
   const theme = useTheme();
-  const route = useRoute();
+
   const prevResults = route?.params?.formResults ?? {};
+  const GENRES = prevResults.formData?.genres.map(item => ({ id: item.id, name: item.name })) || GENRES_FAKE;
 
   return (
     <SelectableListForm 
@@ -34,7 +34,7 @@ export default function GenresFormScreen({ navigation }) {
         showGoBack={true}
         onSubmit={(selectedGenres)=>{
         const genres = selectedGenres.map(g=>g.id);
-        navigation.navigate("DirectorsForm",{ formResults: { ...prevResults, genres } });
+        navigation.navigate("MoviesForm",{ formResults: { ...prevResults, genres } });
         }}
         showSelectButton={false}
         />
