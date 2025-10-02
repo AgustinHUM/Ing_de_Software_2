@@ -201,7 +201,7 @@ class Genero(db.Model):
     usuarios = db.relationship("Usuario", secondary=genero_favorito, back_populates="generos_fav")
 
 
-class PeliculaPaisPlataforma(db.Model):
+class PeliculaPlataformaPais(db.Model):
     __tablename__ = "PELICULA_PLATAFORMA_PAIS"
 
     id_plataforma = db.Column(db.Integer, db.ForeignKey("PLATAFORMA.id_plataforma"), primary_key=True)

@@ -29,6 +29,10 @@ def handle_login():
             return jsonify({"error": "Error en las credenciales"}), 401
 
         if not bcrypt.check_password_hash(usuario.contrasenia, contrasenia):
+            print("contraseña recibida:", repr(contrasenia))
+            print("hash almacenado:", repr(usuario.contrasenia))
+            print("check:", bcrypt.check_password_hash(usuario.contrasenia, contrasenia))
+
             return jsonify({"error": "Error en las credenciales"}), 401
 
 
@@ -43,10 +47,9 @@ def handle_login():
         }
 
         try:
-            resp = Config.COGNITO_CLIENT.admin_initiate_auth(
-                UserPoolId=Config.COGNITO_USER_POOL_ID,
+            resp = Config.COGNITO_CLIENT.initiate_auth(
                 ClientId=Config.COGNITO_CLIENT_ID,
-                AuthFlow="ADMIN_NO_SRP_AUTH",
+                AuthFlow="USER_PASSWORD_AUTH",
                 AuthParameters=auth_params
             )
 

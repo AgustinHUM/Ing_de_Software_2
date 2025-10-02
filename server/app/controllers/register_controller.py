@@ -20,6 +20,7 @@ def handle_register(info = None):
             return jsonify({"error": "Ya existe el usuario"}), 400
         
         hash_contr = bcrypt.generate_password_hash(contrasenia).decode("utf-8")
+        print("hash: ",hash_contr)
 
         try:
 
