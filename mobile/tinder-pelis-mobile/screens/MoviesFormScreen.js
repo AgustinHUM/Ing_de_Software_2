@@ -48,10 +48,12 @@ const handleFinish = async () => {
 
       await saveForm(formResults, token);
 
-      await setFormPendingAsync();
+      await setFormPendingAsync(false);
     });
 
     console.log("Formulario guardado y formPending actualizado");
+    
+    navigation.navigate("MainApp");
   } catch (err) {
     console.log("Error saving form:", err);
   }

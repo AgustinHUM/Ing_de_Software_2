@@ -17,13 +17,19 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
-  const { signIn } = useAuth();
+  const { signIn, state } = useAuth();
 
   async function onLogin() {
     setError(null);
     try {
       await signIn(email, password);
-      // No navegamos manualmente: el stack global redirige según primer login
+      
+      // Check formPending from the user object after login
+      if (state.user?.formPending) {
+        navigation.navigate('CompleteProfile');
+      } else {
+        navigation.navigate('MainApp');
+      }
     } catch (e) {
       setError(String(e?.message || 'No se pudo iniciar sesión'));
     }

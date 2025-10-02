@@ -52,6 +52,8 @@ def save_user_form():
             for s in services if Plataforma.query.filter_by(id_plataforma=int(s[1:])).first()
         ]
 
+        usuario.formulario_pendiente = False
+
         db.session.commit()
 
         return jsonify({"msg": "Formulario guardado con éxito"}), 200

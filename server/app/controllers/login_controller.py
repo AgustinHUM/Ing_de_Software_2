@@ -54,7 +54,8 @@ def handle_login():
                 "id_token": resp["AuthenticationResult"]["IdToken"],
                 "access_token": resp["AuthenticationResult"]["AccessToken"],
                 "refresh_token": resp["AuthenticationResult"]["RefreshToken"],
-                "nombre_cuenta": usuario.nombre_cuenta
+                "nombre_cuenta": usuario.nombre_cuenta,
+                "formulario_pendiente": usuario.formulario_pendiente
             }), 200
 
         except Config.COGNITO_CLIENT.exceptions.NotAuthorizedException:
