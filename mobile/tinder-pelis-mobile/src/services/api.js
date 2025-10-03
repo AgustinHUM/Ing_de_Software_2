@@ -93,7 +93,3 @@ export function saveForm(data, token) {
 export function showUserForm() {
   return get("/showUserForm");
 }
-
-export function getHomeMovies() {
-  return get("/showHomeMovies");
-}

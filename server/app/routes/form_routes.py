@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 from ..controllers.user_controller import save_user_form
-from ..controllers.info_controller import show_form
+from ..controllers.info_controller import show_form, show_home_movies
 
 forms_bp = Blueprint("forms", __name__)
 
