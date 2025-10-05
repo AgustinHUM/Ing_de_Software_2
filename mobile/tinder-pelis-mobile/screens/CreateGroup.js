@@ -13,6 +13,8 @@ import { createGroup } from '../src/services/api';
 import { Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
+import ErrorOverlay from "../components/ErrorOverlay"; // ← agregado
+
 const APPBAR_HEIGHT = 60;
 const APPBAR_BOTTOM_INSET = 10;
 
@@ -21,6 +23,18 @@ export default function CreateGroup({ navigation }) {
   const { top, bottom } = useSafeAreaInsets();
   const textColor = theme.colors?.text ?? "#fff";
   const [groupName, setGroupName] = useState("");
+
+  // Overlay de error genérico
+  const [showGenericError, setShowGenericError] = useState(false);
+  const isGenericBackendError = (err) => {
+    const msg = (err?.message || "").toLowerCase();
+    return (
+      msg.startsWith("http ") ||       // "HTTP 500", etc.
+      msg.includes("timeout") ||       // "Request timeout"
+      msg.includes("no response") ||   // "No response from server"
+      msg === "request error"
+    );
+  };
 
   // FUNCIÓN QUE LLAMA AL BACK
   async function handleCreate() {
@@ -38,16 +52,14 @@ export default function CreateGroup({ navigation }) {
 
     try {
       const data = await createGroup(name, token); // { group_join_id: N }
-      // Alert.alert(
-      //   'Grupo creado',
-      //   `Compartí este código para que se unan:\n${data.group_join_id}`,
-      //   [{ text: 'OK', onPress: () => navigation.navigate('Groups') }]
-      // );
-
-      navigation.navigate('GroupCode', { code: data.group_join_id, groupName: name})
-      
+      navigation.navigate('GroupCode', { code: data.group_join_id, groupName: name});
     } catch (e) {
-      Alert.alert('Error', e.message || 'No se pudo crear el grupo');
+      // Mostrar overlay SOLO si el back no especifica el error
+      if (isGenericBackendError(e)) {
+        setShowGenericError(true); // se oculta solo a los 5s
+      } else {
+        Alert.alert('Error', e.message || 'No se pudo crear el grupo');
+      }
     }
   }
 
@@ -56,6 +68,12 @@ export default function CreateGroup({ navigation }) {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={{ flex: 1, backgroundColor: theme.colors.background }}
     >
+      {/* Overlay de error genérico */}
+      <ErrorOverlay
+        visible={showGenericError}
+        onHide={() => setShowGenericError(false)}
+      />
+
       <View
         style={{
           flex: 1,
