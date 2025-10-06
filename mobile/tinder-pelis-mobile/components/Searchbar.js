@@ -25,11 +25,11 @@ export default function SearchBar({ initialQuery = '', onSubmit = null }) {
   return (
     <TextInput
       mode="outlined"
-      placeholder="Peliculas"
+      placeholder="Search"
       value={query}
       onChangeText={setQuery}
       onSubmitEditing={handleSubmit}          
-      returnKeyType="peliculas"
+      returnKeyType="search"
       style={{
         backgroundColor: 'rgba(105, 105, 105, 0.7)',
         height: Platform.select({ ios: 44, android: 48 }),

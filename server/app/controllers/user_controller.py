@@ -413,13 +413,7 @@ def get_seen_movies():
             print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
             return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
 
-        # Select only the columns you need - returns named tuples
-        peliculas_vistas = db.session.query(
-            UsuarioVioPeli.id_pelicula,
-            UsuarioVioPeli.rating,
-            Pelicula.titulo,
-            Pelicula.url_poster
-        ).join(
+        peliculas_vistas = db.session.query(UsuarioVioPeli, Pelicula).join(
             Pelicula, UsuarioVioPeli.id_pelicula == Pelicula.id_pelicula
         ).filter(UsuarioVioPeli.mail_usuario == mail_usuario).all()
         
@@ -427,11 +421,11 @@ def get_seen_movies():
             return jsonify([]), 200
 
         return jsonify([{
-            "id": row.id_pelicula,
-            "title": row.titulo,
-            "rating": row.rating,
-            "url_poster": row.url_poster,
-        } for row in peliculas_vistas]), 200
+            "id": user_movie.id_pelicula,
+            "title": pelicula.titulo,
+            "rating": user_movie.rating,
+            "url_poster": pelicula.url_poster,
+        } for user_movie, pelicula in peliculas_vistas]), 200
 
 def get_user_rating():
     if request.method == "GET":

@@ -58,29 +58,29 @@ export default function LoginScreen({ navigation }) {
     <View style={styles.container}>
       <View style={{ alignSelf: 'center', alignItems: 'center', marginBottom: '10%', width: '70%' }}>
         <Text variant="headlineLarge" style={{ textAlign: 'center', color: theme.colors.text, fontWeight: '700' }}>
-          Bienvenido a 
-              <Text style={{ color: theme.colors.text, fontWeight: '700' }}> Nombre</Text>
-              <Text style={{ color: theme.colors.primary, fontWeight: '700' }}>App</Text>!
+          Welcome to 
+              <Text style={{ color: theme.colors.text, fontWeight: '700' }}> Movie</Text>
+              <Text style={{ color: theme.colors.primary, fontWeight: '700' }}>Mingle</Text>!
         </Text>
         <Text variant="bodyLarge" style={{ color: theme.colors.text, marginTop: 8, textAlign: 'center' }}>
-          Para comenzar te pedimos que completes tus datos.
+          To begin we ask you fill out some information.
         </Text>
       </View>
       <View style={{ gap: '1%'}}>
-        <TextInput label="Nombre completo" value={nombre} onChangeText={setNombre} />
+        <TextInput label="Full Name" value={nombre} onChangeText={setNombre} />
         <TextInput label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-        <TextInput label="Contraseña" value={password} onChangeText={handlePasswordChange} password={true} />
-        <TextInput label="Confirmar contraseña" value={confirmPassword} onChangeText={handleConfirmPasswordChange} password={true} />
+        <TextInput label="Password" value={password} onChangeText={handlePasswordChange} password={true} />
+        <TextInput label="Confirm Password" value={confirmPassword} onChangeText={handleConfirmPasswordChange} password={true} />
       </View>
       <View style={{height:32,alignContent:'center'}}>
           {error ? <HelperText style={{fontSize:16,fontWeight:'700'}} type="error">{error}</HelperText> : null}
       </View>
       <GradientButton mode="contained" onPress={onSignIn} style={{ marginTop: 12 }}>
-        Registrarme
+        Register
       </GradientButton>
       <View style={{ width: '100%', alignItems: 'center', marginTop: '10%', backgroundColor: 'transparent' }}>
         <Text variant="bodyLarge" style={{ color: theme.colors.text, textAlign: 'center' }}>
-          ¿Ya estás registrado?
+          ¿Already Registered?
         </Text>
         <GradientButton
           mode="text"
@@ -88,7 +88,7 @@ export default function LoginScreen({ navigation }) {
           onPress={() => navigation.navigate('Login')}
           style={{ width: btnWidth, marginTop: '-2%'}}
         >
-          Iniciar sesión
+          Login here
         </GradientButton>
       </View>
     </View>

@@ -39,10 +39,10 @@ export default function SearchEmptyState() {
       
       <View style={styles.textContainer}>
         <Text style={[styles.title, { color: theme.colors.text }]}>
-          ¡Tu próxima película favorita te está esperando! 
+          ¡Your next favorite film is right around the corner! 
         </Text>
         <Text style={[styles.subtitle, { color: theme.colors.primary }]}>
-          Encontrá películas increíbles para ver con tus amigos  
+          Find amazing movies to watch with your friends and family
         </Text>
       </View>
     </View>

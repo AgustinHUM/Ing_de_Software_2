@@ -12,11 +12,10 @@ export default function HomeScreen() {
 
   // Géneros de prueba (en la versión final asumo que se sacarán de la db)
   const allGenres = [
-    'Acción', 'Drama', 'Comedia', 'Crimen', 'Terror',
-    'Ciencia ficción', 'Fantasía', 'Romance', 'Thriller', 'Aventura',
-    'Documental', 'Animación', 'Musical', 'Familia', 'Deportes', 'Superhéroes',
-    'Historia', 'Guerra', 'Western', 'Biografía', 'Misterio','Infantil',
-    '2da Guerra Mundial','1ra Guerra Mundial','Revolución Rusa','Kung-Fu Panda 2'
+    'Action', 'Drama', 'Comedy', 'Crime', 'Horror',
+    'Science Fiction', 'Fantasy', 'Romance', 'Thriller', 'Adventure',
+    'Documentary', 'Animation', 'Musical', 'Family', 'Sports', 'Superheroes',
+    'History', 'War', 'Western', 'Biography', 'Mystery', 'Kids',
   ];
 
  
@@ -142,8 +141,8 @@ export default function HomeScreen() {
       >
 
         <View style={{alignItems:'center'}}>
-          <Text variant='headlineLarge' style={{color:theme.colors.text, fontWeight:700}}>Bienvenido de nuevo</Text>
-          <Text variant='bodyMedium' style={{color:theme.colors.text}}>¿Qué vamos a ver hoy?</Text>
+          <Text variant='headlineLarge' style={{color:theme.colors.text, fontWeight:700}}>Welcome Back</Text>
+          <Text variant='bodyMedium' style={{color:theme.colors.text}}>What are we watching today?</Text>
         </View>
 
         <View style={{padding:'5%', flex:1, gap:15}}>
@@ -155,7 +154,7 @@ export default function HomeScreen() {
           <View style={{paddingHorizontal:5}}>
             <View>
               <Text style={{color:theme.colors.text, fontWeight:700, fontSize:20}}>
-                Géneros:
+                Genres:
               </Text>
             </View>
 
@@ -198,7 +197,7 @@ export default function HomeScreen() {
           <View style={{paddingHorizontal:5}}>
             <View>
               <Text style={{color:theme.colors.text, fontWeight:700, fontSize:20}}>
-                Películas:
+                Movies:
               </Text>
             </View>
 
@@ -233,9 +232,9 @@ export default function HomeScreen() {
       >
         <View style={{ flex: 1, padding: 25, paddingVertical: Platform.OS === 'ios' ? 70 : 35, backgroundColor: theme.colors.background }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-            <Text variant="headlineSmall" style={{ color: theme.colors.text, fontWeight: 700 }}>Todos los géneros</Text>
+            <Text variant="headlineSmall" style={{ color: theme.colors.text, fontWeight: 700 }}>All Genres</Text>
             <TouchableOpacity onPress={() => setShowMore(false)} style={{ padding: 8 }}>
-              <Text style={{ color: theme.colors.text }}>Cerrar</Text>
+              <Text style={{ color: theme.colors.text }}>Close</Text>
             </TouchableOpacity>
           </View>
 

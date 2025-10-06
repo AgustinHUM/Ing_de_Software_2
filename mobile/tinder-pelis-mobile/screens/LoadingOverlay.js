@@ -21,7 +21,7 @@ export default function LoadingScreen() {
         minWidth: 160,
     }}>
                 <ActivityIndicator size="large" color={theme.primary} />
-                <Text style={{ color: theme.secondary, fontSize: 16, marginTop: 12 }}>Cargando...</Text>
+                <Text style={{ color: theme.secondary, fontSize: 16, marginTop: 12 }}>Loading...</Text>
             </View>
         </View>
     );

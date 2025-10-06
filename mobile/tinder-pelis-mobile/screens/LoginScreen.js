@@ -37,7 +37,7 @@ export default function LoginScreen({ navigation }) {
               Welcome Back!
             </Text>
             <Text variant="bodyLarge" style={{ color: theme.colors.text, marginTop: 8, textAlign: 'center' }}>
-              Complete your details to proceed.
+              Complete these details to proceed.
             </Text>
       </View>
       <View style={{flex:0.4,gap:'3%'}}>

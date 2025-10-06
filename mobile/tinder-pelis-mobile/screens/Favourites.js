@@ -208,7 +208,7 @@ export default function Favorites() {
       {/* ---------------- TO WATCH ---------------- */}
       <View style={{ marginBottom: 4, marginTop: 10, height: 300, marginHorizontal: 10 }}>
         <Text style={{ color: theme.colors.text, fontWeight: 700, fontSize: 25, marginBottom: 12, marginTop: 10, marginLeft: 3 }}>
-          Wacthed:
+          Watched:
         </Text>
 
         {watched.length > 0 ? (
@@ -261,7 +261,7 @@ export default function Favorites() {
           <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
             <Text style={{ color: theme.colors.secondary, fontSize: 30, fontWeight: '700' }}>Nothing here...</Text>
             <Text style={{ color: theme.colors.text, fontSize: 20, fontWeight: '400', textAlign: 'center' }}>
-              Try searching for a movie you want to see and save it!
+              Try searching for a movie you watched recently and rate it!
             </Text>
           </View>
         )}
