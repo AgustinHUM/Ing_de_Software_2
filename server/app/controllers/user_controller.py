@@ -145,7 +145,7 @@ def show_user_info():
                    "nombre": usuario.nombre_cuenta,
                    "id_pais": pais.id_pais,
                    "flag": pais.url_bandera,
-                   "plataformas": lista_plataformas, #Es una lista 
+                   "plataformas": lista_plataformas,  
                    }
             
             return jsonify(res), 200
