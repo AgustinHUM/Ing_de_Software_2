@@ -39,10 +39,10 @@ export default function SearchEmptyState() {
       
       <View style={styles.textContainer}>
         <Text style={[styles.title, { color: theme.colors.text }]}>
-          ¡Tu próxima película favorita te está esperando! 
+          ¡Your next favorite film is right around the corner! 
         </Text>
-        <Text style={[styles.subtitle, { color: '#FF6B35' }]}>
-          Encontrá películas increíbles para ver con tus amigos  
+        <Text style={[styles.subtitle, { color: theme.colors.primary }]}>
+          Find amazing movies to watch with your friends and family
         </Text>
       </View>
     </View>
@@ -52,9 +52,10 @@ export default function SearchEmptyState() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'top',
     alignItems: 'center',
     paddingHorizontal: 32,
+    marginTop:96
   },
   imageContainer: {
     marginBottom: 40,

@@ -3,11 +3,11 @@
 import datetime
 from app import create_app
 from app.db import db
-from app.models.models import Cuenta, Genero, Grupo, Pais, Pelicula, Plataforma
-import requests
+from app.models.models import Cuenta, Genero, Grupo, Pais, Pelicula, Plataforma, PeliculaPlataformaPais
+import requests 
 
 def seed_watchmode():
-    app = create_app()
+    app = create_app()  
     app.app_context().push()
     session = db.session
 
@@ -27,6 +27,8 @@ def seed_watchmode():
             )
             session.add(new_genre)
     
+    session.commit()
+    print("Successfully added genres")
 
     # Paises
     countries_response = requests.get(f'{base_url}regions/?apiKey={api_key}')
@@ -34,80 +36,132 @@ def seed_watchmode():
     i = 0
     for country in countries_data:
         i += 1
-        if not Pais.query.filter_by(nombre_pais=country.get('country')).first():
+        if not Pais.query.filter_by(codigo_pais=country.get('country')).first():
             new_country = Pais(
                 id_pais= i,
                 nombre_pais=country.get('name'),
+                codigo_pais=country.get('country'),
+                url_bandera=country.get('flag')
             )
             session.add(new_country)
+    
+    session.commit()
+    print("Successfully added genres and countries")
+"""
+    # Plataformas
 
+    plataformas_limpiadas = [
+        "Acorn TV",
+        "AppleTV+",
+        "BBC iPlayer",
+        "Beamafilm",
+        "Britbox",
+        "Clarovideo",         
+        "Crave",
+        "Criterion Channel",
+        "Crunchyroll",
+        "Curiosity Stream",
+        "Curzon Home Cinema",
+        "Disney+",
+        "Discovery+",
+        "FILMIN",
+        "Fandor",
+        "Fetch TV",
+        "FuboTV",
+        "Globoplay",
+        "Hallmark Movies Now",
+        "Max",               
+        "HiDive",
+        "Hollywood Suite",
+        "Hoopla",
+        "Hulu",
+        "JioHotstar",
+        "Kanopy",
+        "MGM+",
+        "Movistar+",
+        "MUBI",
+        "Netflix",
+        "Paramount+",
+        "Peacock",
+        "Plex",
+        "Prime Video",
+        "Rakuten TV",
+        "Shudder",
+        "SkyShowtime",
+        "Sony LIV",
+        "Stan",
+        "STARZ",
+        "Sun Nxt",
+        "Sundance",
+        "Topic",
+        "YouTube Premium",
+        "Zee5"
+    ]
+
+    platform_name_mapping = {
+        "Amazon": "Prime Video",
+        "AppleTV": "AppleTV+",
+        "HBO Max": "Max",
+        "HBO": "Max",
+        "YouTube": "YouTube Premium",
+        "Disney": "Disney+",
+        "Disney Plus": "Disney+",
+        "Hulu Plus": "Hulu",
+        "Showtime": "Paramount+"
+    }
+
+    """
     # Plataformas
     platforms_response = requests.get(f'{base_url}sources/?apiKey={api_key}')
     platforms_data = platforms_response.json()
     for platform in platforms_data:
-        if not Plataforma.query.filter_by(nombre_plataforma=platform.get('name')).first():
+        api_platform_name = platform.get('name')
+        platform_name = platform_name_mapping.get(api_platform_name, api_platform_name)
+        
+        if platform_name in plataformas_limpiadas and not Plataforma.query.filter_by(nombre_plataforma=platform_name).first():
             new_platform = Plataforma(
                 id_plataforma=platform.get('id'),
-                nombre_plataforma=platform.get('name'),
+                nombre_plataforma=platform_name,
+                url_logo=platform.get('logo_100px')
             )
-            for country in platform.get('regions', []):
-                region = Pais.query.filter_by(nombre_pais=country).first()
-                if region and region not in new_platform.paises:
-                    new_platform.paises.append(region)
-            session.add(new_platform)"""
+            session.add(new_platform)
     
-    """#agreagar paises a plataformas ya existentes (falta agregar codigo de pais)
-    print("Adding regions to existing platforms...")
-    platforms_response = requests.get(f'{base_url}sources/?apiKey={api_key}')
-    platforms_data = platforms_response.json()
-    for platform in platforms_data:
-        existing_platform = Plataforma.query.filter_by(nombre_plataforma=platform.get('name')).first()
-        if existing_platform:
-            print(platform.get('regions'))
-            for country_code in platform.get('regions'):
-                region = Pais.query.filter_by(codigo_pais=country_code).first()
-                if region and region not in existing_platform.paises:
-                    existing_platform.paises.append(region)
-            session.add(existing_platform)
-        try:
-            session.commit()
-            print(f"Successfully added regions {existing_platform.nombre_plataforma} {existing_platform.paises}")
-        except Exception as e:
-            print(f"Error adding regions to platform {existing_platform.nombre_plataforma}: {e}")
-            session.rollback()
+    session.commit()
+    print("Successfully added platforms from cleaned list")
+    
+    platform_details_response = requests.get(f'{base_url}sources/?apiKey={api_key}')
+    platform_details_data = platform_details_response.json() if platform_details_response.status_code == 200 else []
     """
     
+
+    # Peliculas
+    params = {
+        'apiKey': api_key,
+        'types': 'movie',
+        'page': 1,
+        'limit': 180,  # Get more to skip first 30
+        'sort_by': 'popularity_desc'
+    }
+    print("Fetching 180 popular movies (skipping first 30)...")
+    print(params)
+    response = requests.get('https://api.watchmode.com/v1/list-titles/', params=params)
+    print(response)
     
-
-    """# Peliculas
     all_movies = []
-    genres_data = [{"id": 1, "name": "Action"}, {"id": 4, "name": "Comedy"}, {"id": 3, "name": "Animation"},{"id":33,"name":"Anime"}]
-    for genre in genres_data:
-        genre_id = genre['id']
-        platforms_data = [{"id": 203, "name": "Netflix"}, {"id": 157, "name": "Hulu"}, {"id": 26, "name": "Prime Video"}]
-        for platform in platforms_data:
-            platform_id = platform['id']
-            params = {
-            'apiKey': api_key,
-            'types': 'movie',
-            'genres': genre_id,
-            'limit': 5,
-            'source_ids': platform_id,
-            'sort_by': 'relevance_desc'
-            }
-            print(params)
-            response = requests.get('https://api.watchmode.com/v1/list-titles/', params=params)
-            print(response)
-            all_movies.extend(response.json().get('titles', []))
+    if response.status_code == 200:
+        all_movies = response.json().get('titles', [])[30:]  # Skip first 30 results
+    else:
+        print(f"Failed to fetch movies: {response.status_code}")
+        return
 
-    title_ids = list(set([movie['id'] for movie in all_movies])) 
+    title_ids = [movie['id'] for movie in all_movies] 
     for title_id in title_ids:
-        # Check if movie already exists
-        if Pelicula.query.get(title_id):
-            print(f"Movie with ID {title_id} already exists. Skipping.")
-            continue
+        existing_movie = Pelicula.query.get(title_id)
+        if existing_movie:
+            print(f"Movie with ID {title_id} already exists. Updating...")
+        else:
+            print(f"Creating new movie with ID {title_id}")
 
-        # buscar detalles de la pelicula
         details_url = f'{base_url}title/{title_id}/details/?apiKey={api_key}'
         details_response = requests.get(details_url)
         if details_response.status_code != 200:
@@ -115,45 +169,126 @@ def seed_watchmode():
             continue
         details = details_response.json()
 
-        # Buscar data de streaming
+        if not details.get('us_rating'):
+            print(f"Skipping movie {details.get('title', 'Unknown')} - no US rating available")
+            continue
+
         sources_url = f'{base_url}title/{title_id}/sources/?apiKey={api_key}'
         sources_response = requests.get(sources_url)
         sources = sources_response.json() if sources_response.status_code == 200 else []
 
-        # Agregar a base de datos
-        new_pelicula = Pelicula(
-            id_pelicula=details['id'],
-            trama=details.get('plot_overview', ''),
-            anio_lanzamiento=details.get('year'),
-            titulo=details.get('title'),
-            duracion=details.get('runtime_minutes'),
-            clasificacion_edad=details.get('us_rating', ''),
-            url_poster=details.get('poster', ''),
-            score=details.get('critic_score', None)
-        )
-        print(new_pelicula)
-        # agregar generos
+        cast_crew_url = f'{base_url}title/{title_id}/cast-crew/?apiKey={api_key}'
+        cast_crew_response = requests.get(cast_crew_url)
+        directors = []
+        if cast_crew_response.status_code == 200:
+            cast_crew_data = cast_crew_response.json()
+            for person in cast_crew_data:
+                    job = person.get('job', '') or person.get('role', '')
+                    roles = [role.strip() for role in job.split(',')]
+                    if 'Director' in roles:
+                        directors.append(person.get('name', person.get('full_name', '')))
+        
+        directors_str = ', '.join(directors) if directors else 'Unknown'
+
+        critic_score = details.get('critic_score')
+        critic_score_converted = critic_score / 10.0 if critic_score is not None else None
+
+        if existing_movie:
+            existing_movie.trama = details.get('plot_overview', '')
+            existing_movie.anio_lanzamiento = details.get('year')
+            existing_movie.titulo = details.get('title')
+            existing_movie.duracion = details.get('runtime_minutes')
+            existing_movie.clasificacion_edad = details.get('us_rating')
+            existing_movie.url_poster = details.get('poster', '')
+            existing_movie.score_critica = critic_score_converted
+            existing_movie.score_usuarios = details.get('user_rating', 0.0)
+            existing_movie.popularidad_percentil = details.get('popularity_percentile', 0.0)
+            existing_movie.directores = directors_str
+            current_movie = existing_movie
+            print(f"Updating existing movie: {current_movie.titulo}")
+        else:
+            current_movie = Pelicula(
+                id_pelicula=details['id'],
+                trama=details.get('plot_overview', ''),
+                anio_lanzamiento=details.get('year'),
+                titulo=details.get('title'),
+                duracion=details.get('runtime_minutes'),
+                clasificacion_edad=details.get('us_rating'),
+                url_poster=details.get('poster', ''),
+                score_critica=critic_score_converted,
+                score_usuarios=details.get('user_rating', 0.0),
+                popularidad_percentil=details.get('popularity_percentile', 0.0),
+                directores=directors_str
+            )
+            session.add(current_movie)
+            print(f"Creating new movie: {current_movie.titulo}")
+        
         for genre_id in details.get('genres', []):
             genero = Genero.query.get(genre_id)
-            if genero and genero not in new_pelicula.generos:
-                new_pelicula.generos.append(genero)
+            if genero and genero not in current_movie.generos:
+                current_movie.generos.append(genero)
             
-
-        # agregar plataformas
-        for src in sources:
-            plataforma = Plataforma.query.filter_by(id_plataforma=src['source_id']).first()
-            if plataforma and plataforma not in new_pelicula.plataformas:
-                new_pelicula.plataformas.append(plataforma)
-
-        session.add(new_pelicula)
-        # Commit 1 a la veza para testear
+        if not existing_movie: 
+            session.add(current_movie)
         try:
             session.commit()
-            print(f"Successfully added movie {new_pelicula.titulo}")
+            print(f"Successfully saved movie {current_movie.titulo}")
         except Exception as e:
-            print(f"Error adding movie {new_pelicula.titulo}: {e}")
+            print(f"Error saving movie {current_movie.titulo}: {e}")
             session.rollback()
-        """
+            continue
+
+
+        existing_relationships = PeliculaPlataformaPais.query.filter_by(id_pelicula=current_movie.id_pelicula).all()
+        if existing_relationships:
+            print(f"Removing {len(existing_relationships)} existing relationships for {current_movie.titulo}")
+            for rel in existing_relationships:
+                session.delete(rel)
+
+        new_relationships_count = 0
+        processed_combinations = set()  
+        
+        for src in sources:
+            plataforma = Plataforma.query.filter_by(id_plataforma=src['source_id']).first()
+            
+            if not plataforma:
+                api_platform_name = src.get('name', '')
+                mapped_platform_name = platform_name_mapping.get(api_platform_name, api_platform_name)
+                plataforma = Plataforma.query.filter_by(nombre_plataforma=mapped_platform_name).first()
+                
+            if plataforma:
+                region_code = src.get('region')
+                if region_code:
+                    pais = Pais.query.filter_by(codigo_pais=region_code).first()
+                    if pais:
+                        combination_key = (plataforma.id_plataforma, pais.id_pais)
+                        
+                        if combination_key not in processed_combinations:
+                            nueva_relacion = PeliculaPlataformaPais(
+                                id_pelicula=current_movie.id_pelicula,
+                                id_plataforma=plataforma.id_plataforma,
+                                id_pais=pais.id_pais
+                            )
+                            session.add(nueva_relacion)
+                            processed_combinations.add(combination_key)
+                            new_relationships_count += 1
+                            print(f"Added relationship: {current_movie.titulo} -> {plataforma.nombre_plataforma} -> {pais.codigo_pais}")
+                        else:
+                            print(f"Skipping duplicate: {current_movie.titulo} -> {plataforma.nombre_plataforma} -> {pais.codigo_pais}")
+                    else:
+                        print(f"Country {region_code} not found in database for {plataforma.nombre_plataforma}")
+                else:
+                    print(f"No region specified for {plataforma.nombre_plataforma} source")
+        
+        print(f"Created {new_relationships_count} new relationships for {current_movie.titulo}")
+
+        try:
+            session.commit()
+            print(f"Successfully added relationships for movie {current_movie.titulo}")
+        except Exception as e:
+            print(f"Error adding relationships for movie {current_movie.titulo}: {e}")
+            session.rollback()
+        
 
     session.close()
 

@@ -32,12 +32,12 @@ export default function WelcomeScreen({ navigation }) {
         <View style={[styles.inner, { paddingHorizontal: spacingM, paddingVertical: spacingL }]}>
           <View style={{ alignItems: 'center', marginBottom: spacingXXL }}>
             <Text variant="headlineLarge" style={{ textAlign: 'center', color: theme.colors.text, fontWeight: '700' }}>
-              <Text style={{ color: theme.colors.text, fontWeight: '700' }}>Nombre</Text>
-              <Text style={{ color: theme.colors.primary, fontWeight: '700' }}>App</Text>
+              <Text style={{ color: theme.colors.text, fontWeight: '700' }}>Movie</Text>
+              <Text style={{ color: theme.colors.primary, fontWeight: '700' }}>Mingle</Text>
             </Text>
 
             <Text variant="bodyLarge" style={{ color: theme.colors.text, marginTop: 8, textAlign: 'center' }}>
-              Acá podríamos escribir alguna cosa
+              Touch your Friends
             </Text>
           </View>
 
@@ -49,7 +49,7 @@ export default function WelcomeScreen({ navigation }) {
               style={{ width: btnWidth, marginVertical: spacingM / 2 }}
               borderWidth={3}
             >
-              Iniciar sesión
+              Login
             </GradientButton>
 
             <GradientButton
@@ -58,11 +58,11 @@ export default function WelcomeScreen({ navigation }) {
               onPress={() => navigation.navigate('SignUp')}
               style={{ width: btnWidth, marginVertical: spacingM / 2 }}
             >
-              Registrarme
+              Register
             </GradientButton>
 
             <Text variant="bodyLarge" style={{ color: theme.colors.text, marginTop: spacingL, textAlign: 'center' }}>
-              ¿Quieres probar la App sin registrarte?
+              ¿Want to try the app without an account?
             </Text>
 
             <GradientButton
@@ -71,7 +71,7 @@ export default function WelcomeScreen({ navigation }) {
               onPress={() => guestSignIn()}
               style={{ width: btnWidth, marginTop: spacingM / 2 }}
             >
-              Entrar como invitado
+              Continue as a guest
             </GradientButton>
             
           </View>

@@ -1,11 +1,21 @@
 import { useTheme } from "react-native-paper";
 import { StyleSheet, View, Text } from "react-native";
 import GradientButton from "../components/GradientButton";
+import { useState, useEffect } from "react";
+import { showUserForm } from "../src/services/api";    
 
 export default function InitialFormScreen({ navigation }) {
 
   const theme = useTheme();
+  const [formData, setFormData] = useState(null);
 
+  useEffect(() => {
+    showUserForm().then(setFormData);
+  }, []);
+
+  if (!formData) return null; // or a loading spinner
+
+  
   return (
     <View style={{
         ...StyleSheet.absoluteFillObject, 
@@ -21,7 +31,7 @@ export default function InitialFormScreen({ navigation }) {
         <Text style={{fontSize:16, marginBottom:36, textAlign: "center", color: theme.colors.text, fontWeight: 300 }}>
             All preferences can be changed later.
         </Text>
-        <GradientButton fullWidth onPress={()=>navigation.navigate('CountriesForm')}>
+        <GradientButton fullWidth onPress={()=>navigation.navigate('CountriesForm', {formData})}>
             Get started
         </GradientButton>
     </View>

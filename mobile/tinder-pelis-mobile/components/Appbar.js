@@ -24,9 +24,9 @@ const routes = [
     outlineLib: 'MaterialDesignIcons',
   },
   {
-    key: 'Friends',
-    label: 'Friends',
-    route: 'Friends',
+    key: 'Groups',
+    label: 'Groups',
+    route: 'Groups',
     icon: { filled: 'account-group', outline: 'account-group-outline' },
     filledLib: 'MaterialCommunityIcons',
     outlineLib: 'MaterialCommunityIcons',
@@ -67,7 +67,7 @@ export default function AppBar({ currentRouteName = 'Home', navigationRef }) {
   const radiusBottom = 40;
   const radiusTop = 10;
 
-  const visibleRouteNames = [...routes.map((r) => r.route), 'FilmDetails'];
+  const visibleRouteNames = [...routes.map((r) => r.route), 'FilmDetails', 'CreateGroup', 'JoinGroup', 'GroupCode', 'RateFilm'];
   const shouldShow = visibleRouteNames.includes(currentRouteName);
 
   if (!shouldShow) return null;

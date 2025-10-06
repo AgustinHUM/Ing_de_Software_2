@@ -8,7 +8,7 @@ export default function SearchNoResults({ query }) {
   return (
     <View style={styles.container}>
       <View style={styles.imageContainer}>
-        <View style={styles.imageWrapper}>
+        <View style={{...styles.imageWrapper,shadowColor:theme.colors.primary}}>
           <Image 
             source={require('../assets/popcorn.png')} 
             style={styles.image}
@@ -19,10 +19,10 @@ export default function SearchNoResults({ query }) {
       
       <View style={styles.textContainer}>
         <Text style={[styles.title, { color: theme.colors.text }]}>
-          ¡Ay! Esa opcion no está disponible
+          ¡Oh no! It seems this option is not available.
         </Text>
-        <Text style={[styles.subtitle, { color: '#FF6B35' }]}>
-          Intenta con otra búsqueda
+        <Text style={[styles.subtitle, { color: theme.colors.primary }]}>
+          Try another search
         </Text>
       </View>
     </View>
@@ -32,15 +32,15 @@ export default function SearchNoResults({ query }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'top',
     alignItems: 'center',
     paddingHorizontal: 32,
+    marginTop:96
   },
   imageContainer: {
     marginBottom: 40,
   },
   imageWrapper: {
-    shadowColor: '#FF6B35',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25,
     shadowRadius: 12,
