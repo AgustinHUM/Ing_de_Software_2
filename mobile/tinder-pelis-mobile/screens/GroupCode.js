@@ -15,33 +15,46 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import GradientButton from "../components/GradientButton";
 import * as SecureStore from "expo-secure-store";
 import { getGroupUsersById } from "../src/services/api";
-import ErrorOverlay from "../components/ErrorOverlay"; // ← agregado
+import ErrorOverlay from "../components/ErrorOverlay";
 
 const APPBAR_HEIGHT = 60;
 const APPBAR_BOTTOM_INSET = 10;
+
+// helper: id interno -> código lindo
+const toJoinCode = (groupId) => groupId * 7 + 13;
 
 export default function GroupCode({ navigation, route }) {
   const theme = useTheme();
   const { top, bottom } = useSafeAreaInsets();
   const textColor = theme.colors?.text ?? "#fff";
 
-  const codeParam = route?.params?.code;            // join code (número)
-  const groupName = route?.params?.groupName ?? "Group 1";
-  const code = (codeParam ?? "------").toString().toUpperCase();
+  // Params posibles:
+  const codeParam = route?.params?.code;            // flujo viejo (join code)
+  const groupIdParam = route?.params?.groupId;      // flujo nuevo (desde Groups)
+  const groupNameParam = route?.params?.groupName;
 
-  // Calcular group_id como en el back: (join_code - 13) // 7
+  // groupId a usar: prioridad al param nuevo; si no, lo calculamos desde code
   const groupId = useMemo(() => {
+    if (Number.isFinite(groupIdParam)) return groupIdParam;
     const n = Number(codeParam);
     if (Number.isFinite(n)) return Math.floor((n - 13) / 7);
     return null;
-  }, [codeParam]);
+  }, [groupIdParam, codeParam]);
 
+  // código lindo que mostramos: si vino id, lo generamos; si no, usamos codeParam
+  const joinCode = useMemo(() => {
+    if (Number.isFinite(groupIdParam)) return toJoinCode(groupIdParam);
+    const n = Number(codeParam);
+    return Number.isFinite(n) ? n : null;
+  }, [groupIdParam, codeParam]);
+
+  const [groupName, setGroupName] = useState(groupNameParam ?? "Group");
   const [members, setMembers] = useState([]);       // [{email, username}]
   const [startWithoutPrefs, setStartWithoutPrefs] = useState(true);
 
   // Error overlay (solo para errores genéricos del back)
   const [showGenericError, setShowGenericError] = useState(false);
-  const outageShownRef = useRef(false); // evita mostrar overlay repetidas veces durante el mismo “corte”
+  const outageShownRef = useRef(false); // evita overlay repetido durante la misma caída
 
   const isGenericBackendError = (err) => {
     const msg = (err?.message || "").toLowerCase();
@@ -53,6 +66,7 @@ export default function GroupCode({ navigation, route }) {
     );
   };
 
+  // Polling de miembros cada 2s (si hay groupId)
   const pollingRef = useRef(null);
 
   useEffect(() => {
@@ -66,23 +80,25 @@ export default function GroupCode({ navigation, route }) {
         const list = await getGroupUsersById(groupId, token);
         if (!cancelled && Array.isArray(list)) {
           setMembers(list);
-          // si volvió a funcionar, reseteamos el flag para permitir mostrar overlay en una futura caída
-          outageShownRef.current = false;
+          outageShownRef.current = false; // volvió a responder OK
         }
       } catch (e) {
         console.log("getGroupUsers error:", e?.message || e);
         if (isGenericBackendError(e) && !outageShownRef.current) {
           setShowGenericError(true);     // se autocierrra a los 5s
-          outageShownRef.current = true; // no volver a mostrar hasta que haya una respuesta OK
+          outageShownRef.current = true;
         }
-        // si no es genérico, no molestamos con alertas en polling; solo log
       }
     }
 
-    // carga inicial
-    fetchMembers();
-    // polling cada 2s
-    pollingRef.current = setInterval(fetchMembers, 2000);
+    if (pollingRef.current) clearInterval(pollingRef.current);
+
+    if (groupId) {
+      fetchMembers(); // carga inicial
+      pollingRef.current = setInterval(fetchMembers, 2000);
+    } else {
+      setMembers([]);
+    }
 
     return () => {
       cancelled = true;
@@ -120,12 +136,14 @@ export default function GroupCode({ navigation, route }) {
     </View>
   );
 
+  const codeLabel = (joinCode ?? "------").toString().toUpperCase();
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={{ flex: 1, backgroundColor: theme.colors.background }}
     >
-      {/* Overlay de error genérico (idéntico estilo al LoadingOverlay) */}
+      {/* Overlay de error genérico */}
       <ErrorOverlay
         visible={showGenericError}
         onHide={() => setShowGenericError(false)}
@@ -160,129 +178,148 @@ export default function GroupCode({ navigation, route }) {
 
         <View style={{ height: 24 }} />
 
-        {/* Caja grande con el código */}
-        <View
-          style={{
-            alignSelf: "center",
-            paddingVertical: 28,
-            paddingHorizontal: 32,
-            borderRadius: 18,
-            backgroundColor: theme.colors?.surface ?? "rgba(33,5,65,1)",
-            borderWidth: 3,
-            borderColor: theme.colors?.primary ?? "rgba(255,138,0,1)",
-            minWidth: 220,
-            alignItems: "center",
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 44,
-              fontWeight: "900",
-              letterSpacing: 3,
-              color: textColor,
-            }}
-          >
-            {code}
-          </Text>
-        </View>
+        {/* Si no hay params válidos */}
+        {!groupId ? (
+          <>
+            <View style={{ alignItems: "center", marginTop: 12 }}>
+              <Text style={{ color: textColor, opacity: 0.85, textAlign: "center" }}>
+                No group selected. Please open this screen from “My Groups”.
+              </Text>
+            </View>
+            <View style={{ height: 20 }} />
+            <GradientButton onPress={() => navigation.navigate("Groups")} style={{ paddingVertical: 16, borderRadius: 16 }}>
+              <Text style={{ fontSize: 18, fontWeight: "900", textAlign: "center" }}>
+                Go to My Groups
+              </Text>
+            </GradientButton>
+          </>
+        ) : (
+          <>
+            {/* Caja grande con el código */}
+            <View
+              style={{
+                alignSelf: "center",
+                paddingVertical: 28,
+                paddingHorizontal: 32,
+                borderRadius: 18,
+                backgroundColor: theme.colors?.surface ?? "rgba(33,5,65,1)",
+                borderWidth: 3,
+                borderColor: theme.colors?.primary ?? "rgba(255,138,0,1)",
+                minWidth: 220,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 44,
+                  fontWeight: "900",
+                  letterSpacing: 3,
+                  color: textColor,
+                }}
+              >
+                {codeLabel}
+              </Text>
+            </View>
 
-        {/* Acciones opcionales */}
-        <View
-          style={{
-            marginTop: 14,
-            flexDirection: "row",
-            gap: 16,
-            justifyContent: "center",
-          }}
-        >
-          <TouchableOpacity
-            onPress={() => Alert.alert("Copied", "Invite code copied to clipboard")}
-            style={{
-              paddingVertical: 10,
-              paddingHorizontal: 16,
-              borderRadius: 12,
-              backgroundColor: theme.colors?.accent ?? "rgba(50,23,68,1)",
-            }}
-          >
-            <Text style={{ color: textColor, fontWeight: "700" }}>📋 Copy</Text>
-          </TouchableOpacity>
+            {/* Acciones opcionales */}
+            <View
+              style={{
+                marginTop: 14,
+                flexDirection: "row",
+                gap: 16,
+                justifyContent: "center",
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => Alert.alert("Copied", "Invite code copied to clipboard")}
+                style={{
+                  paddingVertical: 10,
+                  paddingHorizontal: 16,
+                  borderRadius: 12,
+                  backgroundColor: theme.colors?.accent ?? "rgba(50,23,68,1)",
+                }}
+              >
+                <Text style={{ color: textColor, fontWeight: "700" }}>📋 Copy</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={async () => {
-              try {
-                await Share.share({ message: `Join my group with this code: ${code}` });
-              } catch {}
-            }}
-            style={{
-              paddingVertical: 10,
-              paddingHorizontal: 16,
-              borderRadius: 12,
-              backgroundColor: theme.colors?.accent ?? "rgba(50,23,68,1)",
-            }}
-          >
-            <Text style={{ color: textColor, fontWeight: "700" }}>🔗 Share</Text>
-          </TouchableOpacity>
-        </View>
+              <TouchableOpacity
+                onPress={async () => {
+                  try {
+                    await Share.share({ message: `Join my group with this code: ${codeLabel}` });
+                  } catch {}
+                }}
+                style={{
+                  paddingVertical: 10,
+                  paddingHorizontal: 16,
+                  borderRadius: 12,
+                  backgroundColor: theme.colors?.accent ?? "rgba(50,23,68,1)",
+                }}
+              >
+                <Text style={{ color: textColor, fontWeight: "700" }}>🔗 Share</Text>
+              </TouchableOpacity>
+            </View>
 
-        {/* Separador */}
-        <View
-          style={{
-            height: 1,
-            backgroundColor: "rgba(255,255,255,0.2)",
-            marginVertical: 24,
-          }}
-        />
+            {/* Separador */}
+            <View
+              style={{
+                height: 1,
+                backgroundColor: "rgba(255,255,255,0.2)",
+                marginVertical: 24,
+              }}
+            />
 
-        {/* Lista de miembros (refresco cada 2s) */}
-        <FlatList
-          data={members}
-          keyExtractor={(u, i) => (u.email || u.username || `m${i}`)}
-          renderItem={renderItem}
-          ListEmptyComponent={
-            <Text style={{ color: textColor, opacity: 0.8, textAlign: "center" }}>
-              Waiting for friends to join…
-            </Text>
-          }
-          contentContainerStyle={{ paddingBottom: 16 }}
-        />
+            {/* Lista de miembros (refresco cada 2s) */}
+            <FlatList
+              data={members}
+              keyExtractor={(u, i) => (u.email || u.username || `m${i}`)}
+              renderItem={renderItem}
+              ListEmptyComponent={
+                <Text style={{ color: textColor, opacity: 0.8, textAlign: "center" }}>
+                  Waiting for friends to join…
+                </Text>
+              }
+              contentContainerStyle={{ paddingBottom: 16 }}
+            />
 
-        <View style={{ height: 20 }} />
+            <View style={{ height: 20 }} />
 
-        {/* Botón principal */}
-        <GradientButton onPress={goStart} style={{ paddingVertical: 18, borderRadius: 16 }}>
-          <Text style={{ fontSize: 20, fontWeight: "900", textAlign: "center" }}>
-            Start swiping
-          </Text>
-        </GradientButton>
+            {/* Botón principal */}
+            <GradientButton onPress={goStart} style={{ paddingVertical: 18, borderRadius: 16 }}>
+              <Text style={{ fontSize: 20, fontWeight: "900", textAlign: "center" }}>
+                Start swiping
+              </Text>
+            </GradientButton>
 
-        {/* Checkbox */}
-        <TouchableOpacity
-          onPress={() => setStartWithoutPrefs((v) => !v)}
-          style={{ flexDirection: "row", alignItems: "center", marginTop: 16 }}
-        >
-          <View
-            style={{
-              width: 24,
-              height: 24,
-              borderRadius: 6,
-              marginRight: 10,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: startWithoutPrefs
-                ? (theme.colors?.secondary ?? "rgba(251,195,76,1)")
-                : "transparent",
-              borderWidth: startWithoutPrefs ? 0 : 2,
-              borderColor: "rgba(255,255,255,0.7)",
-            }}
-          >
-            {startWithoutPrefs ? (
-              <MaterialCommunityIcons name="check-bold" size={16} color="#000" />
-            ) : null}
-          </View>
-          <Text style={{ color: textColor, opacity: 0.95 }}>
-            Start without setting preferences
-          </Text>
-        </TouchableOpacity>
+            {/* Checkbox */}
+            <TouchableOpacity
+              onPress={() => setStartWithoutPrefs((v) => !v)}
+              style={{ flexDirection: "row", alignItems: "center", marginTop: 16 }}
+            >
+              <View
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 6,
+                  marginRight: 10,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: startWithoutPrefs
+                    ? (theme.colors?.secondary ?? "rgba(251,195,76,1)")
+                    : "transparent",
+                  borderWidth: startWithoutPrefs ? 0 : 2,
+                  borderColor: "rgba(255,255,255,0.7)",
+                }}
+              >
+                {startWithoutPrefs ? (
+                  <MaterialCommunityIcons name="check-bold" size={16} color="#000" />
+                ) : null}
+              </View>
+              <Text style={{ color: textColor, opacity: 0.95 }}>
+                Start without setting preferences
+              </Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     </KeyboardAvoidingView>
   );

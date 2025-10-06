@@ -198,9 +198,9 @@ export default function GroupsHome({ navigation }) {
                 name={item.name}
                 members={item.members}
                 availableWidth={availableWidth}
-                onPress={() => {
-                  // navigation.navigate('GroupDetail', { id: item.id });
-                }}
+                
+                // ir a GroupCode con el id y el nombre del grupo
+                onPress={() => navigation.navigate('GroupCode', { groupId: item.id, groupName: item.name })}
               />
             )}
             ListFooterComponent={<View style={{ height: 8 }} />}
