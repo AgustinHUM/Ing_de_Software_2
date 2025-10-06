@@ -40,7 +40,7 @@ export default function LoginScreen({ navigation }) {
     setError(null);
 
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden.');
+      setError("The passwords don't match.");
       return;
     }
 
@@ -50,7 +50,7 @@ export default function LoginScreen({ navigation }) {
         { text: "OK", onPress: async () => {await signIn(email,password);} }
       ]);
     } catch (e) {
-      setError(String(e?.message || 'Ocurrió un error.'));
+      setError(String(e?.message || 'An error occurred.'));
     }
   };
 
