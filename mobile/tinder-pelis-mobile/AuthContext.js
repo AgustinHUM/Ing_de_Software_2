@@ -1,7 +1,7 @@
 // AuthContext.js
-import React, { createContext, useContext, useReducer, useEffect, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useState, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import { API_URL } from './src/services/api';
+
 const AuthContext = createContext();
 
 const initialState = { isLoading: true, userToken: null, user: null };
@@ -20,11 +20,8 @@ function reducer(state, action) {
   }
 }
 
-<<<<<<< HEAD
-const API_URL = 'http://172.20.10.12:5050';
+const API_URL = 'http://192.168.68.51:5050';
 
-=======
->>>>>>> origin/main
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -45,13 +42,8 @@ export function AuthProvider({ children }) {
         const token = await SecureStore.getItemAsync('userToken');
         const email = await SecureStore.getItemAsync('lastLoginEmail');
         const name = await SecureStore.getItemAsync('userName');
-        const storedFormPending = await SecureStore.getItemAsync('formPending');
-        const user = email ? { 
-          email, 
-          name: name || email.split('@')[0], 
-          formPending: storedFormPending === 'true' 
-        } : null;
-        dispatch({ type: 'RESTORE_TOKEN', token, user }); 
+        const user = email ? { email, name: name || email.split('@')[0] } : null;
+        dispatch({ type: 'RESTORE_TOKEN', token, user });
       } catch {
         dispatch({ type: 'RESTORE_TOKEN', token: null, user: null });
       }
@@ -73,18 +65,16 @@ export function AuthProvider({ children }) {
       }
 
       const data = await res.json();
-      const token = data?.id_token || data?.access_token || 'session-ok';
+      const token = data?.access_token || 'session-ok';
       const user = {
         email: email,
-        name: data?.nombre_cuenta || email.split('@')[0],
-        formPending: data?.formulario_pendiente 
+        name: data?.nombre_cuenta || email.split('@')[0]
       };
 
       try {
         await SecureStore.setItemAsync('userToken', token);
         await SecureStore.setItemAsync('lastLoginEmail', email);
         await SecureStore.setItemAsync('userName', user.name);
-        await SecureStore.setItemAsync('formPending', String(user.formPending));
       } catch (e) {
         console.warn('Error guardando token/email en SecureStore', e);
       }
@@ -109,6 +99,7 @@ export function AuthProvider({ children }) {
         const msg = data?.error || data?.detail || `HTTP ${res.status}`;
         throw new Error(msg);
       }
+
       return { status: data?.status || 'OK' };
     });
   }
@@ -122,6 +113,9 @@ export function AuthProvider({ children }) {
 
         const email = await SecureStore.getItemAsync('lastLoginEmail');
         if (email) {
+          const safeEmail = email.toLowerCase().replace(/[^a-z0-9._-]/g, '_');
+          const key = `firstLoginDone__${safeEmail}`;
+          await SecureStore.deleteItemAsync(key);
           await SecureStore.deleteItemAsync('lastLoginEmail');
         }
       } catch (e) {
@@ -137,28 +131,7 @@ export function AuthProvider({ children }) {
     return { token };
   }
 
-  async function setFormPendingAsync(formPending) {
-    try {
-      await SecureStore.setItemAsync('formPending', String(formPending));
-      const updatedUser = { ...state.user, formPending };
-      dispatch({ type: 'SIGN_IN', token: state.userToken, user: updatedUser });
-    } catch (e) {
-      console.warn('Error updating formPending in SecureStore', e);
-    }
-  }
-
-  const value = {
-    state,
-    busy,
-    setBusy,
-    withBusy,
-    signIn,
-    signUp,
-    signOut,
-    guestSignIn,
-    setFormPendingAsync
-  };
-
+  const value = { state, busy, setBusy, withBusy, signIn, signUp, signOut, guestSignIn };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

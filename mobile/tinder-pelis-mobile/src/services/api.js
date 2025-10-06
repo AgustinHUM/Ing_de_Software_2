@@ -133,3 +133,19 @@ export function getFavourites(token) {
     headers: { Authorization: `Bearer ${token}` },
   });
 }
+
+export function getUserInfo(token) {
+  return get('/user', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function updateUserInfo(data, token) {
+  return post('/user/update', data, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function getFormData() {
+  return get('/showUserForm');
+}
