@@ -44,17 +44,12 @@ export default function RateFilm() {
   async function onSave() {
     setSaving(true);
     try {
-      // 1. Get token from SecureStore (same pattern as FilmDetailsScreen)
       const token = await SecureStore.getItemAsync('userToken');
       if (!token) {
         Alert.alert('Error', 'Please log in again');
         return;
       }
-      
-      // 2. Pass token to API call (using current rating state, not userRating param)
       await rateMovie(movie.id, rating, token);
-      
-      // 3. Success feedback
       Alert.alert('Saved', 'Your rating was saved.', [
         { text: 'OK', onPress: () => navigation.goBack() }
       ]);
