@@ -11,7 +11,7 @@ import Fontisto from '@expo/vector-icons/Fontisto';
 import { setAlpha } from '../theme';
 import FilmDisplay from '../components/FilmDisplay';
 import FilmDetail from '../components/FilmDetail';
-import { useState, useEffect, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Seleccionable from '../components/Seleccionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DetailList from '../components/DetailList';
@@ -19,7 +19,6 @@ import TitleDisplay from '../components/TitleDisplay';
 import { toFavorite,getMovieDetails } from '../src/services/api';
 import * as SecureStore from "expo-secure-store";
 import { getUserRating } from '../src/services/api';
-import * as SecureStore from 'expo-secure-store';
 
 const { width } = Dimensions.get('window');
 
