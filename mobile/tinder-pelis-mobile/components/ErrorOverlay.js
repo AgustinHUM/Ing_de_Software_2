@@ -57,7 +57,7 @@ export default function ErrorOverlay({
   });
 
   return (
-    <View style={styles.container} pointerEvents="auto">
+    <View style={styles.container} pointerEvents="none">
       <View style={[styles.backdrop, { backgroundColor: background }]} />
       <View style={styles.center}>
         <MaterialCommunityIcons
