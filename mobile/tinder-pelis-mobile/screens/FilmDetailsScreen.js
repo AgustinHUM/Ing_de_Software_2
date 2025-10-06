@@ -16,8 +16,6 @@ import Seleccionable from '../components/Seleccionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DetailList from '../components/DetailList';
 import TitleDisplay from '../components/TitleDisplay';
-
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
@@ -32,7 +30,6 @@ const fallbackMovie = {
   rating: '',
   description: 'No description available.'
 };
-
 
 export default function FilmDetailsScreen() {
     const theme = useTheme();
@@ -76,18 +73,11 @@ export default function FilmDetailsScreen() {
     setRated((prev) => !prev);
   };
 
-  // --- SOLO para posicionar el texto y el botón (sin tocar el scroll) ---
-  const { bottom } = useSafeAreaInsets();
-  const APPBAR_HEIGHT = 60;
-  const APPBAR_BOTTOM_INSET = 10;
-  const FAB_SIZE = 64;
-  const FAB_MARGIN = 24;
-  const POPUP_GAP = 12;
 
-  const fabBottom = FAB_MARGIN + APPBAR_BOTTOM_INSET + APPBAR_HEIGHT + bottom;
-  const hintRight = FAB_MARGIN + FAB_SIZE + POPUP_GAP;
-  // subir el texto para que quede centrado con el botón:
-  const hintBottom = fabBottom + (FAB_SIZE / 2) - 12; // ajuste fino
+
+
+
+
 
   return (
     <View style={{ flex: 1, flexDirection:'column'}}>
@@ -267,52 +257,9 @@ export default function FilmDetailsScreen() {
             </View>
         </Modal>
 
-        <View
-          style={{
-            position: 'absolute',
-            right: hintRight,
-            bottom: hintBottom,
-            paddingHorizontal: 12,
-            maxWidth: width * 0.6,
-          }}
-        >
-          <Text style={{ textAlign: 'right', color: theme.colors.text, fontSize: 16, fontWeight: '700' }}>
-            Seen this one?
-          </Text>
-          <Text style={{ textAlign: 'right', color: theme.colors.text, opacity: 0.9, marginTop: 2 }}>
-            Rate it and mark it as watched
-          </Text>
-        </View>
+        
 
-        <TouchableOpacity
-          activeOpacity={0.95}
-          onPress={() => navigation.navigate('RateFilm', { movie })}
-          style={{
-            position: 'absolute',
-            right: FAB_MARGIN,
-            bottom: fabBottom,
-          }}
-        >
-          <LinearGradient
-            colors={[theme.colors.primary, theme.colors.secondary ?? theme.colors.accent ?? theme.colors.primary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{
-              width: FAB_SIZE,
-              height: FAB_SIZE,
-              borderRadius: FAB_SIZE / 2,
-              alignItems: 'center',
-              justifyContent: 'center',
-              elevation: 6,
-              shadowColor: '#000',
-              shadowOpacity: 0.25,
-              shadowRadius: 8,
-              shadowOffset: { width: 0, height: 4 },
-            }}
-          >
-            <MaterialIcons name="movie" size={28} color="white" />
-          </LinearGradient>
-        </TouchableOpacity>
+        
 
         <View style={containerStyle}>
             <IconButton
@@ -323,7 +270,9 @@ export default function FilmDetailsScreen() {
                         color={theme.colors.text}
                     />
                 )}
-            onPress={toggleRated}
+            onPress={() => {
+                navigation.navigate('RateFilm', { movie });
+            }}
             style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
             />
         </View>

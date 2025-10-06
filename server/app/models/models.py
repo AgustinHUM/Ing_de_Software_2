@@ -129,7 +129,7 @@ class Pais(db.Model):
 
     usuario_del_pais = db.relationship("Usuario", back_populates="pais", cascade="all, delete-orphan")
 
-    pelis_plataformas = db.relationship("PeliculaPaisPlataforma", back_populates="pais")
+    pelis_plataformas = db.relationship("PeliculaPlataformaPais", back_populates="pais")
 
 class Plataforma(db.Model):
     __tablename__ = "PLATAFORMA"
@@ -140,7 +140,7 @@ class Plataforma(db.Model):
 
     usuarios_plat = db.relationship("Usuario", secondary=usuario_plataforma, back_populates="plataformas")
 
-    pelis_paises = db.relationship("PeliculaPaisPlataforma", back_populates="plataforma")
+    pelis_paises = db.relationship("PeliculaPlataformaPais", back_populates="plataforma")
 
 
 
@@ -160,7 +160,7 @@ class Pelicula(db.Model):
     directores = db.Column(db.String(128), nullable=False)
 
 
-    plataformas_paises = db.relationship("PeliculaPaisPlataforma", back_populates="pelicula")
+    plataformas_paises = db.relationship("PeliculaPlataformaPais", back_populates="pelicula")
 
     vista_usuarios = db.relationship("UsuarioVioPeli", back_populates="pelicula")
 
