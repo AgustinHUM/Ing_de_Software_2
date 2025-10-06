@@ -20,7 +20,7 @@ function reducer(state, action) {
   }
 }
 
-const API_URL = 'http://192.168.68.56:5050';
+const API_URL = 'http://172.20.10.12:5050';
 
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
