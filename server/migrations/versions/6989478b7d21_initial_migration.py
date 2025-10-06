@@ -1,8 +1,8 @@
-"""modelos corregidos
+"""Initial migration
 
-Revision ID: f93644b42d56
+Revision ID: 6989478b7d21
 Revises: 
-Create Date: 2025-09-09 22:54:51.386138
+Create Date: 2025-09-29 18:48:15.257200
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'f93644b42d56'
+revision = '6989478b7d21'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -38,7 +38,10 @@ def upgrade():
     op.create_table('PAIS',
     sa.Column('id_pais', sa.Integer(), nullable=False),
     sa.Column('nombre_pais', sa.String(length=128), nullable=False),
+    sa.Column('codigo_pais', sa.String(length=128), nullable=False),
+    sa.Column('url_bandera', sa.String(length=128), nullable=False),
     sa.PrimaryKeyConstraint('id_pais'),
+    sa.UniqueConstraint('codigo_pais'),
     sa.UniqueConstraint('nombre_pais')
     )
     op.create_table('PELICULA',
@@ -49,12 +52,16 @@ def upgrade():
     sa.Column('duracion', sa.Integer(), nullable=False),
     sa.Column('clasificacion_edad', sa.String(length=128), nullable=False),
     sa.Column('url_poster', sa.String(length=128), nullable=False),
-    sa.Column('score', sa.Integer(), nullable=True),
+    sa.Column('score_critica', sa.Float(), nullable=True),
+    sa.Column('score_usuarios', sa.Float(), nullable=False),
+    sa.Column('popularidad_percentil', sa.Float(), nullable=False),
+    sa.Column('directores', sa.String(length=128), nullable=False),
     sa.PrimaryKeyConstraint('id_pelicula')
     )
     op.create_table('PLATAFORMA',
     sa.Column('id_plataforma', sa.Integer(), nullable=False),
     sa.Column('nombre_plataforma', sa.String(length=128), nullable=False),
+    sa.Column('url_logo', sa.String(length=128), nullable=False),
     sa.PrimaryKeyConstraint('id_plataforma'),
     sa.UniqueConstraint('nombre_plataforma')
     )
@@ -75,22 +82,19 @@ def upgrade():
     sa.ForeignKeyConstraint(['id_pelicula'], ['PELICULA.id_pelicula'], ),
     sa.PrimaryKeyConstraint('id_pelicula', 'id_genero')
     )
-    op.create_table('PELICULA_PLATAFORMA',
+    op.create_table('PELICULA_PLATAFORMA_PAIS',
     sa.Column('id_plataforma', sa.Integer(), nullable=False),
     sa.Column('id_pelicula', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['id_pelicula'], ['PELICULA.id_pelicula'], ),
-    sa.ForeignKeyConstraint(['id_plataforma'], ['PLATAFORMA.id_plataforma'], ),
-    sa.PrimaryKeyConstraint('id_plataforma', 'id_pelicula')
-    )
-    op.create_table('PLATAFORMA_PAIS',
-    sa.Column('id_plataforma', sa.Integer(), nullable=False),
     sa.Column('id_pais', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['id_pais'], ['PAIS.id_pais'], ),
+    sa.ForeignKeyConstraint(['id_pelicula'], ['PELICULA.id_pelicula'], ),
     sa.ForeignKeyConstraint(['id_plataforma'], ['PLATAFORMA.id_plataforma'], ),
-    sa.PrimaryKeyConstraint('id_plataforma', 'id_pais')
+    sa.PrimaryKeyConstraint('id_plataforma', 'id_pelicula', 'id_pais')
     )
     op.create_table('USUARIO',
     sa.Column('mail', sa.String(length=128), nullable=False),
+    sa.Column('id_icono', sa.Integer(), nullable=True),
+    sa.Column('formulario_pendiente', sa.Boolean(), nullable=False),
     sa.Column('id_pais', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['id_pais'], ['PAIS.id_pais'], ),
     sa.ForeignKeyConstraint(['mail'], ['CUENTA.mail'], ),
@@ -142,8 +146,7 @@ def downgrade():
     op.drop_table('PELICULAS_FAVORITAS')
     op.drop_table('GENERO_FAVORITO')
     op.drop_table('USUARIO')
-    op.drop_table('PLATAFORMA_PAIS')
-    op.drop_table('PELICULA_PLATAFORMA')
+    op.drop_table('PELICULA_PLATAFORMA_PAIS')
     op.drop_table('GENERO_PELICULA')
     op.drop_table('ADMIN')
     op.drop_table('PLATAFORMA')

@@ -20,7 +20,6 @@ def save_user_form():
         mail_usuario = payload.get("email")
 
         if not mail_usuario:
-            print("No se pudo obtener email del token")
             return jsonify({"Error": "No se pudo obtener email del token"}), 401
         
         usuario = Usuario.query.filter_by(mail=mail_usuario).first()
@@ -112,7 +111,6 @@ def add_user_to_group():
         mail_usuario = payload.get("email")
 
         if not mail_usuario:
-            print("No se pudo obtener email del token (claims disponibles: {})".format(list(payload.keys())))
             return jsonify({"Error": "No se pudo obtener email del token"}), 401
         
         usuario_agregado = Usuario.query.filter_by(mail=mail_usuario).first()
