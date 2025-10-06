@@ -216,24 +216,15 @@ export default function Favorites() {
       </View>
 
       {/* ---------------- TO WATCH ---------------- */}
-<<<<<<< HEAD
-      <View style={{ marginBottom: 4, marginTop: 10, height: 300, marginHorizontal: 10 }}>
-        <Text style={{ color: theme.colors.text, fontWeight: 700, fontSize: 25, marginBottom: 12, marginTop: 10, marginLeft: 3 }}>
-          Watched:
-        </Text>
-
-        {watched.length > 0 ? (
-=======
       <View style={{ marginBottom: 4, marginTop: 10, height: 320, marginHorizontal: 10}}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
           <Text style={{ color: theme.colors.text, fontWeight: 700, fontSize: 25, marginBottom: 12, marginTop: 10, marginLeft: 3 }}>
-            Wacthed:
+            Watched:
           </Text>
         </View>
         { watchedLoading ? (
           <ActivityIndicator size="medium" color={theme.colors.primary} style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }} />
         ) : (watched.length > 0 ? (
->>>>>>> c9b9518daa44af4b35fb1f8219ac7051914fd8c0
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
               {watched.map((movie, idx) => (
