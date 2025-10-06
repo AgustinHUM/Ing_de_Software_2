@@ -421,11 +421,19 @@ def get_seen_movies():
             return jsonify([]), 200
 
         return jsonify([{
+<<<<<<< HEAD
             "id": user_movie.id_pelicula,
             "title": pelicula.titulo,
             "rating": user_movie.rating,
             "url_poster": pelicula.url_poster,
         } for user_movie, pelicula in peliculas_vistas]), 200
+=======
+            "id": row.id_pelicula,
+            "title": row.titulo,
+            "rating": row.rating,
+            "poster": row.url_poster,
+        } for row in peliculas_vistas]), 200
+>>>>>>> c9b9518daa44af4b35fb1f8219ac7051914fd8c0
 
 def get_user_rating():
     if request.method == "GET":
