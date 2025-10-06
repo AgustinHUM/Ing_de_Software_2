@@ -8,6 +8,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import GradientButton from "../components/GradientButton";
 import { getUserGroups } from "../src/services/api";
 import * as SecureStore from 'expo-secure-store';
+import LoadingOverlay from "../components/LoadingOverlay";
+import ErrorOverlay from "../components/ErrorOverlay";
+
 
 const { width } = Dimensions.get("window");
 
@@ -88,19 +91,43 @@ export default function GroupsHome({ navigation }) {
   const [showPopup, setShowPopup] = useState(false);
   const [search, setSearch] = useState("");
   const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [showGenericError, setShowGenericError] = useState(false);
+
+
+  const isGenericBackendError = (err) => {
+    const msg = (err?.message || "").toLowerCase();
+    return (
+      msg.startsWith("http ") ||       // "HTTP 500", etc.
+      msg.includes("timeout") ||       // "Request timeout"
+      msg.includes("no response") ||   // "No response from server"
+      msg === "request error"
+    );
+  };
+
 
   useFocusEffect(
     React.useCallback(() => {
       const fetchGroups = async () => {
+        setLoading(true);
         try {
           const token = await SecureStore.getItemAsync("userToken");
           if (token) {
             const userGroups = await getUserGroups(token);
             setGroups(userGroups || []);
+          } else {
+            setGroups([]);
           }
         } catch (error) {
-          Alert.alert("Error", "Could not fetch groups.");
           console.error(error);
+          if (isGenericBackendError(error)) {
+            setShowGenericError(true);
+          } else {
+            Alert.alert("Error", error.message || "Could not fetch groups.");
+          }
+          setGroups([]);
+        } finally {
+          setLoading(false);
         }
       };
 
@@ -112,7 +139,6 @@ export default function GroupsHome({ navigation }) {
     }, [])
   );
 
-
   const availableWidth = width - 2 * OUTER_PAD - 2 * CONTENT_PAD;
 
   // espacios para evitar solapes con Appbar/FAB
@@ -123,6 +149,13 @@ export default function GroupsHome({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background, padding: OUTER_PAD }}>
+
+      {loading ? <LoadingOverlay visible={loading} /> : null}
+      <ErrorOverlay
+        visible={showGenericError}
+        onHide={() => setShowGenericError(false)}
+      />
+
       <View style={{ flex: 0.25, alignItems: "center", justifyContent: "center" }}>
         <Text style={{ fontSize: 28, fontWeight: "700", textAlign: "center", color: textColor }}>
           My Groups

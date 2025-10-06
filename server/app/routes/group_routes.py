@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from ..controllers.user_controller import create_group, add_user_to_group, get_user_groups # , bring_groups
+from ..controllers.user_controller import create_group, add_user_to_group, get_user_groups, get_group_users
 
 grupo_bp = Blueprint("grupos", __name__)
 
@@ -15,6 +15,7 @@ def groups_route():
 def join_group_route():
     return add_user_to_group()
 
-#@grupo_bp.route("/groups/user_groups", methods=["GET"])
-#def bring_groups_routes():
-#    return bring_groups
+
+@grupo_bp.route("/groups/users", methods=["GET"])
+def group_users_route():
+    return get_group_users()
