@@ -48,11 +48,10 @@ export default function MoviesFormScreen({ navigation, route }) {
 
   const prevResults = route.params.formResults ?? {};
 
-
   const title = "Movies you've loved";
   const buttonText = "End form";
 
-  const [filteredItems, setFilteredItems] = useState(MOVIES);
+  const [filteredItems, setFilteredItems] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
 
 const handleFinish = async () => {
@@ -90,14 +89,32 @@ const handleFinish = async () => {
     setSelectedIds((prev) => prev.filter((id) => MOVIES.some((it) => it.id === id)));
   }, [MOVIES]);
 
+  const handleSearchSubmit = async (query) => {
+    const trimmed = (query || "").trim();
+    if (!trimmed) {
+      setFilteredItems(MOVIES);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await getMovies(trimmed, 0);
+      const searchResults = Array.isArray(result) ? result.map(m => ({
+        ...m,
+        poster: m.poster ? { uri: m.poster } : undefined
+      })) : [];
+      setFilteredItems(searchResults);
+    } catch (err) {
+      console.error("Error searching movies:", err);
+      setFilteredItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filterByQuery = useCallback(
     (query) => {
-      const q = normalize((query || "").trim());
-      if (!q) {
-        setFilteredItems(MOVIES);
-        return;
-      }
-      setFilteredItems(MOVIES.filter((it) => normalize(it.title).includes(q)));
+      handleSearchSubmit(query);
     },
     [MOVIES]
   );
@@ -153,26 +170,32 @@ const handleFinish = async () => {
 
       <ScrollView contentContainerStyle={{ paddingBottom: 128, paddingHorizontal: 25 }} showsVerticalScrollIndicator={false}>
         <View style={{ paddingTop: 16, flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}>
-          {filteredItems.map((movie) => (
-            <FilmDisplay
-              width={"30%"}
-              key={movie.id}
-              movie={movie}
-              // initial selection based on id
-              initialSelected={selectedIds.includes(movie.id)}
-              toggleable={true}
-              // report selected boolean; we forward id so parent knows which movie toggled
-              onPress={(selected) => toggleSelected(movie.id, selected)}
-            />
-          ))}
+          {loading ? (
+            <View style={{ width: "100%", alignItems: "center", marginTop: 20 }}>
+              <Text style={{ color: theme.colors.text }}>Loading movies...</Text>
+            </View>
+          ) : (
+            filteredItems.map((movie) => (
+              <FilmDisplay
+                width={"30%"}
+                key={movie.id}
+                movie={movie}
+                // initial selection based on id
+                initialSelected={selectedIds.includes(movie.id)}
+                toggleable={true}
+                // report selected boolean; we forward id so parent knows which movie toggled
+                onPress={(selected) => toggleSelected(movie.id, selected)}
+              />
+            ))
+          )}
 
-          {filteredItems.length % 3 === 2 && (
+          {!loading && filteredItems.length % 3 === 2 && (
             <View style={{ width: "30%" }}>
               <View style={{ marginBottom: 16, width: "100%", aspectRatio: 2 / 3, borderRadius: 15, overflow: "hidden", backgroundColor: "transparent" }} />
             </View>
           )}
 
-          {filteredItems.length === 0 && (
+          {!loading && filteredItems.length === 0 && (
             <View style={{ width: "100%", alignItems: "center", marginTop: 20 }}>
               <Text style={{ color: theme.colors.text }}>No movies found.</Text>
             </View>

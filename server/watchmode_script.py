@@ -3,7 +3,7 @@
 import datetime
 from app import create_app
 from app.db import db
-from app.models.models import Cuenta, Genero, Grupo, Pais, Pelicula, Plataforma, PeliculaPaisPlataforma
+from app.models.models import Cuenta, Genero, Grupo, Pais, Pelicula, Plataforma, PeliculaPlataformaPais
 import requests 
 
 def seed_watchmode():
@@ -51,17 +51,11 @@ def seed_watchmode():
     # Plataformas
 
     plataformas_limpiadas = [
-        "AMC+",
         "Acorn TV",
-        "Adult Swim",
         "AppleTV+",
         "BBC iPlayer",
-        "BET+",
-        "BFI Player",
-        "BINGE",
         "Beamafilm",
         "Britbox",
-        "CBC Gem",
         "Clarovideo",         
         "Crave",
         "Criterion Channel",
@@ -74,23 +68,19 @@ def seed_watchmode():
         "Fandor",
         "Fetch TV",
         "FuboTV",
-        "Foxtel Now",
         "Globoplay",
         "Hallmark Movies Now",
-        "Hayu",
         "Max",               
         "HiDive",
         "Hollywood Suite",
         "Hoopla",
         "Hulu",
-        "ITVX",
         "JioHotstar",
         "Kanopy",
         "MGM+",
         "Movistar+",
         "MUBI",
         "Netflix",
-        "Now TV",
         "Paramount+",
         "Peacock",
         "Plex",
@@ -104,7 +94,6 @@ def seed_watchmode():
         "Sun Nxt",
         "Sundance",
         "Topic",
-        "WWE Network",
         "YouTube Premium",
         "Zee5"
     ]
@@ -121,6 +110,7 @@ def seed_watchmode():
         "Showtime": "Paramount+"
     }
 
+    """
     # Plataformas
     platforms_response = requests.get(f'{base_url}sources/?apiKey={api_key}')
     platforms_data = platforms_response.json()
@@ -141,24 +131,25 @@ def seed_watchmode():
     
     platform_details_response = requests.get(f'{base_url}sources/?apiKey={api_key}')
     platform_details_data = platform_details_response.json() if platform_details_response.status_code == 200 else []
-    
+    """
     
 
     # Peliculas
     params = {
         'apiKey': api_key,
         'types': 'movie',
-        'limit': 15,
+        'page': 1,
+        'limit': 180,  # Get more to skip first 30
         'sort_by': 'popularity_desc'
     }
-    print("Fetching 10 popular movies...")
+    print("Fetching 180 popular movies (skipping first 30)...")
     print(params)
     response = requests.get('https://api.watchmode.com/v1/list-titles/', params=params)
     print(response)
     
     all_movies = []
     if response.status_code == 200:
-        all_movies = response.json().get('titles', [])
+        all_movies = response.json().get('titles', [])[30:]  # Skip first 30 results
     else:
         print(f"Failed to fetch movies: {response.status_code}")
         return
@@ -248,7 +239,7 @@ def seed_watchmode():
             continue
 
 
-        existing_relationships = PeliculaPaisPlataforma.query.filter_by(id_pelicula=current_movie.id_pelicula).all()
+        existing_relationships = PeliculaPlataformaPais.query.filter_by(id_pelicula=current_movie.id_pelicula).all()
         if existing_relationships:
             print(f"Removing {len(existing_relationships)} existing relationships for {current_movie.titulo}")
             for rel in existing_relationships:
@@ -273,7 +264,7 @@ def seed_watchmode():
                         combination_key = (plataforma.id_plataforma, pais.id_pais)
                         
                         if combination_key not in processed_combinations:
-                            nueva_relacion = PeliculaPaisPlataforma(
+                            nueva_relacion = PeliculaPlataformaPais(
                                 id_pelicula=current_movie.id_pelicula,
                                 id_plataforma=plataforma.id_plataforma,
                                 id_pais=pais.id_pais
