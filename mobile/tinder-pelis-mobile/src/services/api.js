@@ -90,11 +90,9 @@ export function saveForm(data, token) {
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
   return post("/saveUserForm", data, { headers });
 }
-<<<<<<< HEAD
 export function showUserForm() {
   return get("/showUserForm");
 }
-=======
 
 
 export function getGroupUsersById(groupId, token) {
@@ -103,4 +101,3 @@ export function getGroupUsersById(groupId, token) {
     headers: { Authorization: `Bearer ${token}` },
   });
 }
->>>>>>> rama_mateo
