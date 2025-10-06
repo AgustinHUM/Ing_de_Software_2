@@ -258,6 +258,83 @@ def save_user_form():
         db.session.commit()
 
         return jsonify({"msg": "Formulario guardado con éxito"}), 200
+
+
+def add_remove_favorite_movie():
+    if request.method == "POST":
+        if request.is_json:
+            info = request.get_json()
+        else:
+            info = request.form
+
+        id_pelicula = info.get("movie_id")
+        if not id_pelicula:
+            return jsonify({"Error": "Falta movie_id"}), 400
+
+        pelicula = Pelicula.query.filter_by(id_pelicula=id_pelicula).first()
+        if not pelicula:
+            return jsonify({"Error": "No se encuentra la película"}), 404
+
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        if not token:
+            print("No se recibió token")
+            return jsonify({"Error": "No se recibió token"}), 401
+
+        payload = jwt.decode(token, options={"verify_signature": False})
+        mail_usuario = payload.get("email")
+
+        if not mail_usuario:
+            return jsonify({"Error": "No se pudo obtener email del token"}), 401
+        
+        usuario = Usuario.query.filter_by(mail=mail_usuario).first()
+        if not usuario:
+            print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
+            return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+
+        accion = info.get("action", "add").lower()
+        if accion == "remove":
+            if pelicula not in usuario.favoritas:
+                return jsonify({"msg": "La película no está en favoritas"}), 200
+
+            usuario.favoritas.remove(pelicula)
+            db.session.commit()
+            return jsonify({"msg": "Película removida de favoritas con éxito"}), 200
+
+        else:  # acción por defecto es "add"
+            if pelicula in usuario.favoritas:
+                return jsonify({"msg": "La película ya está en favoritas"}), 200
+
+            usuario.favoritas.append(pelicula)
+            db.session.commit()
+
+            return jsonify({"msg": "Película agregada a favoritas con éxito"}), 200
+        
+
+def show_favorites():
+    if request.method == "GET":
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        if not token:
+            print("No se recibió token")
+            return jsonify({"Error": "No se recibió token"}), 401
+
+        payload = jwt.decode(token, options={"verify_signature": False})
+        mail_usuario = payload.get("email")
+
+        if not mail_usuario:
+            return jsonify({"Error": "No se pudo obtener email del token"}), 401
+        
+        usuario = Usuario.query.filter_by(mail=mail_usuario).first()
+        if not usuario:
+            print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
+            return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+
+        favoritas = usuario.favoritas or []
+        lista = [{"id": peli.id_pelicula, 
+                  "title": peli.titulo, 
+                  "poster": peli.url_poster} for peli in favoritas]
+        
+        return jsonify(lista), 200
+
         
 def rate_movie():
     if request.method == "POST":

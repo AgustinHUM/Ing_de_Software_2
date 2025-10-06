@@ -96,6 +96,51 @@ def selected_movie_info():
         
         return jsonify(pelicula_select), 200
 
+def movie_details_screen_info():
+    if request.method == "GET":
+        if (not request.args) or (not request.args.get("movieId")):
+            return jsonify({"error": "no se recibió movieId"}), 400
+        
+        id_peli = request.args.get("movieId")
+
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        
+        if not token:
+            print("No se recibió token")
+            return jsonify({"Error": "No se recibió token"}), 401
+
+        payload = jwt.decode(token, options={"verify_signature": False})
+        mail_usuario = payload.get("email")
+
+        if not mail_usuario:
+            return jsonify({"Error": "No se pudo obtener email del token"}), 401
+        usuario = Usuario.query.filter_by(mail=mail_usuario).first()
+        if not usuario:
+            print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
+            return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+        
+
+        peli = PeliculaCompleta.query.filter_by(id_pelicula = id_peli).first()
+
+        if not peli:
+            return jsonify({"Error": "La pelicula no existe"}), 401
+        
+        pelicula_select = { "id": peli.id_pelicula, 
+                            "genres": peli.generos,
+                            "platforms": peli.plataformas,
+                            "year": peli.anio_lanzamiento,
+                            "runtime":peli.duracion,
+                            "director":peli.directores,
+                            "rating":peli.score_critica,
+                            "description":peli.trama,
+                            "ageRating":peli.clasificacion_edad,
+                            "is_favorite": peli.id_pelicula in list(map(lambda x: x.id_pelicula,usuario.favoritas))
+                          }         
+        
+        
+        return jsonify(pelicula_select), 200
+
+
 #Esta funcion va en /user_controller     
 def show_form():
     if request.method == "GET":
