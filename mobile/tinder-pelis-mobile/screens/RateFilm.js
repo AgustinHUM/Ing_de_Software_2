@@ -7,6 +7,9 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import GradientButton from '../components/GradientButton';
 import FilmDisplay from '../components/FilmDisplay';
 import { setAlpha } from '../theme';
+import { rateMovie } from '../src/services/api';
+import * as SecureStore from 'expo-secure-store';
+
 
 const { width } = Dimensions.get('window');
 const APPBAR_HEIGHT = 60;
@@ -24,9 +27,10 @@ export default function RateFilm() {
   const movie = route.params?.movie ?? {};
   const title = movie?.title ?? 'Unknown';
   const year = movie?.year ?? '';
+  const userRating = route.params?.userRating ?? 5; 
 
   // Enteros 0..10, arranca en 5
-  const [rating, setRating] = useState(5);
+  const [rating, setRating] = useState(userRating);
   const [saving, setSaving] = useState(false);
 
   const btnWidth = Math.min(width * 0.85, 420);
@@ -39,11 +43,30 @@ export default function RateFilm() {
 
   async function onSave() {
     setSaving(true);
-    setTimeout(() => {
+    try {
+      // 1. Get token from SecureStore (same pattern as FilmDetailsScreen)
+      const token = await SecureStore.getItemAsync('userToken');
+      if (!token) {
+        Alert.alert('Error', 'Please log in again');
+        return;
+      }
+      
+      // 2. Pass token to API call (using current rating state, not userRating param)
+      await rateMovie(movie.id, rating, token);
+      
+      // 3. Success feedback
+      Alert.alert('Saved', 'Your rating was saved.', [
+        { text: 'OK', onPress: () => navigation.goBack() }
+      ]);
+    } catch (error) {
+      console.error('Rating save error:', error);
+      Alert.alert('Error', 'Failed to save rating. Please try again.');
+    } finally {
       setSaving(false);
-      Alert.alert('Saved', 'Your rating was saved.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
-    }, 250);
+    }
   }
+
+  
 
   // Altura fija para el botón + compensación AppBar
   const fixedSaveBottom = bottom + APPBAR_BOTTOM_INSET + APPBAR_HEIGHT + 12;

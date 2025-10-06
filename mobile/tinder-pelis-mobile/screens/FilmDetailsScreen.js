@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Image, TouchableOpacity, ScrollView, Modal, Platform, Dimensions } from 'react-native';
 import { Text, useTheme, IconButton } from 'react-native-paper';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
@@ -11,12 +11,14 @@ import Fontisto from '@expo/vector-icons/Fontisto';
 import { setAlpha } from '../theme';
 import FilmDisplay from '../components/FilmDisplay';
 import FilmDetail from '../components/FilmDetail';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Seleccionable from '../components/Seleccionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DetailList from '../components/DetailList';
 import TitleDisplay from '../components/TitleDisplay';
 import { LinearGradient } from 'expo-linear-gradient';
+import { getUserRating } from '../src/services/api';
+import * as SecureStore from 'expo-secure-store';
 
 const { width } = Dimensions.get('window');
 
@@ -37,10 +39,10 @@ export default function FilmDetailsScreen() {
     const navigation = useNavigation();
     const movie = route.params?.movie || fallbackMovie;
     const [showGenresModal, setShowGenresModal] = React.useState(false);
-    const [isFavourite, setIsFavourite] = useState(false);
-    const [rated, setRated] = useState(false);
+    const [isFavourite, setIsFavourite] = useState(false);      
+    const [userRating, setUserRating] = useState(null); 
     const insets = useSafeAreaInsets();
-    const insetBottom = 10; 
+    const insetBottom = 10;     
     const height = 80; 
     const [showMore, setShowMore] = useState(false);
     const [showAllPlatforms, setShowAllPlatforms] = useState(false);
@@ -69,14 +71,26 @@ export default function FilmDetailsScreen() {
   const toggleFavourite = () => {
     setIsFavourite((prev) => !prev);
   };
-  const toggleRated = () => {
-    setRated((prev) => !prev);
+
+  const checkIfMovieRated = async () => {
+    try {
+      const token = await SecureStore.getItemAsync('userToken');
+      const response = await getUserRating(movie.id, token);
+      console.log(response);
+      setUserRating(response.rating); 
+    } catch (error) {
+      console.error('Error checking user rating:', error);
+      setUserRating(null);
+    }
   };
 
-
-
-
-
+  useFocusEffect(
+    useCallback(() => {
+      if (movie.id) {
+        checkIfMovieRated();
+      }
+    }, [movie.id])
+  );
 
 
   return (
@@ -265,13 +279,13 @@ export default function FilmDetailsScreen() {
             <IconButton
                 icon={() => (
                     <MaterialCommunityIcons
-                        name={rated ? 'video-check-outline' : 'video-outline'}
+                        name={userRating ? 'video-check-outline' : 'video-outline'}
                         size={32}
-                        color={theme.colors.text}
+                        color={userRating ? theme.colors.text : theme.colors.text}
                     />
                 )}
             onPress={() => {
-                navigation.navigate('RateFilm', { movie });
+                navigation.navigate('RateFilm', { movie, userRating });
             }}
             style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
             />
