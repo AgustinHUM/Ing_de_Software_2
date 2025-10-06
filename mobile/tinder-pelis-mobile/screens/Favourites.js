@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import FilmDisplay from '../components/FilmDisplay';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { getFavourites } from '../src/services/api';
+import { getFavourites, getSeenMovies } from '../src/services/api';
 import * as SecureStore from 'expo-secure-store';
 
 // 🔹 Tus 6 películas hardcodeadas
@@ -101,6 +101,7 @@ export default function Favorites() {
   const theme = useTheme();
   const navigation = useNavigation();
   const [favLoading, setFavLoading] = useState(false);
+  const [watchedLoading, setWatchedLoading] = useState(false);
   const [favs, setFavs] = useState([]);
   const [watched, setWatched] = useState([]);
 
@@ -125,22 +126,43 @@ export default function Favorites() {
 
     }, []);
 
+    useEffect(() => {
+    const fetchWatched = async () => {
+        setWatchedLoading(true);
+        try {
+        const token = await SecureStore.getItemAsync("userToken");
+        const data = await getSeenMovies(token);
+        
+        if (data) {
+            setWatched(data);
+        }
+        } catch (error) {
+        console.error('Error fetching watched movies:', error);
+        } finally {
+        setWatchedLoading(false);
+        }
+    };
+
+    fetchWatched();
+
+    }, []);
 
   return (
   <View style={{ flex: 1, flexDirection: 'column', paddingTop: Platform.OS === 'ios' ? 80 : 45 }}>
-    <View style={{ marginBottom: 4, alignSelf: 'center' }}>
-      <Text
-        style={{
-          color: theme.colors.text,
-          fontWeight: 700,
-          fontSize: 28,
-          marginBottom: 5,
-          textAlign: 'center',
-        }}
-      >
-        My Movies
-      </Text>
-
+    <View style={{ marginBottom: 4, alignItems:'baseline' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center',textAlign:'center',width:'100%', justifyContent: 'center' }}>  
+        <Text
+          style={{
+            color: theme.colors.text,
+            fontWeight: 700,
+            fontSize: 28,
+            marginBottom: 5,
+            textAlign: 'center',
+          }}
+        >
+          My Movies
+        </Text>
+      </View>
       {/* ---------------- FAVS ---------------- */}
       <View style={{ marginBottom: 4, height: 300, marginHorizontal: 10 }}>
         <Text style={{ color: theme.colors.text, fontWeight: 700, fontSize: 25, marginBottom: 12, marginTop: 10, marginLeft: 3 }}>
@@ -179,18 +201,6 @@ export default function Favorites() {
                   >
                     {movie.title}
                   </Text>
-                  {/* <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-                    <MaterialCommunityIcons
-                      name="star"
-                      size={20}
-                      color={theme.colors.primary}
-                      style={{ marginRight: 3 }}
-                    />
-                    <Text style={{ color: '#aaa', fontWeight: '500', fontSize: 14, marginRight: 2 }}>Rating</Text>
-                    <Text style={{ color: theme.colors.text, fontWeight: '500', fontSize: 14 }}>
-                      {movie.rating} / 10
-                    </Text>
-                  </View> */}
                 </View>
               ))}
             </View>
@@ -206,12 +216,15 @@ export default function Favorites() {
       </View>
 
       {/* ---------------- TO WATCH ---------------- */}
-      <View style={{ marginBottom: 4, marginTop: 10, height: 300, marginHorizontal: 10 }}>
-        <Text style={{ color: theme.colors.text, fontWeight: 700, fontSize: 25, marginBottom: 12, marginTop: 10, marginLeft: 3 }}>
-          Wacthed:
-        </Text>
-
-        {watched.length > 0 ? (
+      <View style={{ marginBottom: 4, marginTop: 10, height: 320, marginHorizontal: 10}}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          <Text style={{ color: theme.colors.text, fontWeight: 700, fontSize: 25, marginBottom: 12, marginTop: 10, marginLeft: 3 }}>
+            Wacthed:
+          </Text>
+        </View>
+        { watchedLoading ? (
+          <ActivityIndicator size="medium" color={theme.colors.primary} style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }} />
+        ) : (watched.length > 0 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
               {watched.map((movie, idx) => (
@@ -227,8 +240,8 @@ export default function Favorites() {
                 >
                   <FilmDisplay
                     width={120}
-                    movie={movie}
-                    onPress={() => navigation.navigate('FilmDetails', { movie })}
+                    movie={{...movie,poster:{uri: movie.poster}}}
+                    onPress={() => navigation.navigate('FilmDetails', { movie: { ...movie, poster: { uri: movie.poster } } })}
                   />
                   <Text
                     style={{
@@ -241,18 +254,18 @@ export default function Favorites() {
                   >
                     {movie.title}
                   </Text>
-                  <Text
-                    style={{
-                      marginTop: 2,
-                      color: theme.colors.text,
-                      fontWeight: '400',
-                      fontSize: 14,
-                      textAlign: 'center',
-                    }}
-                    numberOfLines={1}
-                  >
-                    {movie.genres[0]} - {movie.year}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                    <MaterialCommunityIcons
+                      name="star"
+                      size={20}
+                      color={theme.colors.primary}
+                      style={{ marginRight: 3 }}
+                    />
+                    <Text style={{ color: '#aaa', fontWeight: '500', fontSize: 14, marginRight: 2 }}>Rating</Text>
+                    <Text style={{ color: theme.colors.text, fontWeight: '500', fontSize: 14 }}>
+                      {movie.rating} / 10
+                    </Text>
+                  </View>
                 </View>
               ))}
             </View>
@@ -264,7 +277,7 @@ export default function Favorites() {
               Try searching for a movie you want to see and save it!
             </Text>
           </View>
-        )}
+        ))}
       </View>
     </View>
   </View>

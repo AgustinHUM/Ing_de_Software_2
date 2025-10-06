@@ -430,7 +430,7 @@ def get_seen_movies():
             "id": row.id_pelicula,
             "title": row.titulo,
             "rating": row.rating,
-            "url_poster": row.url_poster,
+            "poster": row.url_poster,
         } for row in peliculas_vistas]), 200
 
 def get_user_rating():
