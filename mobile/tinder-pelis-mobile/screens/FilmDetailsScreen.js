@@ -7,13 +7,15 @@ import Feather from '@expo/vector-icons/Feather';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Octicons from '@expo/vector-icons/Octicons';
+import Fontisto from '@expo/vector-icons/Fontisto';
+import { setAlpha } from '../theme';
 import FilmDisplay from '../components/FilmDisplay';
 import FilmDetail from '../components/FilmDetail';
 import { useState } from 'react';
+import Seleccionable from '../components/Seleccionable';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DetailList from '../components/DetailList';
 import TitleDisplay from '../components/TitleDisplay';
-
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
@@ -30,27 +32,52 @@ const fallbackMovie = {
 };
 
 export default function FilmDetailsScreen() {
-  const theme = useTheme();
-  const route = useRoute();
-  const navigation = useNavigation();
-  const movie = route.params?.movie || fallbackMovie;
-  const [showGenresModal, setShowGenresModal] = React.useState(false);
-  const [showAllPlatforms, setShowAllPlatforms] = useState(false);
-  const visible_genres = 2;
-  const visible_platforms = showAllPlatforms ? 30 : 5;
+    const theme = useTheme();
+    const route = useRoute();
+    const navigation = useNavigation();
+    const movie = route.params?.movie || fallbackMovie;
+    const [showGenresModal, setShowGenresModal] = React.useState(false);
+    const [isFavourite, setIsFavourite] = useState(false);
+    const [rated, setRated] = useState(false);
+    const insets = useSafeAreaInsets();
+    const insetBottom = 10; 
+    const height = 80; 
+    const [showMore, setShowMore] = useState(false);
+    const [showAllPlatforms, setShowAllPlatforms] = useState(false);
+    const visible_genres = 2;
+    const visible_platforms = showAllPlatforms ? 30 : 5;
 
-  // --- SOLO para posicionar el texto y el botón (sin tocar el scroll) ---
-  const { bottom } = useSafeAreaInsets();
-  const APPBAR_HEIGHT = 60;
-  const APPBAR_BOTTOM_INSET = 10;
-  const FAB_SIZE = 64;
-  const FAB_MARGIN = 24;
-  const POPUP_GAP = 12;
+    const containerStyle = {
+        position: 'absolute',
+        right: 16, 
+        bottom: insetBottom + (insets.bottom || 0) + height + 10, 
+        height: 60, 
+        width: 60, 
+        borderRadius: 30, 
+        backgroundColor: theme.colors.primary, 
+        justifyContent: 'center',
+        alignItems: 'center',
+        boxShadow: [{
+            offsetX: 0,
+            offsetY: 0,
+            blurRadius: 24,
+            spread: 0,
+            color: setAlpha(theme.colors.primary, 0.6),
+        }],
+    };
 
-  const fabBottom = FAB_MARGIN + APPBAR_BOTTOM_INSET + APPBAR_HEIGHT + bottom;
-  const hintRight = FAB_MARGIN + FAB_SIZE + POPUP_GAP;
-  // subir el texto para que quede centrado con el botón:
-  const hintBottom = fabBottom + (FAB_SIZE / 2) - 12; // ajuste fino
+  const toggleFavourite = () => {
+    setIsFavourite((prev) => !prev);
+  };
+  const toggleRated = () => {
+    setRated((prev) => !prev);
+  };
+
+
+
+
+
+
 
   return (
     <View style={{ flex: 1, flexDirection:'column'}}>
@@ -73,6 +100,18 @@ export default function FilmDetailsScreen() {
                     style={{ position: 'absolute', left: 0 }}
                     />
                     <Text variant='headlineSmall' style={{ color: theme.colors.text, fontWeight: 400 }}>Details</Text>
+                    <View style={{ position: 'absolute', right: 0 }}>
+                        <IconButton
+                            icon={() => (
+                                <MaterialCommunityIcons
+                                    name={isFavourite ? 'heart' : 'heart-outline'}
+                                    size={28}
+                                    color={isFavourite ? theme.colors.primary : theme.colors.text} 
+                                />
+                            )}
+                            onPress={toggleFavourite} 
+                        />
+                    </View>
                 </View>
 
                 <View style={{paddingTop:16, flexDirection: 'row', flexWrap: 'wrap', justifyContent:'space-between', flex:1}}>
@@ -218,53 +257,25 @@ export default function FilmDetailsScreen() {
             </View>
         </Modal>
 
-        {/* --- SOLO overlay: texto + botón --- */}
-        <View
-          style={{
-            position: 'absolute',
-            right: hintRight,
-            bottom: hintBottom,
-            paddingHorizontal: 12,
-            maxWidth: width * 0.6,
-          }}
-        >
-          <Text style={{ textAlign: 'right', color: theme.colors.text, fontSize: 16, fontWeight: '700' }}>
-            Seen this one?
-          </Text>
-          <Text style={{ textAlign: 'right', color: theme.colors.text, opacity: 0.9, marginTop: 2 }}>
-            Rate it and mark it as watched
-          </Text>
-        </View>
+        
 
-        <TouchableOpacity
-          activeOpacity={0.95}
-          onPress={() => navigation.navigate('RateFilm', { movie })}
-          style={{
-            position: 'absolute',
-            right: FAB_MARGIN,
-            bottom: fabBottom,
-          }}
-        >
-          <LinearGradient
-            colors={[theme.colors.primary, theme.colors.secondary ?? theme.colors.accent ?? theme.colors.primary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{
-              width: FAB_SIZE,
-              height: FAB_SIZE,
-              borderRadius: FAB_SIZE / 2,
-              alignItems: 'center',
-              justifyContent: 'center',
-              elevation: 6,
-              shadowColor: '#000',
-              shadowOpacity: 0.25,
-              shadowRadius: 8,
-              shadowOffset: { width: 0, height: 4 },
+        
+
+        <View style={containerStyle}>
+            <IconButton
+                icon={() => (
+                    <MaterialCommunityIcons
+                        name={rated ? 'video-check-outline' : 'video-outline'}
+                        size={32}
+                        color={theme.colors.text}
+                    />
+                )}
+            onPress={() => {
+                navigation.navigate('RateFilm', { movie });
             }}
-          >
-            <MaterialIcons name="movie" size={28} color="white" />
-          </LinearGradient>
-        </TouchableOpacity>
+            style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
+            />
+        </View>
     </View>
-  );
+  );    
 }

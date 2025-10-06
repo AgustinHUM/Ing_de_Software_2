@@ -1,4 +1,5 @@
 from flask import request, redirect, jsonify
+from sqlalchemy.orm import joinedload
 from ..models.models import *
 from ..config import Config
 from ..db import db
@@ -113,6 +114,81 @@ def get_user_groups():
 
         return jsonify(lista_grupos), 200
 
+def show_user_info():
+        if request.method == "GET":
+
+            token = request.headers.get("Authorization", "").replace("Bearer ", "")
+            if not token:
+                print("No se recibió token")
+                return jsonify({"Error": "No se recibió token"}), 401
+
+            payload = jwt.decode(token, options={"verify_signature": False})
+            mail_usuario = payload.get("email")
+
+            if not mail_usuario:
+                return jsonify({"Error": "No se pudo obtener email del token"}), 401
+            
+            usuario = Usuario.query.options(
+                joinedload("plataformas")
+            ).filter_by(mail=mail_usuario).first()
+
+            if not usuario:
+                print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
+                return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"})
+            
+            pais = usuario.pais
+            lista_plataformas = [{"id": p.id_plataforma,
+                                  "nombre": p.nombre_plataforma,
+                                  "logo": p.url_logo} for p in usuario.plataformas]
+            
+            res = {"email": usuario.mail,
+                   "nombre": usuario.nombre_cuenta,
+                   "id_pais": pais.id_pais,
+                   "flag": pais.url_bandera,
+                   "plataformas": lista_plataformas,  
+                   }
+            
+            return jsonify(res), 200
+        
+def update_user_info():
+    if request.method != "POST":
+        return jsonify({"error": "Método no permitido"}), 405
+
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if not token:
+        return jsonify({"Error": "No se recibió token"}), 401
+    payload = jwt.decode(token, options={"verify_signature": False})
+    mail_usuario = payload.get("email")
+    if not mail_usuario:
+        return jsonify({"Error": "No se pudo obtener email del token"}), 401
+
+    usuario = Usuario.query.options(
+        joinedload("plataformas")
+        ).filter_by(mail=mail_usuario).first()
+    if not usuario:
+        return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+
+    data = request.get_json() if request.is_json else request.form
+
+    if "nombre" in data:
+        usuario.nombre_cuenta = data["nombre"]
+
+    if "id_pais" in data:
+        usuario.id_pais = data["id_pais"]
+
+    if "plataformas" in data:
+        usuario.plataformas.clear()
+        for plat_id in data["plataformas"]:
+            plat = Plataforma.query.get(plat_id)
+            if plat:
+                usuario.plataformas.append(plat)
+
+    db.session.commit()
+
+
+    return jsonify({"message": "Los parametros se actualizaron con exito"}), 200
+        
+
 def get_group_users():
     if request.method == "GET":
         # 1) leer ?group_id=... de la URL
@@ -146,7 +222,6 @@ def save_user_form():
         mail_usuario = payload.get("email")
 
         if not mail_usuario:
-            print("No se pudo obtener email del token")
             return jsonify({"Error": "No se pudo obtener email del token"}), 401
         
         usuario = Usuario.query.filter_by(mail=mail_usuario).first()
@@ -156,27 +231,29 @@ def save_user_form():
 
         countries = info.get("countries", [])
         if countries:
-            pais = Pais.query.filter_by(nombre_pais=countries[0]).first()  
+            pais = Pais.query.filter_by(id_pais=int(countries[0])).first()  
             if pais:
                 usuario.pais = pais
 
         genres = info.get("genres", [])
         usuario.generos_fav = [
-            Genero.query.filter_by(nombre_genero=g).first()
-            for g in genres if Genero.query.filter_by(nombre_genero=g).first()
+            Genero.query.filter_by(id_genero=int(g)).first()
+            for g in genres if Genero.query.filter_by(id_genero=int(g)).first()
         ]
 
         movies = info.get("movies", [])
         usuario.favoritas = [
-            Pelicula.query.filter_by(id_pelicula=int(m[1:])).first()
-            for m in movies if Pelicula.query.filter_by(id_pelicula=int(m[1:])).first()
+            Pelicula.query.filter_by(id_pelicula=int(m)).first()
+            for m in movies if Pelicula.query.filter_by(id_pelicula=int(m)).first()
         ]
 
         services = info.get("services", [])
         usuario.plataformas = [
-            Plataforma.query.filter_by(id_plataforma=int(s[1:])).first()
-            for s in services if Plataforma.query.filter_by(id_plataforma=int(s[1:])).first()
+            Plataforma.query.filter_by(id_plataforma=int(s)).first()
+            for s in services if Plataforma.query.filter_by(id_plataforma=int(s)).first()
         ]
+
+        usuario.formulario_pendiente = False
 
         db.session.commit()
 

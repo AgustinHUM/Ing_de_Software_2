@@ -20,10 +20,7 @@ def handle_register(info = None):
             return jsonify({"error": "Ya existe el usuario"}), 400
         
         hash_contr = bcrypt.generate_password_hash(contrasenia).decode("utf-8")
-
-        n_usuario = Usuario(mail=mail, nombre_cuenta = nombre_usuario, contrasenia = hash_contr)
-        db.session.add(n_usuario)
-        db.session.commit()
+        print("hash: ",hash_contr)
 
         try:
 
@@ -47,6 +44,9 @@ def handle_register(info = None):
         except Config.COGNITO_CLIENT.exceptions.UsernameExistsException:
             return jsonify({"error":"Ya existe en Cognito"}), 400 
         
+        n_usuario = Usuario(mail=mail, nombre_cuenta = nombre_usuario, contrasenia = hash_contr, formulario_pendiente=True)
+        db.session.add(n_usuario)
+        db.session.commit()
+
         return jsonify({"message":"Registro exitoso"}), 200
-        
 

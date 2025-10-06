@@ -184,13 +184,13 @@ function AppInner({ setAppTheme, themesMap, themeName, navigationRef, setCurrent
 
 
 function MainNavigator({ setAppTheme, themesMap, themeName }) {
-  const { state,formPending } = useAuth();
+  const { state } = useAuth();
   const [firstLogin, setFirstLogin] = useState(false);
 
   useEffect(() => {
-   setFirstLogin(formPending);
-   console.log(`En app.js, formPending cambió a ${formPending}`)
-  }, [formPending]);
+   setFirstLogin(state.user?.formPending || false);
+   console.log(`En app.js, formPending cambió a ${state.user?.formPending}`)
+  }, [state.user?.formPending]);
 
   return (
     <Stack.Navigator

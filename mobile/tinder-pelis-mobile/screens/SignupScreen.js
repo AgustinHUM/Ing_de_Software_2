@@ -18,7 +18,7 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState(null);
-  const { signUp,signIn,setFormPendingAsync } = useAuth();
+  const { signUp, signIn } = useAuth();
 
   const handlePasswordChange = (text) => {
     setPassword(text);
@@ -47,7 +47,7 @@ export default function LoginScreen({ navigation }) {
     try {
       await signUp(email, nombre, password);
       Alert.alert("Éxito", "Usuario creado con éxito", [
-        { text: "OK", onPress: async () => {await setFormPendingAsync(); await signIn(email,password);} }
+        { text: "OK", onPress: async () => {await signIn(email,password);} }
       ]);
     } catch (e) {
       setError(String(e?.message || 'Ocurrió un error.'));
