@@ -200,7 +200,7 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
     >
       {!state.userToken ? (
         <>
-          <Stack.Screen name="Home" component={WelcomeScreen} options={{ headerShown: false, animation:'none' }} />
+          <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false, animation:'none' }} />
           <Stack.Screen name="Login" component={LoginScreen} options={{title: 'Login', animation:'none' }} />
           <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: 'Register', animation:'none' }} />
         </>

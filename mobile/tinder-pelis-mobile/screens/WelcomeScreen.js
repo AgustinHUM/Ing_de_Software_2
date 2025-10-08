@@ -37,7 +37,7 @@ export default function WelcomeScreen({ navigation }) {
             </Text>
 
             <Text variant="bodyLarge" style={{ color: theme.colors.text, marginTop: 8, textAlign: 'center' }}>
-              Touch your Friends
+              match
             </Text>
           </View>
 

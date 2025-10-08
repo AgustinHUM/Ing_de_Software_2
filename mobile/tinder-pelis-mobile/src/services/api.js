@@ -1,10 +1,10 @@
 import axios from "axios";
 
-export const API_URL = "http://192.168.68.62:5000"; // Local server
+export const API_URL = "http://192.168.68.52:5000"; // Local server
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 10000,
+  timeout: 60000,
   headers: {
     "Content-Type": "application/json",
   },
