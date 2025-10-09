@@ -79,7 +79,6 @@ def add_user_to_group():
 
         return jsonify({"message": "el usuario se agregó con éxito"}), 200
 
-
 def generate_id():
     while True:
         id_random = random.randint(10000, 99999)
@@ -129,7 +128,7 @@ def show_user_info():
                 return jsonify({"Error": "No se pudo obtener email del token"}), 401
             
             usuario = Usuario.query.options(
-                joinedload("plataformas")
+                joinedload(Usuario.plataformas)
             ).filter_by(mail=mail_usuario).first()
 
             if not usuario:

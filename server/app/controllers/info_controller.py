@@ -114,7 +114,9 @@ def movie_details_screen_info():
 
         if not mail_usuario:
             return jsonify({"Error": "No se pudo obtener email del token"}), 401
+        
         usuario = Usuario.query.filter_by(mail=mail_usuario).first()
+
         if not usuario:
             print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
             return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
@@ -182,8 +184,8 @@ def show_home_movies():
             return jsonify({"Error": "No se pudo obtener email del token"}), 401
         
         usuario = Usuario.query.options(
-            joinedload("generos_fav"),
-            joinedload("plataformas")
+            joinedload(Usuario.generos_fav),
+            joinedload(Usuario.plataformas)
         ).filter_by(mail=mail_usuario).first()
 
         if not usuario:
