@@ -73,24 +73,24 @@ export default function LoginScreen({ navigation }) {
         <TextInput label="Confirm Password" value={confirmPassword} onChangeText={handleConfirmPasswordChange} password={true} />
         
       </View>
-      <View style={{alignContent:'center'}}>
-          {error ? <HelperText style={{fontSize:16,fontWeight:'700', textAlign: 'center'}} type="error">
-            {error}
+      <View style={{alignContent:'center', paddingLeft: 16}}>
+          {error ? <HelperText style={{fontSize:12,fontWeight:'700', textAlign: 'center'}} type="error">
+            { /* error.message */ }
             {error === 'HTTP 500' ? 
-            <Text style={{ color: theme.colors.primary, fontSize: 12, opacity: 0.6, fontWeight: '400', textAlign: 'center' }}>
-              {'\n'}Password must contain at least: 8 characters
-              {'\n'}1 number & 1 special character
-              {'\n'}1 upper & 1 lowercase letter
+            <Text style={{ color: theme.colors.primary, fontSize: 12, opacity: 0.6, fontWeight: '400', textAlign: 'left', marginLeft: 16}}>
+              {/*'\n'*/}• Minimum 8 characters
+              {'\n'}• At least 1 number & 1 special character
+              {'\n'}• At least 1 upper & 1 lowercase letter
             </Text>
             : null}
           </HelperText> : null}
       </View>
       <GradientButton mode="contained" onPress={onSignIn} style={{ marginTop: 8 }}>
-        Register
+        Sign up
       </GradientButton>
       <View style={{ width: '100%', alignItems: 'center', marginTop: '5%', backgroundColor: 'transparent' }}>
         <Text variant="bodyLarge" style={{ color: theme.colors.text, textAlign: 'center' }}>
-          ¿Already Registered?
+          Already Registered?
         </Text>
         <GradientButton
           mode="text"
