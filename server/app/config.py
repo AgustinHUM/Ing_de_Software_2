@@ -20,3 +20,4 @@ class Config:
 
 
 'postgresql://dbmaster:password@ingsoft2.cj06eqq0ykhj.us-east-2.rds.amazonaws.com:5432/IngSoft2_db'
+

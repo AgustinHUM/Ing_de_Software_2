@@ -7,15 +7,15 @@ import GradientButton from "../components/GradientButton";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import FilmDisplay from "../components/FilmDisplay";
 import * as SecureStore from "expo-secure-store";
-import { saveForm } from "../src/services/api";
+import { getMovies, saveForm } from "../src/services/api";
 import { useAuth } from "../AuthContext";
 
-export default function MoviesFormScreen() {
+export default function MoviesFormScreen({ navigation, route }) {
   const theme = useTheme();
-  const navigation = useNavigation();
-  const route = useRoute();
   const { setFormPendingAsync, withBusy } = useAuth();
-  const MOVIES = useMemo(
+  const [MOVIES, setMovies] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const MOVIES_FAKE = useMemo(
     () => [
       { id: "m1", title: "Avengers: Endgame", poster: require("../assets/avengers_endgame.jpg") },
       { id: "m2", title: "Los tipos malos 2", poster: require("../assets/the_bad_guys_2.jpg") },
@@ -27,12 +27,31 @@ export default function MoviesFormScreen() {
     []
   );
 
-  const prevResults = route?.params?.formResults ?? {};
+  useEffect(() => {
+    const fetchMovies = async () => {
+      setLoading(true);
+      try {
+        const result = await getMovies("a", 0);
+        setMovies(Array.isArray(result) ? result.map(m => ({
+            ...m,
+            poster: m.poster ? { uri: m.poster } : undefined })) 
+            : MOVIES_FAKE);
+      } catch (err) {
+        console.error("Error fetching movies:", err);
+        setMovies([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMovies();
+  }, []);
+
+  const prevResults = route.params.formResults ?? {};
 
   const title = "Movies you've loved";
   const buttonText = "End form";
 
-  const [filteredItems, setFilteredItems] = useState(MOVIES);
+  const [filteredItems, setFilteredItems] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
 
 const handleFinish = async () => {
@@ -48,10 +67,12 @@ const handleFinish = async () => {
 
       await saveForm(formResults, token);
 
-      await setFormPendingAsync();
+      await setFormPendingAsync(false);
     });
 
     console.log("Formulario guardado y formPending actualizado");
+
+    // App.js maneja automatico navigation cuando formPending cambia a false
   } catch (err) {
     console.log("Error saving form:", err);
   }
@@ -68,14 +89,32 @@ const handleFinish = async () => {
     setSelectedIds((prev) => prev.filter((id) => MOVIES.some((it) => it.id === id)));
   }, [MOVIES]);
 
+  const handleSearchSubmit = async (query) => {
+    const trimmed = (query || "").trim();
+    if (!trimmed) {
+      setFilteredItems(MOVIES);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await getMovies(trimmed, 0);
+      const searchResults = Array.isArray(result) ? result.map(m => ({
+        ...m,
+        poster: m.poster ? { uri: m.poster } : undefined
+      })) : [];
+      setFilteredItems(searchResults);
+    } catch (err) {
+      console.error("Error searching movies:", err);
+      setFilteredItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filterByQuery = useCallback(
     (query) => {
-      const q = normalize((query || "").trim());
-      if (!q) {
-        setFilteredItems(MOVIES);
-        return;
-      }
-      setFilteredItems(MOVIES.filter((it) => normalize(it.title).includes(q)));
+      handleSearchSubmit(query);
     },
     [MOVIES]
   );
@@ -131,26 +170,32 @@ const handleFinish = async () => {
 
       <ScrollView contentContainerStyle={{ paddingBottom: 128, paddingHorizontal: 25 }} showsVerticalScrollIndicator={false}>
         <View style={{ paddingTop: 16, flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}>
-          {filteredItems.map((movie) => (
-            <FilmDisplay
-              width={"30%"}
-              key={movie.id}
-              movie={movie}
-              // initial selection based on id
-              initialSelected={selectedIds.includes(movie.id)}
-              toggleable={true}
-              // report selected boolean; we forward id so parent knows which movie toggled
-              onPress={(selected) => toggleSelected(movie.id, selected)}
-            />
-          ))}
+          {loading ? (
+            <View style={{ width: "100%", alignItems: "center", marginTop: 20 }}>
+              <Text style={{ color: theme.colors.text }}>Loading movies...</Text>
+            </View>
+          ) : (
+            filteredItems.map((movie) => (
+              <FilmDisplay
+                width={"30%"}
+                key={movie.id}
+                movie={movie}
+                // initial selection based on id
+                initialSelected={selectedIds.includes(movie.id)}
+                toggleable={true}
+                // report selected boolean; we forward id so parent knows which movie toggled
+                onPress={(selected) => toggleSelected(movie.id, selected)}
+              />
+            ))
+          )}
 
-          {filteredItems.length % 3 === 2 && (
+          {!loading && filteredItems.length % 3 === 2 && (
             <View style={{ width: "30%" }}>
               <View style={{ marginBottom: 16, width: "100%", aspectRatio: 2 / 3, borderRadius: 15, overflow: "hidden", backgroundColor: "transparent" }} />
             </View>
           )}
 
-          {filteredItems.length === 0 && (
+          {!loading && filteredItems.length === 0 && (
             <View style={{ width: "100%", alignItems: "center", marginTop: 20 }}>
               <Text style={{ color: theme.colors.text }}>No movies found.</Text>
             </View>

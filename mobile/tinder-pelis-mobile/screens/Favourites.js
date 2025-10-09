@@ -1,11 +1,13 @@
 // Favorites.js
 import React, { useEffect, useState } from 'react';
 import { View, ScrollView, Platform } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
+import { ActivityIndicator, Text, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import FilmDisplay from '../components/FilmDisplay';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { getFavourites, getSeenMovies } from '../src/services/api';
+import * as SecureStore from 'expo-secure-store';
 
 // 🔹 Tus 6 películas hardcodeadas
 const movies = [
@@ -98,42 +100,81 @@ const movies = [
 export default function Favorites() {
   const theme = useTheme();
   const navigation = useNavigation();
-
+  const [favLoading, setFavLoading] = useState(false);
+  const [watchedLoading, setWatchedLoading] = useState(false);
+  const [favs, setFavs] = useState([]);
   const [watched, setWatched] = useState([]);
-  const [toWatch, setToWatch] = useState([]);
 
-  // Meter pelis harcodeadas en watched y toWatch
-  useEffect(() => {
-    // Ejemplo: agregar 5 películas a "watched" y a "toWatch"
-    setWatched([movies[0], movies[1], movies[2], movies[4], movies[5]]);
-    setToWatch([movies[3], movies[4], movies[1], movies[0], movies[5]]);
-  }, []);
+    useEffect(() => {
+    const fetchFavourites = async () => {
+        setFavLoading(true);
+        try {
+        const token = await SecureStore.getItemAsync("userToken");
+        const data = await getFavourites(token);
+        
+        if (data) {
+            setFavs(data);
+        }
+        } catch (error) {
+        console.error('Error fetching favourite movies:', error);
+        } finally {
+        setFavLoading(false);
+        }
+    };
+
+    fetchFavourites();
+
+    }, []);
+
+    useEffect(() => {
+    const fetchWatched = async () => {
+        setWatchedLoading(true);
+        try {
+        const token = await SecureStore.getItemAsync("userToken");
+        const data = await getSeenMovies(token);
+        
+        if (data) {
+            setWatched(data);
+        }
+        } catch (error) {
+        console.error('Error fetching watched movies:', error);
+        } finally {
+        setWatchedLoading(false);
+        }
+    };
+
+    fetchWatched();
+
+    }, []);
 
   return (
   <View style={{ flex: 1, flexDirection: 'column', paddingTop: Platform.OS === 'ios' ? 80 : 45 }}>
-    <View style={{ marginBottom: 4, alignSelf: 'center' }}>
-      <Text
-        style={{
-          color: theme.colors.text,
-          fontWeight: 700,
-          fontSize: 28,
-          marginBottom: 5,
-          textAlign: 'center',
-        }}
-      >
-        My Movies
-      </Text>
-
-      {/* ---------------- WATCHED ---------------- */}
+    <View style={{ marginBottom: 4, alignItems:'baseline' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center',textAlign:'center',width:'100%', justifyContent: 'center' }}>  
+        <Text
+          style={{
+            color: theme.colors.text,
+            fontWeight: 700,
+            fontSize: 28,
+            marginBottom: 5,
+            textAlign: 'center',
+          }}
+        >
+          My Movies
+        </Text>
+      </View>
+      {/* ---------------- FAVS ---------------- */}
       <View style={{ marginBottom: 4, height: 300, marginHorizontal: 10 }}>
         <Text style={{ color: theme.colors.text, fontWeight: 700, fontSize: 25, marginBottom: 12, marginTop: 10, marginLeft: 3 }}>
-          Watched:
+          Favorites:
         </Text>
 
-        {watched.length > 0 ? (
+        { favLoading ? (
+          <ActivityIndicator size="medium" color={theme.colors.primary} style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }} />
+        ) : (favs.length > 0 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-              {watched.map((movie, idx) => (
+              {favs.map((movie, idx) => (
                 <View
                   key={movie.id}
                   style={{
@@ -146,8 +187,61 @@ export default function Favorites() {
                 >
                   <FilmDisplay
                     width={120}
-                    movie={movie}
-                    onPress={() => navigation.navigate('FilmDetails', { movie })}
+                    movie={{...movie,poster:{uri: movie.poster}}}
+                    onPress={() => navigation.navigate('FilmDetails', { movie: { ...movie, poster: { uri: movie.poster } } })}
+                  />
+                  <Text
+                    style={{
+                      marginTop: 0.5,
+                      fontWeight: '600',
+                      color: theme.colors.text,
+                      textAlign: 'center',
+                    }}
+                    numberOfLines={2}
+                  >
+                    {movie.title}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+        ) : (
+          <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+            <Text style={{ color: theme.colors.secondary, fontSize: 30, fontWeight: '700' }}>Nothing here...</Text>
+            <Text style={{ color: theme.colors.text, fontSize: 20, fontWeight: '400', textAlign: 'center' }}>
+              Try searching for a movie you love and tap the heart icon! 
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      {/* ---------------- TO WATCH ---------------- */}
+      <View style={{ marginBottom: 4, marginTop: 10, height: 320, marginHorizontal: 10}}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          <Text style={{ color: theme.colors.text, fontWeight: 700, fontSize: 25, marginBottom: 12, marginTop: 10, marginLeft: 3 }}>
+            Watched:
+          </Text>
+        </View>
+        { watchedLoading ? (
+          <ActivityIndicator size="medium" color={theme.colors.primary} style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }} />
+        ) : (watched.length > 0 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+              {watched.map((movie, idx) => (
+                <View
+                  key={movie.id + idx}
+                  style={{
+                    width: 130,
+                    alignItems: 'center',
+                    marginRight: 12,
+                    marginTop: 10,
+                    marginLeft: 3,
+                  }}
+                >
+                  <FilmDisplay
+                    width={120}
+                    movie={{...movie,poster:{uri: movie.poster}}}
+                    onPress={() => navigation.navigate('FilmDetails', { movie: { ...movie, poster: { uri: movie.poster } } })}
                   />
                   <Text
                     style={{
@@ -178,74 +272,12 @@ export default function Favorites() {
           </ScrollView>
         ) : (
           <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-            <Text style={{ color: theme.colors.text, fontSize: 40, fontWeight: '700' }}>Nothing here...</Text>
+            <Text style={{ color: theme.colors.secondary, fontSize: 30, fontWeight: '700' }}>Nothing here...</Text>
             <Text style={{ color: theme.colors.text, fontSize: 20, fontWeight: '400', textAlign: 'center' }}>
-              Try searching for a movie you’ve already watched and rate it! 
+              Try searching for a movie you watched recently and rate it!
             </Text>
           </View>
-        )}
-      </View>
-
-      {/* ---------------- TO WATCH ---------------- */}
-      <View style={{ marginBottom: 4, marginTop: 10, height: 300, marginHorizontal: 10 }}>
-        <Text style={{ color: theme.colors.text, fontWeight: 700, fontSize: 25, marginBottom: 12, marginTop: 10, marginLeft: 3 }}>
-          To watch:
-        </Text>
-
-        {toWatch.length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-              {toWatch.map((movie, idx) => (
-                <View
-                  key={movie.id + idx}
-                  style={{
-                    width: 130,
-                    alignItems: 'center',
-                    marginRight: 12,
-                    marginTop: 10,
-                    marginLeft: 3,
-                  }}
-                >
-                  <FilmDisplay
-                    width={120}
-                    movie={movie}
-                    onPress={() => navigation.navigate('FilmDetails', { movie })}
-                  />
-                  <Text
-                    style={{
-                      marginTop: 0.5,
-                      fontWeight: '600',
-                      color: theme.colors.text,
-                      textAlign: 'center',
-                    }}
-                    numberOfLines={1}
-                  >
-                    {movie.title}
-                  </Text>
-                  <Text
-                    style={{
-                      marginTop: 2,
-                      color: theme.colors.text,
-                      fontWeight: '400',
-                      fontSize: 14,
-                      textAlign: 'center',
-                    }}
-                    numberOfLines={1}
-                  >
-                    {movie.genres[0]} - {movie.year}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </ScrollView>
-        ) : (
-          <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-            <Text style={{ color: theme.colors.text, fontSize: 40, fontWeight: '700' }}>Nothing here...</Text>
-            <Text style={{ color: theme.colors.text, fontSize: 20, fontWeight: '400', textAlign: 'center' }}>
-              Try searching for a movie you want to see and save it
-            </Text>
-          </View>
-        )}
+        ))}
       </View>
     </View>
   </View>

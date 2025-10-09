@@ -19,10 +19,10 @@ export default function SearchNoResults({ query }) {
       
       <View style={styles.textContainer}>
         <Text style={[styles.title, { color: theme.colors.text }]}>
-          ¡Ay! Esa opcion no está disponible
+          ¡Oh no! It seems this option is not available.
         </Text>
         <Text style={[styles.subtitle, { color: theme.colors.primary }]}>
-          Intenta con otra búsqueda
+          Try another search
         </Text>
       </View>
     </View>

@@ -17,43 +17,42 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
-  const { signIn } = useAuth();
+  const { signIn, state } = useAuth();
 
   async function onLogin() {
     setError(null);
     try {
       await signIn(email, password);
-      // No navegamos manualmente: el stack global redirige según primer login
+      // App.js maneja automaticamente navigation con el formPending
     } catch (e) {
-      setError(String(e?.message || 'No se pudo iniciar sesión'));
+      setError(String(e?.message || 'Could not log in. Please try again.'));
     }
   }
 
-  // Navegación automática según primer login eliminada, ahora se maneja directo en onLogin
 
   return (
     <View style={styles.container}>
       <View style={{alignSelf:'center', alignItems: 'center', marginBottom: '10%', width:'90%'}}>
             <Text variant="headlineLarge" style={{ textAlign: 'center', color: theme.colors.text, fontWeight: '700' }}>
-              Bienvenido de vuelta!
+              Welcome Back!
             </Text>
             <Text variant="bodyLarge" style={{ color: theme.colors.text, marginTop: 8, textAlign: 'center' }}>
-              Completa tus datos para avanzar.
+              Complete these details to proceed.
             </Text>
       </View>
       <View style={{flex:0.4,gap:'3%'}}>
         <TextInput label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-        <TextInput label="Contraseña" value={password} onChangeText={setPassword} password={true} />
+        <TextInput label="Password" value={password} onChangeText={setPassword} password={true} />
         <View style={{height:32,alignContent:'center'}}>
           {error ? <HelperText style={{fontSize:16,fontWeight:'700'}} type="error">{error}</HelperText> : null}
         </View>
       </View>
   <GradientButton mode="contained" onPress={onLogin}>
-        Iniciar sesión
+        Login
       </GradientButton>
       <View style={{ width: '100%', alignItems: 'center', marginTop: '3%',backgroundColor:'transparent' }}>
         <Text variant="bodyLarge" style={{ color: theme.colors.text, textAlign: 'center' }}>
-        ¿No tenés una cuenta?
+        ¿Don't have an account?
         </Text>
         <GradientButton
                 mode="text"
@@ -61,7 +60,7 @@ export default function LoginScreen({ navigation }) {
                 onPress={() => navigation.navigate('SignUp')}
                 style={{ width: btnWidth, marginTop: '-2%'}}
               >
-                Registrate aquí
+                Register here
         </GradientButton>
       </View>
     </View>

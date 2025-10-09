@@ -1,10 +1,10 @@
 import axios from "axios";
 
-export const API_URL = "http://192.168.68.53:5000"; // Local server
+export const API_URL = "http://172.20.10.10:5050"; // Local server
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 10000,
+  timeout: 60000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -61,8 +61,9 @@ export function getMovies(query,page) {
 }
 
 
-export function getMovieDetails(movieId) {
-  return post("/movies/selected", { movie_id: movieId });
+export function getMovieDetails(movieId, token) {
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  return get('/movies/detailsScreen', {params:{movieId}, headers });
 }
 
 
@@ -89,4 +90,45 @@ export function getUserGroups(token) {
 export function saveForm(data, token) {
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
   return post("/saveUserForm", data, { headers });
+}
+export function showUserForm() {
+  return get("/showUserForm");
+}
+
+
+export function getGroupUsersById(groupId, token) {
+  return get('/groups/users', {
+    params: { group_id: groupId },
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function rateMovie(movieId, rating, token) {
+  return post('/seen_movies/rate_movie', { movie_id: movieId, rating }, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+  export function toFavorite(movieId,action, token) {
+  return post('/user/to_favorite', { movie_id: movieId,action: action }, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function getSeenMovies(token) {
+  return get('/seen_movies/get_seen_movies', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function getUserRating(movie_id, token) {
+  return get('/seen_movies/get_user_rating', {
+    headers: { Authorization: `Bearer ${token}` },
+    params: { movie_id }
+  });
+}
+export function getFavourites(token) {
+  return get('/user/favorites', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 }

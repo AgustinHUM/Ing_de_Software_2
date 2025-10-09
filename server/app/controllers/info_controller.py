@@ -2,7 +2,9 @@ from flask import request, redirect, jsonify
 from ..models.models import *
 from ..config import Config
 from ..db import db
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, desc
+from sqlalchemy.orm import joinedload
+import jwt
 
 def request_movie_info():
     if request.method == "GET":
@@ -94,26 +96,123 @@ def selected_movie_info():
         
         return jsonify(pelicula_select), 200
 
-     
+def movie_details_screen_info():
+    if request.method == "GET":
+        if (not request.args) or (not request.args.get("movieId")):
+            return jsonify({"error": "no se recibió movieId"}), 400
+        
+        id_peli = request.args.get("movieId")
+
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        
+        if not token:
+            print("No se recibió token")
+            return jsonify({"Error": "No se recibió token"}), 401
+
+        payload = jwt.decode(token, options={"verify_signature": False})
+        mail_usuario = payload.get("email")
+
+        if not mail_usuario:
+            return jsonify({"Error": "No se pudo obtener email del token"}), 401
+        
+        usuario = Usuario.query.filter_by(mail=mail_usuario).first()
+
+        if not usuario:
+            print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
+            return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+        
+
+        peli = PeliculaCompleta.query.filter_by(id_pelicula = id_peli).first()
+
+        if not peli:
+            return jsonify({"Error": "La pelicula no existe"}), 401
+        
+        pelicula_select = { "id": peli.id_pelicula, 
+                            "genres": peli.generos,
+                            "platforms": peli.plataformas,
+                            "year": peli.anio_lanzamiento,
+                            "runtime":peli.duracion,
+                            "director":peli.directores,
+                            "rating":peli.score_critica,
+                            "description":peli.trama,
+                            "ageRating":peli.clasificacion_edad,
+                            "is_favorite": peli.id_pelicula in list(map(lambda x: x.id_pelicula,usuario.favoritas))
+                          }         
+        
+        
+        return jsonify(pelicula_select), 200
+
+
+#Esta funcion va en /user_controller     
 def show_form():
     if request.method == "GET":
         
         paises = Pais.query.all()
         
-        lista_paises = [{"country_id": pais.id_pais,
-                         "country_name": pais.nombre_pais} for pais in paises]
+        lista_paises = [{"id": pais.id_pais,
+                         "name": pais.nombre_pais,
+                         'flag': pais.url_bandera} for pais in paises]
 
         plataformas = Plataforma.query.all()
 
-        lista_plataformas = [{"platform_id": plataforma.id_plataforma,
-                            "platform_name": plataforma.nombre_platafoma} for plataforma in plataformas]
+        lista_plataformas = [{"id": plataforma.id_plataforma,
+                            "name": plataforma.nombre_plataforma,
+                            "logo": plataforma.url_logo} for plataforma in plataformas]
         
         generos = Genero.query.all()
-        lista_genero = [{"genre_id": genero.id_genero,
-                        "genre_name": genero.nombre_genero} for genero in generos]
+        lista_genero = [{"id": genero.id_genero,
+                        "name": genero.nombre_genero} for genero in generos]
         
         
         res = {"countries": lista_paises, "platforms": lista_plataformas, "genres": lista_genero}
         return jsonify(res), 200
 
 
+def show_home_movies():
+    if request.method == "GET":
+
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        
+        if not token:
+            print("No se recibió token")
+            return jsonify({"Error": "No se recibió token"}), 401
+
+        payload = jwt.decode(token, options={"verify_signature": False})
+        mail_usuario = payload.get("email")
+
+        if not mail_usuario:
+            return jsonify({"Error": "No se pudo obtener email del token"}), 401
+        
+        usuario = Usuario.query.options(
+            joinedload(Usuario.generos_fav),
+            joinedload(Usuario.plataformas)
+        ).filter_by(mail=mail_usuario).first()
+
+        if not usuario:
+            print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
+            return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+        
+        id_generos = [g.id_genero for g in usuario.generos_fav]
+        id_plataformas = [p.id_plataforma for p in usuario.plataformas]
+        id_pais = usuario.id_pais
+
+        #Capaz que funciona horrible
+        peliculas = (
+            Pelicula.query
+            .join(Pelicula.generos)
+            .join(Pelicula.plataformas_paises)
+            .filter(Genero.id_genero.in_(id_generos))
+            .filter(PeliculaPlataformaPais.id_plataforma.in_(id_plataformas))
+            .filter(PeliculaPlataformaPais.id_pais == id_pais)
+            .order_by(desc(Pelicula.score_critica))
+            .distinct()
+            .limit(6)
+            .all()
+        )
+
+        res = [{
+            "id_pelicula": p.id_pelicula,
+            "titulo": p.titulo,
+            "poster": p.url_poster} for p in peliculas]
+        
+        return jsonify(res), 200

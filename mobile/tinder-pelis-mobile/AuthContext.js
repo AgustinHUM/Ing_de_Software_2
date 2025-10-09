@@ -25,29 +25,6 @@ export function AuthProvider({ children }) {
 
   const [busy, setBusy] = useState(false);
 
-  const [formPending, setFormPendingState] = useState(false);
-  const pendingResolvers = useRef([]);
-
-  const setFormPending = useCallback(() => {
-    console.log(`Setting formPending to ${!formPending}`);
-    setFormPendingState(prev=>!prev);
-  }, []);
-
-  const setFormPendingAsync = useCallback(() => {
-    return new Promise((resolve) => {
-      pendingResolvers.current.push(resolve);
-      setFormPendingState(prev => !prev);
-    });
-  }, []);
-
-    useEffect(() => {
-    if (pendingResolvers.current.length === 0) return;
-    while (pendingResolvers.current.length) {
-      const r = pendingResolvers.current.shift();
-      try { r(formPending); } catch (e) { console.warn("Error resolving formPending promise", e);}
-    }
-  }, [formPending]);
-
   const withBusy = useCallback(async (fn) => {
     setBusy(true);
     try {
@@ -63,8 +40,13 @@ export function AuthProvider({ children }) {
         const token = await SecureStore.getItemAsync('userToken');
         const email = await SecureStore.getItemAsync('lastLoginEmail');
         const name = await SecureStore.getItemAsync('userName');
-        const user = email ? { email, name: name || email.split('@')[0] } : null;
-        dispatch({ type: 'RESTORE_TOKEN', token, user });
+        const storedFormPending = await SecureStore.getItemAsync('formPending');
+        const user = email ? { 
+          email, 
+          name: name || email.split('@')[0], 
+          formPending: storedFormPending === 'true' 
+        } : null;
+        dispatch({ type: 'RESTORE_TOKEN', token, user }); 
       } catch {
         dispatch({ type: 'RESTORE_TOKEN', token: null, user: null });
       }
@@ -72,7 +54,6 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function signIn(email, password) {
-    console.log("Form pending at signIn:", formPending);
     return withBusy(async () => {
       const res = await fetch(`${API_URL}/login`, {
         method: 'POST',
@@ -90,13 +71,15 @@ export function AuthProvider({ children }) {
       const token = data?.id_token || data?.access_token || 'session-ok';
       const user = {
         email: email,
-        name: data?.nombre_cuenta || email.split('@')[0]
+        name: data?.nombre_cuenta || email.split('@')[0],
+        formPending: data?.formulario_pendiente 
       };
 
       try {
         await SecureStore.setItemAsync('userToken', token);
         await SecureStore.setItemAsync('lastLoginEmail', email);
         await SecureStore.setItemAsync('userName', user.name);
+        await SecureStore.setItemAsync('formPending', String(user.formPending));
       } catch (e) {
         console.warn('Error guardando token/email en SecureStore', e);
       }
@@ -107,7 +90,6 @@ export function AuthProvider({ children }) {
   }
 
   async function signUp(email, nombre, password) {
-    console.log("Form pending at signUp:", formPending);
     return withBusy(async () => {
       const res = await fetch(`${API_URL}/register`, {
         method: 'POST',
@@ -127,7 +109,6 @@ export function AuthProvider({ children }) {
   }
 
   async function signOut() {
-    console.log("Form pending at signOut:", formPending);
     return withBusy(async () => {
       dispatch({ type: 'SIGN_OUT' });
 
@@ -151,6 +132,16 @@ export function AuthProvider({ children }) {
     return { token };
   }
 
+  async function setFormPendingAsync(formPending) {
+    try {
+      await SecureStore.setItemAsync('formPending', String(formPending));
+      const updatedUser = { ...state.user, formPending };
+      dispatch({ type: 'SIGN_IN', token: state.userToken, user: updatedUser });
+    } catch (e) {
+      console.warn('Error updating formPending in SecureStore', e);
+    }
+  }
+
   const value = {
     state,
     busy,
@@ -160,8 +151,6 @@ export function AuthProvider({ children }) {
     signUp,
     signOut,
     guestSignIn,
-    formPending,
-    setFormPending,
     setFormPendingAsync
   };
 

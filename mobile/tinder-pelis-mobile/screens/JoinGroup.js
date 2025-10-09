@@ -7,12 +7,12 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import GradientButton from "../components/GradientButton";
 import Input from "../components/TextInput";
 
-
 // Para conectar al back
 import { Alert } from 'react-native';
 import { useAuth } from '../AuthContext';
 import { joinGroup } from '../src/services/api';
 
+import ErrorOverlay from "../components/ErrorOverlay"; // ← agregado
 
 const APPBAR_HEIGHT = 60;
 const APPBAR_BOTTOM_INSET = 10;
@@ -26,6 +26,18 @@ export default function JoinGroup({ navigation }) {
   // OBTENER TOKEN
   const { state } = useAuth();
   const token = state?.userToken;
+
+  // Overlay de error genérico
+  const [showGenericError, setShowGenericError] = useState(false);
+  const isGenericBackendError = (err) => {
+    const msg = (err?.message || "").toLowerCase();
+    return (
+      msg.startsWith("http ") ||       // "HTTP 500", etc.
+      msg.includes("timeout") ||       // "Request timeout"
+      msg.includes("no response") ||   // "No response from server"
+      msg === "request error"
+    );
+  };
 
   // FUNCIÓN QUE LLAMA AL BACK
   async function handleJoin() {
@@ -45,7 +57,11 @@ export default function JoinGroup({ navigation }) {
         { text: 'OK', onPress: () => navigation.navigate('Groups') },
       ]);
     } catch (e) {
-      Alert.alert('Error', e.message || 'No te pudimos unir al grupo');
+      if (isGenericBackendError(e)) {
+        setShowGenericError(true); // se cierra solo a los 5s
+      } else {
+        Alert.alert('Error', e.message || 'No te pudimos unir al grupo');
+      }
     }
   }
 
@@ -57,6 +73,12 @@ export default function JoinGroup({ navigation }) {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={{ flex: 1, backgroundColor: theme.colors.background }}
     >
+      {/* Overlay de error genérico */}
+      <ErrorOverlay
+        visible={showGenericError}
+        onHide={() => setShowGenericError(false)}
+      />
+
       <View
         style={{
           flex: 1,

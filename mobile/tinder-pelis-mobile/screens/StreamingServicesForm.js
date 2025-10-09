@@ -1,9 +1,9 @@
 import { useTheme } from "react-native-paper";
 import SelectableListForm from "../components/Form";
-import { useRoute } from "@react-navigation/native";
 
-export default function StreamingServicesForm({ navigation }) {
-  const SERVICES = [
+
+export default function StreamingServicesForm({ navigation, route}) {
+  const PLATFORMS_FAKE = [
     { id:'p1', name: "Netflix", icon: { uri: "https://cdn.watchmode.com/provider_logos/netflix_100px.png" } },
     { id:'p2', name: "Disney+", icon: require("../assets/DisneyPlus.jpg") },
     { id:'p3', name: "Prime Video", icon: require("../assets/PrimeVideo.jpg") },
@@ -22,14 +22,19 @@ export default function StreamingServicesForm({ navigation }) {
 
   const theme = useTheme();
   
-  const route = useRoute();
-  const prevResults = route?.params?.formResults ?? {};
+  const prevResults = route.params.formResults;
+  const PLATFORMS = prevResults.formData.platforms.map(item => ({
+    id: item.id,
+    name: item.name,
+    icon: item.logo ? { uri: item.logo } : undefined
+  })) || PLATFORMS_FAKE;
+
 
   return (
     <SelectableListForm 
     title="What are your favorite streaming platforms?"
     mandatory={true}
-    items={SERVICES}
+    items={PLATFORMS}
     buttonText="Next"
     showGoBack={true}
     onSubmit={(selectedServices)=>{

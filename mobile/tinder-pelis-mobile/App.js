@@ -15,9 +15,11 @@ import AppBar from './components/Appbar';
 import ProfileScreen from './screens/Profile';
 
 // import FriendsScreen from './screens/Friends';
+
 import Groups from './screens/Groups';
 import CreateGroup from './screens/CreateGroup';
 import JoinGroup from './screens/JoinGroup';
+import GroupCode from './screens/GroupCode';
 
 import SearchScreen from './screens/Search';
 import FavouritesScreen from './screens/Favourites';
@@ -29,6 +31,7 @@ import StreamingServicesForm from './screens/StreamingServicesForm';
 import CountriesForm from './screens/CountriesForm';
 import DirectorsFormScreen from './screens/DirectorsForm';
 import MoviesFormScreen from './screens/MoviesFormScreen';
+import RateFilm from './screens/RateFilm';
 
 const Stack = createNativeStackNavigator();
 
@@ -181,13 +184,13 @@ function AppInner({ setAppTheme, themesMap, themeName, navigationRef, setCurrent
 
 
 function MainNavigator({ setAppTheme, themesMap, themeName }) {
-  const { state,formPending } = useAuth();
+  const { state } = useAuth();
   const [firstLogin, setFirstLogin] = useState(false);
 
   useEffect(() => {
-   setFirstLogin(formPending);
-   console.log(`En app.js, formPending cambió a ${formPending}`)
-  }, [formPending]);
+   setFirstLogin(state.user?.formPending || false);
+   console.log(`En app.js, formPending cambió a ${state.user?.formPending}`)
+  }, [state.user?.formPending]);
 
   return (
     <Stack.Navigator
@@ -197,9 +200,9 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
     >
       {!state.userToken ? (
         <>
-          <Stack.Screen name="Inicio" component={WelcomeScreen} options={{ headerShown: false, animation:'none' }} />
-          <Stack.Screen name="Login" component={LoginScreen} options={{title: 'Inicio de sesión', animation:'none' }} />
-          <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: 'Registro', animation:'none' }} />
+          <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false, animation:'none' }} />
+          <Stack.Screen name="Login" component={LoginScreen} options={{title: 'Login', animation:'none' }} />
+          <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: 'Sign up', animation:'none' }} />
         </>
       ) : firstLogin ? (
         <>
@@ -227,6 +230,9 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
           <Stack.Screen name="Groups" component={Groups} options={{ headerShown: false }} />
           <Stack.Screen name="CreateGroup" component={CreateGroup} options={{ headerShown: false }} />
           <Stack.Screen name="JoinGroup" component={JoinGroup} options={{ headerShown: false }} />
+          <Stack.Screen name="GroupCode" component={GroupCode} options={{ headerShown: false }} />
+
+          <Stack.Screen name="RateFilm" component={RateFilm} options={{ headerShown: false }} />
           
           <Stack.Screen name="Search" component={SearchScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Favourites" component={FavouritesScreen} options={{ headerShown: false }} />
