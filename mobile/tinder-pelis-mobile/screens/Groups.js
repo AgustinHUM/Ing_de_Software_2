@@ -47,7 +47,7 @@ function GroupSearch({ placeholder = "Search for a group", style, onSubmit, valu
 
 function GroupItem({ name, members = 1, onPress, availableWidth }) {
   return (
-    <View style={{ alignItems: "center", marginTop: 16 }}>
+    <View style={{ alignItems: "center", marginTop: 1 }}>
       <GradientButton
         onPress={onPress}
         fullWidth={false}
@@ -142,8 +142,8 @@ export default function GroupsHome({ navigation }) {
   const availableWidth = width - 2 * OUTER_PAD - 2 * CONTENT_PAD;
 
   // espacios para evitar solapes con Appbar/FAB
-  const contentBottomPad = bottom + APPBAR_BOTTOM_INSET + APPBAR_HEIGHT + 16;
-  const listBottomPad = contentBottomPad + FAB_SIZE + FAB_MARGIN + 8;
+  const contentBottomPad = bottom + APPBAR_BOTTOM_INSET + APPBAR_HEIGHT + FAB_SIZE;
+  const listBottomPad = 0;
   const fabBottom = FAB_MARGIN + APPBAR_BOTTOM_INSET + APPBAR_HEIGHT + bottom;
   const popupRight = FAB_MARGIN + FAB_SIZE + POPUP_GAP;
 
