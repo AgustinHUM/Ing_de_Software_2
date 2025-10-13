@@ -1,4 +1,4 @@
-// Favorites.js
+
 import React, { useEffect, useState } from 'react';
 import { View, ScrollView, Platform } from 'react-native';
 import { ActivityIndicator, Text, useTheme } from 'react-native-paper';
@@ -9,7 +9,6 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { getFavourites, getSeenMovies } from '../src/services/api';
 import * as SecureStore from 'expo-secure-store';
 
-// 🔹 Tus 6 películas hardcodeadas
 const movies = [
   {
     id: 'm1',

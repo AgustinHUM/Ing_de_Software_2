@@ -107,6 +107,7 @@ export default function GroupCode({ navigation, route }) {
   }, [groupId]);
 
   const goStart = () => navigation.navigate("Home");
+  const goSwipe = () => navigation.navigate("GroupSwiping", { groupId, groupName, startWithoutPrefs });
 
   const renderItem = ({ item }) => (
     <View
@@ -284,7 +285,7 @@ export default function GroupCode({ navigation, route }) {
             <View style={{ height: 20 }} />
 
             {/* Botón principal */}
-            <GradientButton onPress={goStart} style={{ paddingVertical: 18, borderRadius: 16 }}>
+            <GradientButton onPress={goSwipe} style={{ paddingVertical: 18, borderRadius: 16 }}>
               <Text style={{ fontSize: 20, fontWeight: "900", textAlign: "center" }}>
                 Start swiping
               </Text>
