@@ -114,7 +114,9 @@ def movie_details_screen_info():
 
         if not mail_usuario:
             return jsonify({"Error": "No se pudo obtener email del token"}), 401
+        
         usuario = Usuario.query.filter_by(mail=mail_usuario).first()
+
         if not usuario:
             print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
             return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
@@ -182,8 +184,8 @@ def show_home_movies():
             return jsonify({"Error": "No se pudo obtener email del token"}), 401
         
         usuario = Usuario.query.options(
-            joinedload("generos_fav"),
-            joinedload("plataformas")
+            joinedload(Usuario.generos_fav),
+            joinedload(Usuario.plataformas)
         ).filter_by(mail=mail_usuario).first()
 
         if not usuario:
@@ -200,8 +202,8 @@ def show_home_movies():
             .join(Pelicula.generos)
             .join(Pelicula.plataformas_paises)
             .filter(Genero.id_genero.in_(id_generos))
-            .filter(PeliculaPaisPlataforma.id_plataforma.in_(id_plataformas))
-            .filter(PeliculaPaisPlataforma.id_pais == id_pais)
+            .filter(PeliculaPlataformaPais.id_plataforma.in_(id_plataformas))
+            .filter(PeliculaPlataformaPais.id_pais == id_pais)
             .order_by(desc(Pelicula.score_critica))
             .distinct()
             .limit(6)

@@ -93,6 +93,7 @@ export default function LoginScreen({ navigation }) {
         <TextInput label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
         <TextInput label="Password" value={password} onChangeText={handlePasswordChange} password={true} />
         <TextInput label="Confirm Password" value={confirmPassword} onChangeText={handleConfirmPasswordChange} password={true} />
+        
       </View>
 
       <View style={{height:32,alignContent:'center'}}>
@@ -105,7 +106,7 @@ export default function LoginScreen({ navigation }) {
 
       <View style={{ width: '100%', alignItems: 'center', marginTop: '10%', backgroundColor: 'transparent' }}>
         <Text variant="bodyLarge" style={{ color: theme.colors.text, textAlign: 'center' }}>
-          ¿Already Registered?
+          Already Registered?
         </Text>
         <GradientButton
           mode="text"
