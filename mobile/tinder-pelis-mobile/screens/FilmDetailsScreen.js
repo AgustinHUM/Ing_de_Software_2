@@ -310,7 +310,7 @@ export default function FilmDetailsScreen() {
                         )}
                     </View>
 
-                    <View style={{marginBottom:256}}>
+                    <View style={{marginBottom:300}}>
                        {movie.description ? (
                        <>
                            <Text style={{ color: theme.colors.text, fontSize: 20, fontWeight: 'bold', marginBottom: 8 }}>
