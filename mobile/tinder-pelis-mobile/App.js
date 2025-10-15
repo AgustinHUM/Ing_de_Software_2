@@ -79,7 +79,7 @@ const TEMAS = {
     primary:'rgba(251, 206, 4, 1)',secondary:'rgba(180, 171, 0, 1)',
     accent:'rgba(251, 230, 4, 1)',text:'rgba(44, 1, 1, 1)',placeholder:'rgba(0, 0, 0, 1)'
   },
-  Frozone: {background:'rgba(255, 255, 255, 1)',surface:'rgba(47, 173, 227, 1)',
+  Frozone: {background:'rgba(255, 255, 255, 1)',surface:'rgba(17, 89, 119, 1)',
     primary:'rgba(4, 251, 247, 1)',secondary:'rgba(0, 53, 59, 1)',
     accent:'rgba(4, 251, 247, 1)',text:'rgba(0, 0, 0, 1)',placeholder:'rgba(255,255,255,1)'
   },
