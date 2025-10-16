@@ -132,7 +132,7 @@ export default function Favorites() {
             </View>
           </ScrollView>
         ) : (
-          <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+          <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1, marginHorizontal: 10 }}>
             <Text style={{ color: theme.colors.secondary, fontSize: 30, fontWeight: '700' }}>Nothing here...</Text>
             <Text style={{ color: theme.colors.text, fontSize: 20, fontWeight: '400', textAlign: 'center' }}>
               Try searching for a movie you love and tap the heart icon! 
@@ -216,7 +216,7 @@ export default function Favorites() {
             </View>
           </ScrollView>
         ) : (
-          <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+          <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1, marginHorizontal: 10 }}>
             <Text style={{ color: theme.colors.secondary, fontSize: 30, fontWeight: '700' }}>Nothing here...</Text>
             <Text style={{ color: theme.colors.text, fontSize: 20, fontWeight: '400', textAlign: 'center' }}>
               Try searching for a movie you watched recently and rate it!
