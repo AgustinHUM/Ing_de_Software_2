@@ -205,6 +205,7 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
   useEffect(() => {
    setFirstLogin(state.user?.formPending || false);
    console.log(`En app.js, formPending cambió a ${state.user?.formPending}`)
+   console.log(`Usuario: ${state.user?.email}, name: ${state.user?.name}, formPending: ${state.user?.formPending}`);
   }, [state.user?.formPending]);
 
   return (

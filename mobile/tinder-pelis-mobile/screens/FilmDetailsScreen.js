@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Image, TouchableOpacity, ScrollView, Modal, Platform, Dimensions } from 'react-native';
-import { Text, useTheme, IconButton, ActivityIndicator } from 'react-native-paper';
+import { Text, useTheme, IconButton, ActivityIndicator, Divider } from 'react-native-paper';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
@@ -20,6 +20,7 @@ import { toFavorite,getMovieDetails } from '../src/services/api';
 import * as SecureStore from "expo-secure-store";
 import { getUserRating } from '../src/services/api';
 import LoadingBox from '../components/LoadingBox';
+import GradientButton from '../components/GradientButton';
 
 const { width } = Dimensions.get('window');
 
@@ -236,6 +237,7 @@ export default function FilmDetailsScreen() {
                                   icon={<Ionicons name="person-outline" size={16} color={theme.colors.text} />}
                                   label="Director"
                                   value={movie.director || 'Unknown'}
+                                  containerStyle={{paddingRight:1}}
                               />
                             )}
 
@@ -252,13 +254,12 @@ export default function FilmDetailsScreen() {
                     </View>
                     
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems:'flex-start', flex:1, marginBottom:16 }}>
-                        {(loading || movie.rating) ? (
-                            loading ? (
+                        {loading ? (
                               <LoadingBox style={{marginBottom:8,borderRadius:8,width:64,height:40, marginRight:8}} />
                             ) : (
                               <FilmDetail
                                   icon= {<MaterialIcons name='star-outline' size={16} color={theme.colors.text} />}
-                                  value={typeof movie.rating === 'number' ? movie.rating.toFixed(1) : String(movie.rating)}
+                                  value={!!movie.rating ? (typeof movie.rating === 'number' ? movie.rating.toFixed(1) : String(movie.rating)) : 'N/A'}
                                   textStyle={{ color: theme.colors.text, fontSize: 14, fontWeight: '600', marginLeft: 6}}
                                   containerStyle={{flexDirection: 'row',
                                   paddingVertical: 10,
@@ -269,10 +270,7 @@ export default function FilmDetailsScreen() {
                                   backgroundColor: theme.colors.primary,
                                   alignItems: 'center'}}>
                               </FilmDetail>
-                            )
-                        ) : (
-                            <LoadingBox style={{marginBottom:8,borderRadius:8,width:64,height:40, marginRight:8}} />
-                        )}
+                            )}
 
                         {loading ? (
                             <LoadingBox style={{marginBottom:8,borderRadius:8,width:256,height:40}} />
@@ -333,15 +331,20 @@ export default function FilmDetailsScreen() {
                 onRequestClose={() => setShowGenresModal(false)}
                 transparent={false}
             >
-                <View style={{ flex: 1, padding: 25, paddingVertical: Platform.OS === 'ios' ? 70 : 35, backgroundColor: theme.colors.background }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-                        <Text variant="headlineSmall" style={{ color: theme.colors.text, fontWeight: 700 }}>All Genres</Text>
-                        <TouchableOpacity onPress={() => setShowGenresModal(false)} style={{ padding: 8 }}>
-                            <Text style={{ color: theme.colors.text }}>Close</Text>
-                        </TouchableOpacity>
+                <View style={{ flex: 1, flexDirection:'column', padding: 25, paddingVertical: Platform.OS === 'ios' ? 70 : 35, backgroundColor: theme.colors.background }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+                        <Text variant="headlineMedium" style={{ color: theme.colors.text, fontWeight: 700, textAlign:'center' }}>{movie.title}'{movie.title.slice(-1)==='s' ? '' : 's'} Genres</Text>
                     </View>
+                    <Divider
+                            style={{
+                                backgroundColor: theme.colors.primary,
+                                width: "100%",
+                                height: 5,
+                                borderRadius: 5,
+                            }}
+                            />
 
-                    <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+                    <ScrollView contentContainerStyle={{ paddingBottom: 24, flexGrow:0 }} showsVerticalScrollIndicator={false}>
                         { (Array.isArray(movie.genres) && movie.genres.length ? movie.genres : ['No genres available']).map((genre, index) => (
                             <View
                                 key={index}
@@ -351,15 +354,15 @@ export default function FilmDetailsScreen() {
                                     paddingHorizontal: 8,
                                     paddingVertical: 4,
                                     marginRight: 4,
-                                    marginBottom: 8,
+                                    marginTop: 12,
                                 }}
                             >
                                 <Text
                                     style={{
                                         textAlign: 'center',
                                         color: theme.colors.text,
-                                        fontSize: 14,
-                                        fontWeight: '600',
+                                        fontSize: 16,
+                                        fontWeight: '700',
                                     }}
                                 >
                                     {genre}
@@ -367,12 +370,22 @@ export default function FilmDetailsScreen() {
                             </View>
                         ))}
                     </ScrollView>
+                    <Divider
+                        style={{
+                        backgroundColor: theme.colors.primary,
+                        width: "100%",
+                        height: 5,
+                        borderRadius: 5,
+                        marginBottom:16}}/>
+                    <GradientButton mode='outlined' onPress={() => setShowGenresModal(false)}>Close</GradientButton>
+                    <View style={{flex:1}} />
                 </View>
             </Modal>
 
          
 
-        <View style={containerStyle}>
+        <View style={userRating ? {...containerStyle,backgroundColor:theme.colors.secondary} : containerStyle}>
+            {loading ? <ActivityIndicator size={25} color={theme.colors.text} /> : 
             <IconButton
                 icon={() => (
                     <MaterialCommunityIcons
@@ -385,7 +398,7 @@ export default function FilmDetailsScreen() {
                 navigation.navigate('RateFilm', { movie, userRating });
             }}
             style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
-            />
+            />}
         </View>
     </View>
   );    
