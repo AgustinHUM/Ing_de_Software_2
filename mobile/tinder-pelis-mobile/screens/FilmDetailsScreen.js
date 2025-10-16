@@ -19,6 +19,7 @@ import TitleDisplay from '../components/TitleDisplay';
 import { toFavorite,getMovieDetails } from '../src/services/api';
 import * as SecureStore from "expo-secure-store";
 import { getUserRating } from '../src/services/api';
+import LoadingBox from '../components/LoadingBox';
 
 const { width } = Dimensions.get('window');
 
@@ -310,13 +311,19 @@ export default function FilmDetailsScreen() {
                     </View>
 
                     <View style={{marginBottom:256}}>
-                        <Text style={{ color: theme.colors.text, fontSize: 20, fontWeight: 'bold', marginBottom: 8 }}>
-                            Synopsis
-                        </Text>
-                        <Text style={{ color: theme.colors.text, fontSize: 16, lineHeight: 22, opacity: 0.8 }}>
-                            {movie.description || 'Loading description...'}
-                        </Text>
-                    </View>
+                       {movie.description ? (
+                       <>
+                           <Text style={{ color: theme.colors.text, fontSize: 20, fontWeight: 'bold', marginBottom: 8 }}>
+                               Synopsis
+                           </Text>
+                           <Text style={{ color: theme.colors.text, fontSize: 16, lineHeight: 22, opacity: 0.8 }}>
+                               {movie.description}
+                           </Text>
+                       </>) : (
+                       <>
+                           <LoadingBox style={{width:'100%',height:128, borderRadius:15}}></LoadingBox>
+                       </>)}
+                   </View>
                 </View>
             </ScrollView>
 
