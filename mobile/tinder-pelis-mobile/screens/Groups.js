@@ -1,14 +1,27 @@
 // Groups.js
-import React, { Activity, useState } from "react";
-import { View, Modal, Pressable, TouchableOpacity, Dimensions, FlatList, Alert, ScrollView } from "react-native";
-import { ActivityIndicator, Divider, Text, useTheme as usePaperTheme } from "react-native-paper";
+import React, { useState } from "react";
+import {
+  View,
+  Pressable,
+  TouchableOpacity,
+  Dimensions,
+  FlatList,
+  Alert,
+  ScrollView,
+} from "react-native";
+import {
+  ActivityIndicator,
+  Divider,
+  Text,
+  useTheme as usePaperTheme,
+} from "react-native-paper";
 import { useTheme, useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { LinearGradient } from "expo-linear-gradient";
 import GradientButton from "../components/GradientButton";
 import { getUserGroups } from "../src/services/api";
-import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from "expo-secure-store";
 import LoadingOverlay from "../components/LoadingOverlay";
 import ErrorOverlay from "../components/ErrorOverlay";
 
@@ -27,7 +40,7 @@ const FAB_SIZE = 64;
 const FAB_MARGIN = 24;
 const POPUP_GAP = 12;
 
-const OUTER_PAD = 16;   // padding del SafeAreaView
+const OUTER_PAD = 16; // padding del SafeAreaView
 const CONTENT_PAD = 16; // padding del contenedor interno
 
 export default function GroupsHome({ navigation }) {
@@ -54,9 +67,9 @@ export default function GroupsHome({ navigation }) {
   const isGenericBackendError = (err) => {
     const msg = (err?.message || "").toLowerCase();
     return (
-      msg.startsWith("http ") ||       // "HTTP 500", etc.
-      msg.includes("timeout") ||       // "Request timeout"
-      msg.includes("no response") ||   // "No response from server"
+      msg.startsWith("http ") || // "HTTP 500", etc.
+      msg.includes("timeout") || // "Request timeout"
+      msg.includes("no response") || // "No response from server"
       msg === "request error"
     );
   };
@@ -79,7 +92,10 @@ export default function GroupsHome({ navigation }) {
           if (isGenericBackendError(error)) {
             setShowGenericError(true);
           } else {
-            Alert.alert("Error", error.message || "An error occurred while looking for your groups.");
+            Alert.alert(
+              "Error",
+              error.message || "An error occurred while looking for your groups."
+            );
           }
           if (mounted) setGroups([]);
         } finally {
@@ -120,31 +136,36 @@ export default function GroupsHome({ navigation }) {
 
       {/* Use your SearchBar component. It will call onSubmit with the query when the user submits. */}
       <SearchBar initialQuery={search} onSubmit={(q) => setSearch(q)} />
-      <Divider style={{
-        backgroundColor: theme.colors.primary,
-        width: "100%",
-        height: 5,
-        borderRadius: 5,
-        marginTop:16}}/>
+      <Divider
+        style={{
+          backgroundColor: theme.colors.primary,
+          width: "100%",
+          height: 5,
+          borderRadius: 5,
+          marginTop: 16,
+        }}
+      />
       {/* Contenido */}
-      <View style={{ flex: 1, paddingBottom:64 }}>
-        {loading ? 
-        (
+      <View style={{ flex: 1, paddingBottom: 64 }}>
+        {loading ? (
           <View style={{ flex: 0.75, alignItems: "center" }}>
-            {[1,2,3,4,5].map(i =>{
-              return (<LoadingBox 
-              key={i}
-              style={{
-                marginTop:16,
-                width: Math.min(availableWidth, 420),
-                height: 60,
-                borderRadius: 999,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }} />)
+            {[1, 2, 3, 4, 5].map((i) => {
+              return (
+                <LoadingBox
+                  key={i}
+                  style={{
+                    marginTop: 16,
+                    width: Math.min(availableWidth, 420),
+                    height: 60,
+                    borderRadius: 999,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                />
+              );
             })}
           </View>
-        ) : (filteredGroups.length === 0 ? (
+        ) : filteredGroups.length === 0 ? (
           <View style={{ flex: 1, alignItems: "center", paddingTop: 64 }}>
             <Text style={{ fontSize: 28, fontWeight: "800", marginBottom: 8, color: textColor }}>
               Looks empty...
@@ -169,18 +190,21 @@ export default function GroupsHome({ navigation }) {
             {filteredGroups.map((item) => {
               const members = item.members ?? 1;
               const label = item.name ?? "Untitled group";
-              const red_variation = (Math.random() * 80 - 40)*Math.sqrt(item.members);
-              const green_variation = (Math.random() * 80 - 40)*Math.sqrt(item.members);
-              const blue_variation = (Math.random() * 80 - 40)*Math.sqrt(item.members);
+              const red_variation = (item.id % 81 - 40) * Math.sqrt(item.members);
+              const green_variation = (item.id % 81 - 40) * Math.sqrt(item.members);
+              const blue_variation = (item.id % 81 - 40) * Math.sqrt(item.members);
               return (
                 <TouchableOpacity
                   key={String(item.id)}
                   activeOpacity={0.85}
-                  onPress={() => navigation.navigate('GroupCode', { groupId: item.id, groupName: item.name })}
-                  style={{ alignItems: 'center', marginTop: 16 }}
+                  onPress={() => navigation.navigate("GroupCode", { groupId: item.id, groupName: item.name })}
+                  style={{ alignItems: "center", marginTop: 16 }}
                 >
                   <LinearGradient
-                    colors={[tweakColor(gradStart,red_variation,green_variation,blue_variation), tweakColor(gradEnd,red_variation,green_variation,blue_variation)]}
+                    colors={[
+                      tweakColor(gradStart, red_variation, green_variation, blue_variation),
+                      tweakColor(gradEnd, red_variation, green_variation, blue_variation),
+                    ]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={{
@@ -188,13 +212,17 @@ export default function GroupsHome({ navigation }) {
                       borderRadius: 999,
                       paddingVertical: 14,
                       paddingHorizontal: 20,
-                      alignItems: 'center',
-                      justifyContent: 'center',
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}
                   >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", width: "100%" }}>
                       <Text
-                        style={{ fontSize: 20, fontWeight: '700', color: 'white' }}
+                        style={{
+                          fontSize: 20,
+                          fontWeight: "700",
+                          color: theme.colors?.onGradient ?? theme.colors.text,
+                        }}
                         numberOfLines={1}
                         ellipsizeMode="tail"
                       >
@@ -203,11 +231,23 @@ export default function GroupsHome({ navigation }) {
 
                       <View style={{ flex: 1 }} />
 
-                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Text style={{ color: theme.colors.text, opacity: 0.95, marginRight: 8, fontSize:16, fontWeight:'700' }}>
+                      <View style={{ flexDirection: "row", alignItems: "center" }}>
+                        <Text
+                          style={{
+                            color: theme.colors?.onGradient ?? theme.colors.text,
+                            opacity: 0.95,
+                            marginRight: 8,
+                            fontSize: 16,
+                            fontWeight: "700",
+                          }}
+                        >
                           {members}
                         </Text>
-                        <MaterialCommunityIcons name="account-group" size={24} color={theme.colors.text} />
+                        <MaterialCommunityIcons
+                          name="account-group"
+                          size={24}
+                          color={theme.colors?.onGradient ?? theme.colors.text}
+                        />
                       </View>
                     </View>
                   </LinearGradient>
@@ -218,7 +258,7 @@ export default function GroupsHome({ navigation }) {
             {/* footer spacer */}
             <View style={{ height: 8 }} />
           </ScrollView>
-        ))}
+        )}
       </View>
 
       {(!loading && !showPopup && groups.length === 0) && (
@@ -238,71 +278,89 @@ export default function GroupsHome({ navigation }) {
       )}
 
       {/* FAB + con gradiente del theme */}
-      {!loading && (<TouchableOpacity
-        activeOpacity={0.95}
-        onPress={() => setShowPopup(true)}
-        style={{
-          position: "absolute",
-          right: FAB_MARGIN,
-          bottom: fabBottom,
-        }}
-      >
-        <LinearGradient
-          colors={[gradStart, gradEnd]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{
-            width: FAB_SIZE,
-            height: FAB_SIZE,
-            borderRadius: FAB_SIZE / 2,
-            alignItems: "center",
-            justifyContent: "center",
-            elevation: 6,
-            shadowColor: "#000",
-            shadowOpacity: 0.25,
-            shadowRadius: 8,
-            shadowOffset: { width: 0, height: 4 },
-          }}
-        >
-          <MaterialCommunityIcons name="plus" size={28} color="white" />
-        </LinearGradient>
-      </TouchableOpacity>)}
-
-      {/* Popup al costado del + */}
-      <Modal transparent visible={showPopup} animationType="fade" onRequestClose={() => setShowPopup(false)}>
-        <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)" }} onPress={() => setShowPopup(false)} />
-        <View
+      {!loading && (
+        <TouchableOpacity
+          activeOpacity={0.95}
+          onPress={() => setShowPopup(true)}
           style={{
             position: "absolute",
-            right: popupRight,
-            bottom: fabBottom - FAB_SIZE / 2,
-            alignItems: "flex-end",
-            gap: 16,
+            right: FAB_MARGIN,
+            bottom: fabBottom,
           }}
         >
-          <GradientButton
-            fullWidth={true}
-            onPress={() => {
-              setShowPopup(false);
-              navigation.navigate("CreateGroup");
+          <LinearGradient
+            colors={[gradStart, gradEnd]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              width: FAB_SIZE,
+              height: FAB_SIZE,
+              borderRadius: FAB_SIZE / 2,
+              alignItems: "center",
+              justifyContent: "center",
+              elevation: 6,
+              shadowColor: "#000",
+              shadowOpacity: 0.25,
+              shadowRadius: 8,
+              shadowOffset: { width: 0, height: 4 },
             }}
-            style={{ marginTop: 32, marginLeft: 16 }}
           >
-            Create group
-          </GradientButton>
+            <MaterialCommunityIcons name="plus" size={28} color="white" />
+          </LinearGradient>
+        </TouchableOpacity>
+      )}
 
-          <GradientButton
-            fullWidth={true}
-            mode="outlined"
-            onPress={() => {
-              setShowPopup(false);
-              navigation.navigate("JoinGroup");
+      {/* Popup al costado del + (REPLACED Modal with overlay + popup view) */}
+      {showPopup && (
+        <>
+          {/* Fullscreen half-opacity overlay. Touching it closes the popup */}
+          <Pressable
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.4)",
+            }}
+            onPress={() => setShowPopup(false)}
+          />
+
+          {/* Popup buttons (rendered after overlay so they're on top) */}
+          <View
+            style={{
+              position: "absolute",
+              right: popupRight,
+              bottom: fabBottom,
+              alignItems: "flex-end",
+              gap: 16,
+              zIndex: 1000, // ensure it's above the overlay on Android
             }}
           >
-            Join group
-          </GradientButton>
-        </View>
-      </Modal>
+            <GradientButton
+              fullWidth={true}
+              onPress={() => {
+                setShowPopup(false);
+                navigation.navigate("CreateGroup");
+              }}
+              style={{ marginTop: 32, marginLeft: 16 }}
+            >
+              Create group
+            </GradientButton>
+
+            <GradientButton
+              fullWidth={true}
+              mode="outlined"
+              onPress={() => {
+                setShowPopup(false);
+                navigation.navigate("JoinGroup");
+              }}
+            >
+              Join group
+            </GradientButton>
+          </View>
+        </>
+      )}
     </View>
   );
 }

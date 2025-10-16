@@ -383,9 +383,8 @@ export default function FilmDetailsScreen() {
             </Modal>
 
          
-
-        <View style={userRating ? {...containerStyle,backgroundColor:theme.colors.secondary} : containerStyle}>
-            {loading ? <ActivityIndicator size={25} color={theme.colors.text} /> : 
+        {loading ? null :
+        <View style={userRating ? {...containerStyle,backgroundColor:theme.colors.secondary} : containerStyle}> 
             <IconButton
                 icon={() => (
                     <MaterialCommunityIcons
@@ -398,8 +397,8 @@ export default function FilmDetailsScreen() {
                 navigation.navigate('RateFilm', { movie, userRating });
             }}
             style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
-            />}
-        </View>
+            />
+        </View>}
     </View>
   );    
 }

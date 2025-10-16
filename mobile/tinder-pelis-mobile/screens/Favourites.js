@@ -8,94 +8,8 @@ import FilmDisplay from '../components/FilmDisplay';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { getFavourites, getSeenMovies } from '../src/services/api';
 import * as SecureStore from 'expo-secure-store';
+import LoadingBox from '../components/LoadingBox';
 
-// 🔹 Tus 6 películas hardcodeadas
-const movies = [
-  {
-    id: 'm1',
-    title: 'Interstellar',
-    genres: ['Ciencia Ficción', 'Superhéroes'],
-    poster: require('../assets/interstellar.jpg'),
-    rating: 8.7,
-    year: 2014,
-    runtime: '169',
-    director: 'Anthony Russo, Joe Russo',
-    ageRating: 'PG-13',
-    platforms: ['Disney+', 'Prime Video', 'aaaaaaaaaaa', 'bbbbbbbbbbbbbbbbbbb', 'cccccc', 'DirectTV', 'ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd'],
-    description:
-      'After the devastating events of Avengers: Infinity War, the universe is in ruins. The Avengers assemble once more to undo Thanos’ actions and restore balance to the universe.',
-  },
-  {
-    id: 'm2',
-    title: 'Los tipos malos 2',
-    genres: ['Acción', 'Animación', 'Crimen'],
-    poster: require('../assets/the_bad_guys_2.jpg'),
-    rating: 7.3,
-    year: 2023,
-    runtime: '100',
-    director: 'Pierre Perifel',
-    ageRating: 'PG',
-    platforms: ['Netflix', 'Hulu'],
-    description:
-      'The Bad Guys return for another thrilling adventure as they navigate their way through a heist gone wrong, learning the value of teamwork and friendship.',
-  },
-  {
-    id: 'm3',
-    title: 'Jaws',
-    genres: ['Terror', 'Thriller'],
-    poster: require('../assets/jaws.jpg'),
-    rating: 8.0,
-    year: 1975,
-    runtime: '124',
-    director: 'Steven Spielberg',
-    ageRating: 'PG',
-    platforms: ['Prime Video', 'HBO Max'],
-    description:
-      'A giant great white shark terrorizes a small resort town, prompting the local sheriff, a marine biologist, and a grizzled fisherman to hunt it down.',
-  },
-  {
-    id: 'm4',
-    title: 'Mufasa',
-    genres: ['Animación', 'Familia', 'Infantil'],
-    poster: require('../assets/mufasa.jpg'),
-    rating: 7.2,
-    year: 2024,
-    runtime: '90',
-    director: 'Barry Jenkins',
-    ageRating: 'G',
-    platforms: ['Disney+'],
-    description:
-      'A prequel to The Lion King, exploring the rise of Mufasa and his journey to becoming the king of the Pride Lands.',
-  },
-  {
-    id: 'm5',
-    title: 'Scott Pilgrim vs. the World',
-    genres: ['Ciencia ficción', 'Comedia', 'Drama'],
-    poster: { uri: 'https://cdn.watchmode.com/posters/01336293_poster_w342.jpg' },
-    rating: 10.0,
-    year: 2010,
-    runtime: '112',
-    director: 'Edgar Wright',
-    ageRating: 'PG-13',
-    platforms: ['Netflix'],
-    description:
-      'Scott Pilgrim must defeat his new girlfriend’s seven evil exes in order to win her heart in this quirky and action-packed comedy.',
-  },
-  {
-    id: 'm6',
-    title: 'The Greatest Showman',
-    genres: ['Musical', 'Familia', 'Drama', 'superheroes', 'comedia musical', 'las aventuras de hugh jackman'],
-    poster: require('../assets/greatest_showman.jpg'),
-    rating: 7.6,
-    year: 2017,
-    runtime: '105',
-    director: 'Michael Gracey',
-    ageRating: 'PG',
-    platforms: ['Disney+', 'Hulu'],
-    description:
-      'Inspired by the story of P.T. Barnum, this musical celebrates the birth of show business and the visionary who rose from nothing to create a spectacle that became a worldwide sensation.',
-  },
-];
 
 export default function Favorites() {
   const theme = useTheme();
@@ -164,17 +78,29 @@ export default function Favorites() {
         </Text>
       </View>
       {/* ---------------- FAVS ---------------- */}
-      <View style={{ marginBottom: 4, height: 300, marginHorizontal: 10 }}>
-        <Text style={{ color: theme.colors.text, fontWeight: 700, fontSize: 25, marginBottom: 12, marginTop: 10, marginLeft: 3 }}>
+      <View style={{ marginBottom: 4, height: 300 }}>
+        <Text style={{ color: theme.colors.text, fontWeight: 700, fontSize: 25, marginBottom: 12, marginTop: 10, marginLeft: 13 }}>
           Favorites:
         </Text>
 
-        { favLoading ? (
-          <ActivityIndicator size="medium" color={theme.colors.primary} style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }} />
-        ) : (favs.length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-              {favs.map((movie, idx) => (
+        { ((favLoading || favs.length > 0) ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} >
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginHorizontal: 10 }}>
+              {favLoading ? (
+                [1,2,3].map(i=>(<View
+                  key={i}
+                  style={{
+                    width: 130,
+                    alignItems: 'center',
+                    marginRight: 12,
+                    marginTop: 10,
+                    marginLeft: 3,
+                  }}
+                >  
+                  <LoadingBox style={{ width:120,height:180, borderRadius:15 }} />
+                  <LoadingBox style={{ width:120,height:30, borderRadius:8, marginTop:18 }} />
+                </View>))
+              ) : (favs.map((movie, idx) => (
                 <View
                   key={movie.id}
                   style={{
@@ -201,7 +127,7 @@ export default function Favorites() {
                   >
                     {movie.title}
                   </Text>
-                </View>
+                </View>)
               ))}
             </View>
           </ScrollView>
@@ -216,17 +142,36 @@ export default function Favorites() {
       </View>
 
       {/* ---------------- TO WATCH ---------------- */}
-      <View style={{ marginBottom: 4, marginTop: 10, height: 320, marginHorizontal: 10}}>
+      <View style={{ marginBottom: 4, marginTop: 10, height: 320}}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-          <Text style={{ color: theme.colors.text, fontWeight: 700, fontSize: 25, marginBottom: 12, marginTop: 10, marginLeft: 3 }}>
+          <Text style={{ color: theme.colors.text, fontWeight: 700, fontSize: 25, marginBottom: 12, marginTop: 10, marginLeft: 13 }}>
             Watched:
           </Text>
         </View>
         { watchedLoading ? (
-          <ActivityIndicator size="medium" color={theme.colors.primary} style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginHorizontal: 10 }}>
+              {[1,2,3].map(i => (
+                <View
+                  key={i}
+                  style={{
+                    width: 130,
+                    alignItems: 'center',
+                    marginRight: 12,
+                    marginTop: 10,
+                    marginLeft: 3,
+                  }}
+                >
+                  <LoadingBox style={{ width:120,height:180, borderRadius:15 }} />
+                  <LoadingBox style={{ width:120,height:15, borderRadius:4, marginTop:18 }} />
+                  <LoadingBox style={{ width:60,height:15, borderRadius:4, marginTop:8 }} />
+                </View>
+              ))}
+            </View>
+          </ScrollView>
         ) : (watched.length > 0 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginHorizontal:10 }}>
               {watched.map((movie, idx) => (
                 <View
                   key={movie.id + idx}
