@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Image, Animated } from 'react-native';
 import { useTheme } from 'react-native-paper';
+import Movie from '../assets/movie.svg';
 
 export default function SearchEmptyState() {
   const theme = useTheme();
@@ -28,18 +29,22 @@ export default function SearchEmptyState() {
   return (
     <View style={styles.container}>
       <Animated.View style={[styles.imageContainer, { transform: [{ translateY: bounceAnim }] }]}>
-        <View style={styles.imageWrapper}>
-          <Image 
-            source={require('../assets/movie.png')} 
-            style={styles.image}
-            resizeMode="contain"
-          />
+        <View style={{width:140,height:140, alignItems:'center',justifyContent:'center'}}>
+        <View style={{width:100,height:70, alignItems:'center',justifyContent:'center', paddingBottom:40,
+                     boxShadow: 
+                      [{offsetX: 0,
+                      offsetY: 0,
+                      blurRadius: 50,
+                      color:theme.colors.primary}],
+                      borderRadius:999}}>
+          <Movie width={140} height={140} color={theme.colors.primary} />
+        </View>
         </View>
       </Animated.View>
       
       <View style={styles.textContainer}>
         <Text style={[styles.title, { color: theme.colors.text }]}>
-          ¡Your next favorite film is right around the corner! 
+          Your next favorite film is right around the corner! 
         </Text>
         <Text style={[styles.subtitle, { color: theme.colors.primary }]}>
           Find amazing movies to watch with your friends and family
@@ -59,17 +64,6 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     marginBottom: 40,
-  },
-  imageWrapper: {
-    shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  image: {
-    width: 140,
-    height: 140,
   },
   textContainer: {
     alignItems: 'center',

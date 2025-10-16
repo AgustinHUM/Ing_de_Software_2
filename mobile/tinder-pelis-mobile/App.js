@@ -45,7 +45,7 @@ const TEMAS = {
   Light: {
     primary: 'rgba(25, 118, 210, 1)', secondary: 'rgba(144, 202, 249, 1)',
     background: 'rgba(255, 255, 255, 1)', surface: 'rgba(245, 245, 245, 1)',
-    accent: 'rgba(90, 90, 90, 1)', text: 'rgba(0, 0, 0, 1)',
+    accent: 'rgba(90, 90, 90, 1)', text: 'rgba(0, 0, 0, 1)',placeholder: 'rgba(255,255,255,0.5)'
   },
   Dark: {background:'rgba(48, 48, 48, 1)',surface:'rgba(80, 79, 79, 1)',
     primary:'rgba(0, 0, 0, 1)',secondary:'rgba(44, 44, 44, 1)',
@@ -89,7 +89,7 @@ const TEMAS = {
   },
   Ghost:  {background:'rgba(228, 227, 227, 1)',surface:'rgba(130, 130, 130, 1)',
     primary:'rgba(0, 0, 0, 1)',secondary:'rgba(194, 194, 194, 1)',
-    accent:'rgba(4, 4, 4, 1)',text:'rgba(101, 101, 101, 1)',placeholder:'rgba(255,255,255,1)'
+    accent:'rgba(4, 4, 4, 1)',text:'rgba(101, 101, 101, 1)',placeholder:'rgba(255,255,255,1)', onGradient:'rgba(255,255,255,1)'
   }
 };
 // -------------------------------------------------------------------
