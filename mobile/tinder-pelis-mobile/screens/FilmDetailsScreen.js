@@ -204,11 +204,14 @@ export default function FilmDetailsScreen() {
                             )}
 
                             <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 }}>
-                            <DetailList 
+                            {(loading && !movie.genres) ? (
+                                <LoadingBox style={{height:26,width:128,borderRadius:999}} />
+                            ) : (
+                                <DetailList 
                                 list={Array.isArray(movie.genres) && movie.genres.length ? movie.genres : ['No genres available']}
                                 visibleCount={visible_genres}
                                 onShowMore={() => setShowGenresModal(true)}
-                            />
+                                />)}
                             </View>
 
                             {/* Mostramos LoadingBox cuando estamos cargando */}
