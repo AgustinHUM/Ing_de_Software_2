@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Image, TouchableOpacity, ScrollView, Modal, Platform, Dimensions } from 'react-native';
-import { Text, useTheme, IconButton, ActivityIndicator } from 'react-native-paper';
+import { Text, useTheme, IconButton, ActivityIndicator, Divider } from 'react-native-paper';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
@@ -20,6 +20,7 @@ import { toFavorite,getMovieDetails } from '../src/services/api';
 import * as SecureStore from "expo-secure-store";
 import { getUserRating } from '../src/services/api';
 import LoadingBox from '../components/LoadingBox';
+import GradientButton from '../components/GradientButton';
 
 const { width } = Dimensions.get('window');
 
@@ -182,89 +183,101 @@ export default function FilmDetailsScreen() {
                         </View>
                     </View>
 
-                    {/* Activity indicator del fetch (se muestra mientras loading === true),
-                        pero la información parcial que ya exista se sigue mostrando */}
-                    {loading ? (
-                      <View style={{ alignItems: 'center', marginBottom: 12 }}>
-                        <ActivityIndicator animating size="small" />
-                      </View>
-                    ) : null}
 
                     <View style={{paddingTop:16, flexDirection: 'row', flexWrap: 'wrap', justifyContent:'space-between', flex:1}}>
-                        <FilmDisplay width={'50%'} key={movie.id} movie={movie} onPress={null} interactable={false} />
+                        {!movie.poster ? (
+                          <LoadingBox style={{ width: '50%', height: 240, borderRadius: 8 }} />
+                        ) : (
+                          <FilmDisplay width={'50%'} key={movie.id} movie={movie} onPress={null} interactable={false} />
+                        )}
+
                         <View style={{ width: '47%' }}>
 
-                            <TitleDisplay
-                              title={movie.title || 'Unknown title'}
-                              style={{color:theme.colors.text, fontSize: 28, fontWeight: 'bold', marginBottom: 8,}}
-                              numberOfLines={2}
-                            />
+                            {!movie.title ? (
+                              <LoadingBox style={{ width: '80%', height: 36, borderRadius: 6, marginBottom: 8 }} />
+                            ) : (
+                              <TitleDisplay
+                                title={movie.title || 'Unknown title'}
+                                style={{color:theme.colors.text, fontSize: 28, fontWeight: 'bold', marginBottom: 8,}}
+                                numberOfLines={2}
+                              />
+                            )}
 
                             <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16 }}>
-                            <DetailList 
+                            {(loading && !movie.genres) ? (
+                                <LoadingBox style={{height:26,width:128,borderRadius:999}} />
+                            ) : (
+                                <DetailList 
                                 list={Array.isArray(movie.genres) && movie.genres.length ? movie.genres : ['No genres available']}
                                 visibleCount={visible_genres}
                                 onShowMore={() => setShowGenresModal(true)}
-                            />
+                                />)}
                             </View>
 
-                            {/* Mostramos placeholders cuando faltan campos */}
-                            <FilmDetail 
-                                icon={<Feather name="calendar" size={16} color={theme.colors.text} />}
-                                value={movie.year || 'Unknown'}
-                            />
+                            {/* Mostramos LoadingBox cuando estamos cargando */}
+                            {loading ? (
+                              <LoadingBox style={{width:120,height:20,borderRadius:6,marginBottom:8}} />
+                            ) : (
+                              <FilmDetail 
+                                  icon={<Feather name="calendar" size={16} color={theme.colors.text} />}
+                                  value={movie.year || 'Unknown'}
+                              />
+                            )}
 
-                            <FilmDetail 
-                                icon={<Octicons name="hourglass" size={16} color={theme.colors.text} />}
-                                value={movie.runtime ? `${movie.runtime} min` : 'Unknown'}
-                            />
+                            {loading ? (
+                              <LoadingBox style={{width:140,height:20,borderRadius:6,marginBottom:8}} />
+                            ) : (
+                              <FilmDetail 
+                                  icon={<Octicons name="hourglass" size={16} color={theme.colors.text} />}
+                                  value={movie.runtime ? `${movie.runtime} min` : 'Unknown'}
+                              />
+                            )}
 
-                            <FilmDetail 
-                                icon={<Ionicons name="person-outline" size={16} color={theme.colors.text} />}
-                                label="Director"
-                                value={movie.director || 'Unknown'}
-                            />
+                            {loading ? (
+                              <LoadingBox style={{width:160,height:20,borderRadius:6,marginBottom:8}} />
+                            ) : (
+                              <FilmDetail 
+                                  icon={<Ionicons name="person-outline" size={16} color={theme.colors.text} />}
+                                  label="Director"
+                                  value={movie.director || 'Unknown'}
+                                  containerStyle={{paddingRight:1}}
+                              />
+                            )}
 
-                            <FilmDetail 
-                                icon={<Ionicons name="ticket-outline" size={16} color={theme.colors.text} />}
-                                label="Rated"
-                                value={movie.ageRating || 'N/A'}
-                            />
+                            {loading ? (
+                              <LoadingBox style={{width:100,height:20,borderRadius:6,marginBottom:8}} />
+                            ) : (
+                              <FilmDetail 
+                                  icon={<Ionicons name="ticket-outline" size={16} color={theme.colors.text} />}
+                                  label="Rated"
+                                  value={movie.ageRating || 'N/A'}
+                              />
+                            )}
                         </View>
                     </View>
                     
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems:'flex-start', flex:1, marginBottom:16 }}>
-                        {movie.rating ? (
-                            <FilmDetail
-                                icon= {<MaterialIcons name='star-outline' size={16} color={theme.colors.primary} />}
-                                value={typeof movie.rating === 'number' ? movie.rating.toFixed(1) : String(movie.rating)}
-                                textStyle={{ color: theme.colors.primary, fontSize: 14, fontWeight: '600', marginLeft: 6}}
-                                containerStyle={{flexDirection: 'row',
-                                paddingVertical: 10,
-                                paddingHorizontal: 12,
-                                borderRadius: 8,
-                                marginRight: 8,
-                                marginBottom: 8,
-                                backgroundColor: theme.colors.surface,
-                                alignItems: 'center'}}>
-                            </FilmDetail>
-                        ) : (
-                            <FilmDetail
-                                icon= {<MaterialIcons name='star-outline' size={16} color={theme.colors.primary} />}
-                                value={'N/A'}
-                                textStyle={{ color: theme.colors.primary, fontSize: 14, fontWeight: '600', marginLeft: 6}}
-                                containerStyle={{flexDirection: 'row',
-                                paddingVertical: 10,
-                                paddingHorizontal: 12,
-                                borderRadius: 8,
-                                marginRight: 8,
-                                marginBottom: 8,
-                                backgroundColor: theme.colors.surface,
-                                alignItems: 'center'}}>
-                            </FilmDetail>
-                        )}
+                        {loading ? (
+                              <LoadingBox style={{marginBottom:8,borderRadius:8,width:64,height:40, marginRight:8}} />
+                            ) : (
+                              <FilmDetail
+                                  icon= {<MaterialIcons name='star-outline' size={16} color={theme.colors.text} />}
+                                  value={!!movie.rating ? (typeof movie.rating === 'number' ? movie.rating.toFixed(1) : String(movie.rating)) : 'N/A'}
+                                  textStyle={{ color: theme.colors.text, fontSize: 14, fontWeight: '600', marginLeft: 6}}
+                                  containerStyle={{flexDirection: 'row',
+                                  paddingVertical: 10,
+                                  paddingHorizontal: 12,
+                                  borderRadius: 8,
+                                  marginRight: 8,
+                                  marginBottom: 8,
+                                  backgroundColor: theme.colors.primary,
+                                  alignItems: 'center'}}>
+                              </FilmDetail>
+                            )}
 
-                        {Array.isArray(movie.platforms) && movie.platforms.length ? (
+                        {loading ? (
+                            <LoadingBox style={{marginBottom:8,borderRadius:8,width:256,height:40}} />
+                        ) : Array.isArray(movie.platforms) && movie.platforms.length ? (
                             <>
                                 <DetailList
                                     list={movie.platforms}
@@ -292,26 +305,14 @@ export default function FilmDetailsScreen() {
                                     ) : null}
                             </>
                         ) : (
-                            <FilmDetail
-                                icon={<MaterialIcons name='inventory' size={16} color={theme.colors.primary} />}
-                                value={'No platforms available'}
-                                textStyle={{ color: theme.colors.primary, fontSize: 14, fontWeight: '600', marginLeft: 6 }}
-                                containerStyle={{
-                                    flexDirection: 'row',
-                                    paddingVertical: 10,
-                                    paddingHorizontal: 12,
-                                    borderRadius: 8,
-                                    marginRight: 8,
-                                    marginBottom: 8,
-                                    backgroundColor: theme.colors.surface,
-                                    alignItems: 'center',
-                                }}
-                            />
+                            <LoadingBox style={{marginBottom:8,borderRadius:8,width:256,height:40}} />
                         )}
                     </View>
 
-                    <View style={{marginBottom:256}}>
-                       {movie.description ? (
+                    <View style={{marginBottom:300}}>
+                       {loading ? (
+                           <LoadingBox style={{width:'100%',height:150, borderRadius:15}} />
+                       ) : movie.description ? (
                        <>
                            <Text style={{ color: theme.colors.text, fontSize: 20, fontWeight: 'bold', marginBottom: 8 }}>
                                Synopsis
@@ -321,8 +322,8 @@ export default function FilmDetailsScreen() {
                            </Text>
                        </>) : (
                        <>
-                           <LoadingBox style={{width:'100%',height:128, borderRadius:15}}></LoadingBox>
-                       </>)}
+                           <LoadingBox style={{width:'100%',height:150, borderRadius:15}}></LoadingBox>
+                       </>) }
                    </View>
                 </View>
             </ScrollView>
@@ -333,15 +334,20 @@ export default function FilmDetailsScreen() {
                 onRequestClose={() => setShowGenresModal(false)}
                 transparent={false}
             >
-                <View style={{ flex: 1, padding: 25, paddingVertical: Platform.OS === 'ios' ? 70 : 35, backgroundColor: theme.colors.background }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-                        <Text variant="headlineSmall" style={{ color: theme.colors.text, fontWeight: 700 }}>All Genres</Text>
-                        <TouchableOpacity onPress={() => setShowGenresModal(false)} style={{ padding: 8 }}>
-                            <Text style={{ color: theme.colors.text }}>Close</Text>
-                        </TouchableOpacity>
+                <View style={{ flex: 1, flexDirection:'column', padding: 25, paddingVertical: Platform.OS === 'ios' ? 70 : 35, backgroundColor: theme.colors.background }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 16 }}>
+                        <Text variant="headlineMedium" style={{ color: theme.colors.text, fontWeight: 700, textAlign:'center' }}>{movie.title}'{movie.title.slice(-1)==='s' ? '' : 's'} Genres</Text>
                     </View>
+                    <Divider
+                            style={{
+                                backgroundColor: theme.colors.primary,
+                                width: "100%",
+                                height: 5,
+                                borderRadius: 5,
+                            }}
+                            />
 
-                    <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+                    <ScrollView contentContainerStyle={{ paddingBottom: 24, flexGrow:0 }} showsVerticalScrollIndicator={false}>
                         { (Array.isArray(movie.genres) && movie.genres.length ? movie.genres : ['No genres available']).map((genre, index) => (
                             <View
                                 key={index}
@@ -351,15 +357,15 @@ export default function FilmDetailsScreen() {
                                     paddingHorizontal: 8,
                                     paddingVertical: 4,
                                     marginRight: 4,
-                                    marginBottom: 8,
+                                    marginTop: 12,
                                 }}
                             >
                                 <Text
                                     style={{
                                         textAlign: 'center',
                                         color: theme.colors.text,
-                                        fontSize: 14,
-                                        fontWeight: '600',
+                                        fontSize: 16,
+                                        fontWeight: '700',
                                     }}
                                 >
                                     {genre}
@@ -367,14 +373,21 @@ export default function FilmDetailsScreen() {
                             </View>
                         ))}
                     </ScrollView>
+                    <Divider
+                        style={{
+                        backgroundColor: theme.colors.primary,
+                        width: "100%",
+                        height: 5,
+                        borderRadius: 5,
+                        marginBottom:16}}/>
+                    <GradientButton mode='outlined' onPress={() => setShowGenresModal(false)}>Close</GradientButton>
+                    <View style={{flex:1}} />
                 </View>
             </Modal>
 
-        
-
-        
-
-        <View style={containerStyle}>
+         
+        {loading ? null :
+        <View style={userRating ? {...containerStyle,backgroundColor:theme.colors.secondary} : containerStyle}> 
             <IconButton
                 icon={() => (
                     <MaterialCommunityIcons
@@ -388,7 +401,7 @@ export default function FilmDetailsScreen() {
             }}
             style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
             />
-        </View>
+        </View>}
     </View>
   );    
 }

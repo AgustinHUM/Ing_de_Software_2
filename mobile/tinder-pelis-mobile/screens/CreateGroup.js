@@ -1,16 +1,14 @@
 import React, { useState } from "react";
-import { View, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native";
+import { View, KeyboardAvoidingView, Platform, TouchableOpacity, Alert } from "react-native";
 import { Text } from "react-native-paper";
 import { useTheme } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import GradientButton from "../components/GradientButton";
-import Input from "../components/TextInput";
+import TextInput from "../components/TextInput";
+import LoadingOverlay from "../components/LoadingOverlay"; // ← agregado
 
-// Para conectar al back
-import { useAuth } from '../AuthContext';
 import { createGroup } from '../src/services/api';
-import { Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 import ErrorOverlay from "../components/ErrorOverlay"; // ← agregado
@@ -23,6 +21,9 @@ export default function CreateGroup({ navigation }) {
   const { top, bottom } = useSafeAreaInsets();
   const textColor = theme.colors?.text ?? "#fff";
   const [groupName, setGroupName] = useState("");
+
+  // loading state
+  const [loading, setLoading] = useState(false);
 
   // Overlay de error genérico
   const [showGenericError, setShowGenericError] = useState(false);
@@ -38,25 +39,27 @@ export default function CreateGroup({ navigation }) {
 
   // FUNCIÓN QUE LLAMA AL BACK
   async function handleCreate() {
+    if (loading) return; // evitar doble submit
     const name = (groupName || '').trim();
     if (!name) return;
 
     const token = await SecureStore.getItemAsync("userToken");
 
-    console.log("Token sent:", token);
-
     if (!token) {
-      Alert.alert('Sesión', 'Necesitás iniciar sesión para crear un grupo.');
+      Alert.alert('???', 'You need to be logged in to create a group.');
       return;
     }
 
+    setLoading(true);
     try {
       const data = await createGroup(name, token); // { group_join_id: N }
+      setLoading(false); // clear loading before navigation to avoid setState on unmounted component
       navigation.navigate('GroupCode', { code: data.group_join_id, groupName: name});
     } catch (e) {
+      setLoading(false);
       // Mostrar overlay SOLO si el back no especifica el error
       if (isGenericBackendError(e)) {
-        setShowGenericError(true); // se oculta solo a los 5s
+        setShowGenericError(true); // se oculta solo a los 5s (según tu componente)
       } else {
         Alert.alert('Error', e.message || 'No se pudo crear el grupo');
       }
@@ -68,6 +71,9 @@ export default function CreateGroup({ navigation }) {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={{ flex: 1, backgroundColor: theme.colors.background }}
     >
+      {/* Loading overlay */}
+      <LoadingOverlay visible={loading} />
+
       {/* Overlay de error genérico */}
       <ErrorOverlay
         visible={showGenericError}
@@ -96,27 +102,24 @@ export default function CreateGroup({ navigation }) {
         </View>
 
         <View style={{ height: 32 }} />
-
-        <Text style={{ fontSize: 28, fontWeight: "800", lineHeight: 34, color: textColor }}>
-          What should we{"\n"}name this group?
-        </Text>
-
+        <View style={{ alignItems: "center", width: '70%', alignSelf: 'center' }}>
+          <Text style={{ fontSize: 28, fontWeight: "800", color: textColor, textAlign: "center" }}>
+            What should we name this group?
+          </Text>
+        </View>
         <View style={{ height: 24 }} />
 
-        <Input
+        <TextInput
           value={groupName}
           onChangeText={setGroupName}
-          placeholder=""
-          mode="flat"
-          underlineColor="rgba(255,255,255,0.9)"
-          style={{ backgroundColor: "transparent" }}
+          label="Group Name"
         />
 
         <View style={{ height: 40 }} />
 
         <GradientButton
           onPress={handleCreate}
-          disabled={!groupName.trim()}
+          disabled={!groupName.trim() || loading}
         >
           Create Group
         </GradientButton>
