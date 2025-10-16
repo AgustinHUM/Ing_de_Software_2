@@ -1,8 +1,9 @@
-import React, { useState } from "react";
-import { View, Modal, Pressable, TouchableOpacity, Dimensions, FlatList, Alert } from "react-native";
-import { Text, TextInput as PaperTextInput, useTheme as usePaperTheme } from "react-native-paper";
+// Groups.js
+import React, { Activity, useState } from "react";
+import { View, Modal, Pressable, TouchableOpacity, Dimensions, FlatList, Alert, ScrollView } from "react-native";
+import { ActivityIndicator, Divider, Text, useTheme as usePaperTheme } from "react-native-paper";
 import { useTheme, useFocusEffect } from "@react-navigation/native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { LinearGradient } from "expo-linear-gradient";
 import GradientButton from "../components/GradientButton";
@@ -11,6 +12,10 @@ import * as SecureStore from 'expo-secure-store';
 import LoadingOverlay from "../components/LoadingOverlay";
 import ErrorOverlay from "../components/ErrorOverlay";
 
+import SearchBar from "../components/Searchbar";
+import Seleccionable from "../components/Seleccionable";
+import LoadingBox from "../components/LoadingBox";
+import { tweakColor } from "../theme";
 
 const { width } = Dimensions.get("window");
 
@@ -25,59 +30,9 @@ const POPUP_GAP = 12;
 const OUTER_PAD = 16;   // padding del SafeAreaView
 const CONTENT_PAD = 16; // padding del contenedor interno
 
-// Buscador local (no tocamos el Searchbar de películas)
-function GroupSearch({ placeholder = "Search for a group", style, onSubmit, value, onChangeText }) {
-  const paperTheme = usePaperTheme();
-  return (
-    <PaperTextInput
-      mode="outlined"
-      value={value}
-      onChangeText={onChangeText}
-      placeholder={placeholder}
-      onSubmitEditing={onSubmit}
-      returnKeyType="search"
-      style={[{ borderRadius: 20 }, style]}
-      outlineStyle={{ borderRadius: 20 }}
-      left={<PaperTextInput.Icon icon="magnify" />}
-      textColor={paperTheme.colors.text}
-      placeholderTextColor={paperTheme.colors.placeholder}
-    />
-  );
-}
-
-function GroupItem({ name, members = 1, onPress, availableWidth }) {
-  return (
-    <View style={{ alignItems: "center", marginTop: 16 }}>
-      <GradientButton
-        onPress={onPress}
-        fullWidth={false}
-        style={{
-          width: Math.min(availableWidth, 420),
-          borderRadius: 999,
-          paddingVertical: 14,
-          paddingHorizontal: 20,
-        }}
-      >
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Text
-            style={{ fontSize: 20, fontWeight: "700", color: "white" }}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {name}
-          </Text>
-          <View style={{ flex: 1 }} />
-          <Text style={{ color: "white", opacity: 0.9 }}>
-            {members} {members === 1 ? "Member" : "Members"}
-          </Text>
-        </View>
-      </GradientButton>
-    </View>
-  );
-}
-
 export default function GroupsHome({ navigation }) {
-  const theme = useTheme();
+  const theme = useTheme(); // react-navigation theme (used for layout/colors)
+  const paperTheme = usePaperTheme(); // react-native-paper theme (Seleccionable uses paper theme)
   const { bottom } = useSafeAreaInsets();
   const textColor = theme.colors?.text ?? "#fff";
 
@@ -89,11 +44,12 @@ export default function GroupsHome({ navigation }) {
     "#FFC300";
 
   const [showPopup, setShowPopup] = useState(false);
+
+  // search state is updated when SearchBar's onSubmit is called
   const [search, setSearch] = useState("");
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showGenericError, setShowGenericError] = useState(false);
-
 
   const isGenericBackendError = (err) => {
     const msg = (err?.message || "").toLowerCase();
@@ -105,36 +61,36 @@ export default function GroupsHome({ navigation }) {
     );
   };
 
-
   useFocusEffect(
     React.useCallback(() => {
+      let mounted = true;
       const fetchGroups = async () => {
         setLoading(true);
         try {
           const token = await SecureStore.getItemAsync("userToken");
           if (token) {
             const userGroups = await getUserGroups(token);
-            setGroups(userGroups || []);
+            if (mounted) setGroups(userGroups || []);
           } else {
-            setGroups([]);
+            if (mounted) setGroups([]);
           }
         } catch (error) {
           console.error(error);
           if (isGenericBackendError(error)) {
             setShowGenericError(true);
           } else {
-            Alert.alert("Error", error.message || "Could not fetch groups.");
+            Alert.alert("Error", error.message || "An error occurred while looking for your groups.");
           }
-          setGroups([]);
+          if (mounted) setGroups([]);
         } finally {
-          setLoading(false);
+          if (mounted) setLoading(false);
         }
       };
 
       fetchGroups();
 
       return () => {
-        // Optional cleanup
+        mounted = false;
       };
     }, [])
   );
@@ -142,19 +98,19 @@ export default function GroupsHome({ navigation }) {
   const availableWidth = width - 2 * OUTER_PAD - 2 * CONTENT_PAD;
 
   // espacios para evitar solapes con Appbar/FAB
-  const contentBottomPad = bottom + APPBAR_BOTTOM_INSET + APPBAR_HEIGHT + 16;
-  const listBottomPad = contentBottomPad + FAB_SIZE + FAB_MARGIN + 8;
   const fabBottom = FAB_MARGIN + APPBAR_BOTTOM_INSET + APPBAR_HEIGHT + bottom;
   const popupRight = FAB_MARGIN + FAB_SIZE + POPUP_GAP;
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background, padding: OUTER_PAD }}>
+  // filter groups using the current search string (simple substring match)
+  const filteredGroups =
+    (search || "").trim().length > 0
+      ? groups.filter((g) => (g.name || "").toLowerCase().includes(search.toLowerCase()))
+      : groups;
 
-      {loading ? <LoadingOverlay visible={loading} /> : null}
-      <ErrorOverlay
-        visible={showGenericError}
-        onHide={() => setShowGenericError(false)}
-      />
+  return (
+    <View style={{ flex: 1, backgroundColor: theme.colors.background, padding: OUTER_PAD }}>
+      {/* Loading & error overlays */}
+      <ErrorOverlay visible={showGenericError} onHide={() => setShowGenericError(false)} />
 
       <View style={{ flex: 0.25, alignItems: "center", justifyContent: "center" }}>
         <Text style={{ fontSize: 28, fontWeight: "700", textAlign: "center", color: textColor }}>
@@ -162,17 +118,34 @@ export default function GroupsHome({ navigation }) {
         </Text>
       </View>
 
-      <GroupSearch
-        value={search}
-        onChangeText={setSearch}
-        onSubmit={() => {}}
-        placeholder="Search for a group"
-      />
-
+      {/* Use your SearchBar component. It will call onSubmit with the query when the user submits. */}
+      <SearchBar initialQuery={search} onSubmit={(q) => setSearch(q)} />
+      <Divider style={{
+        backgroundColor: theme.colors.primary,
+        width: "100%",
+        height: 5,
+        borderRadius: 5,
+        marginTop:16}}/>
       {/* Contenido */}
-      <View style={{ flex: 1, padding: CONTENT_PAD, paddingBottom: contentBottomPad }}>
-        {groups.length === 0 ? (
-          <View style={{ flex: 1, alignItems: "center" }}>
+      <View style={{ flex: 1, paddingBottom:64 }}>
+        {loading ? 
+        (
+          <View style={{ flex: 0.75, alignItems: "center" }}>
+            {[1,2,3,4,5].map(i =>{
+              return (<LoadingBox 
+              key={i}
+              style={{
+                marginTop:16,
+                width: Math.min(availableWidth, 420),
+                height: 60,
+                borderRadius: 999,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }} />)
+            })}
+          </View>
+        ) : (filteredGroups.length === 0 ? (
+          <View style={{ flex: 1, alignItems: "center", paddingTop: 64 }}>
             <Text style={{ fontSize: 28, fontWeight: "800", marginBottom: 8, color: textColor }}>
               Looks empty...
             </Text>
@@ -180,7 +153,7 @@ export default function GroupsHome({ navigation }) {
             <MaterialCommunityIcons
               name="sofa"
               size={Math.min(width * 0.45, 220)}
-              color={theme.dark ? "#ffb199" : "#c04a2f"}
+              color={theme.colors.primary}
             />
 
             <Text style={{ marginTop: 8, opacity: 0.9, color: textColor }}>
@@ -188,28 +161,67 @@ export default function GroupsHome({ navigation }) {
             </Text>
           </View>
         ) : (
-          <FlatList
-            data={groups}
-            keyExtractor={(g) => String(g.id)}
-            contentContainerStyle={{ paddingBottom: listBottomPad }}
+          <ScrollView
+            contentContainerStyle={{ paddingBottom: 128 }}
             keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) => (
-              <GroupItem
-                name={item.name}
-                members={item.members}
-                availableWidth={availableWidth}
-                
-                // ir a GroupCode con el id y el nombre del grupo
-                onPress={() => navigation.navigate('GroupCode', { groupId: item.id, groupName: item.name })}
-              />
-            )}
-            ListFooterComponent={<View style={{ height: 8 }} />}
-          />
-        )}
+            showsVerticalScrollIndicator={false}
+          >
+            {filteredGroups.map((item) => {
+              const members = item.members ?? 1;
+              const label = item.name ?? "Untitled group";
+              const red_variation = (Math.random() * 80 - 40)*Math.sqrt(item.members);
+              const green_variation = (Math.random() * 80 - 40)*Math.sqrt(item.members);
+              const blue_variation = (Math.random() * 80 - 40)*Math.sqrt(item.members);
+              return (
+                <TouchableOpacity
+                  key={String(item.id)}
+                  activeOpacity={0.85}
+                  onPress={() => navigation.navigate('GroupCode', { groupId: item.id, groupName: item.name })}
+                  style={{ alignItems: 'center', marginTop: 16 }}
+                >
+                  <LinearGradient
+                    colors={[tweakColor(gradStart,red_variation,green_variation,blue_variation), tweakColor(gradEnd,red_variation,green_variation,blue_variation)]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={{
+                      width: Math.min(availableWidth, 420),
+                      borderRadius: 999,
+                      paddingVertical: 14,
+                      paddingHorizontal: 20,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}>
+                      <Text
+                        style={{ fontSize: 20, fontWeight: '700', color: 'white' }}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {label}
+                      </Text>
+
+                      <View style={{ flex: 1 }} />
+
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={{ color: theme.colors.text, opacity: 0.95, marginRight: 8, fontSize:16, fontWeight:'700' }}>
+                          {members}
+                        </Text>
+                        <MaterialCommunityIcons name="account-group" size={24} color={theme.colors.text} />
+                      </View>
+                    </View>
+                  </LinearGradient>
+                </TouchableOpacity>
+              );
+            })}
+
+            {/* footer spacer */}
+            <View style={{ height: 8 }} />
+          </ScrollView>
+        ))}
       </View>
 
-      {/* Texto “Planning…” (se oculta solo con el popup abierto) */}
-      {!showPopup && (
+      {(!loading && !showPopup && groups.length === 0) && (
         <View
           style={{
             position: "absolute",
@@ -226,7 +238,7 @@ export default function GroupsHome({ navigation }) {
       )}
 
       {/* FAB + con gradiente del theme */}
-      <TouchableOpacity
+      {!loading && (<TouchableOpacity
         activeOpacity={0.95}
         onPress={() => setShowPopup(true)}
         style={{
@@ -254,7 +266,7 @@ export default function GroupsHome({ navigation }) {
         >
           <MaterialCommunityIcons name="plus" size={28} color="white" />
         </LinearGradient>
-      </TouchableOpacity>
+      </TouchableOpacity>)}
 
       {/* Popup al costado del + */}
       <Modal transparent visible={showPopup} animationType="fade" onRequestClose={() => setShowPopup(false)}>
@@ -263,40 +275,34 @@ export default function GroupsHome({ navigation }) {
           style={{
             position: "absolute",
             right: popupRight,
-            bottom: fabBottom + 8,
+            bottom: fabBottom - FAB_SIZE / 2,
             alignItems: "flex-end",
-            gap: 12,
+            gap: 16,
           }}
         >
           <GradientButton
-            fullWidth={false}
+            fullWidth={true}
             onPress={() => {
               setShowPopup(false);
               navigation.navigate("CreateGroup");
             }}
+            style={{ marginTop: 32, marginLeft: 16 }}
           >
             Create group
           </GradientButton>
 
-          <TouchableOpacity
-            activeOpacity={0.9}
+          <GradientButton
+            fullWidth={true}
+            mode="outlined"
             onPress={() => {
               setShowPopup(false);
               navigation.navigate("JoinGroup");
             }}
-            style={{
-              borderRadius: 999,
-              borderWidth: 2,
-              borderColor: gradStart,
-              paddingVertical: 12,
-              paddingHorizontal: 18,
-              backgroundColor: "transparent",
-            }}
           >
-            <Text style={{ fontWeight: "700", color: textColor }}>Join group</Text>
-          </TouchableOpacity>
+            Join group
+          </GradientButton>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
