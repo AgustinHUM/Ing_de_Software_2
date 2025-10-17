@@ -59,13 +59,9 @@ const TEMAS = {
     primary:'rgba(197, 8, 8, 1)',secondary:'rgba(206, 119, 19, 1)',
     accent:'rgba(207, 191, 44, 1)',text:'rgba(247, 167, 167, 1)'
   },
-  Nature: {background:'rgba(5, 29, 2, 1)',surface:'rgba(12, 32, 2, 1)',
-    primary:'rgba(90, 68, 11, 1)',secondary:'rgba(66, 38, 2, 1)',
-    accent:'rgba(125, 243, 121, 1)',text:'rgba(98, 195, 62, 1)'
-  },
   Barbie: {background:'rgba(170, 67, 153, 1)',surface:'rgba(83, 4, 64, 1)',
     primary:'rgba(240, 104, 234, 1)',secondary:'rgba(224, 12, 97, 1)',
-    accent:'rgba(176, 37, 226, 1)',text:'rgba(239, 185, 231, 1)',disabled:'rgba(239, 185, 231, 1)'
+    accent:'rgba(85, 12, 111, 1)',text:'rgba(239, 185, 231, 1)',disabled:'rgba(239, 185, 231, 1)'
   },
   TheBatman: {background:'rgba(0, 0, 0, 1)',surface:'rgba(42, 8, 8, 1)',
     primary:'rgba(164, 14, 14, 1)',secondary:'rgba(91, 3, 3, 1)',
@@ -73,11 +69,11 @@ const TEMAS = {
   },
   Matrix: {background:'rgba(0, 0, 0, 1)',surface:'rgba(17, 42, 8, 1)',
     primary:'rgba(51, 169, 19, 1)',secondary:'rgba(34, 66, 31, 1)',
-    accent:'rgba(23, 180, 11, 1)',text:'rgba(110, 165, 104, 1)'
+    accent:'rgba(23, 180, 11, 1)',text:'rgba(165, 211, 160, 1)'
   },
   MrIncredible: {background:'rgba(184, 3, 3, 1)',surface:'rgba(255, 2, 2, 1)',
     primary:'rgba(251, 206, 4, 1)',secondary:'rgba(180, 171, 0, 1)',
-    accent:'rgba(251, 230, 4, 1)',text:'rgba(44, 1, 1, 1)',placeholder:'rgba(0, 0, 0, 1)'
+    accent:'rgba(218, 46, 8, 1)',text:'rgba(44, 1, 1, 1)',placeholder:'rgba(0, 0, 0, 1)'
   },
   Frozone: {background:'rgba(255, 255, 255, 1)',surface:'rgba(17, 89, 119, 1)',
     primary:'rgba(4, 251, 247, 1)',secondary:'rgba(0, 53, 59, 1)',
@@ -89,7 +85,7 @@ const TEMAS = {
   },
   Ghost:  {background:'rgba(228, 227, 227, 1)',surface:'rgba(130, 130, 130, 1)',
     primary:'rgba(0, 0, 0, 1)',secondary:'rgba(194, 194, 194, 1)',
-    accent:'rgba(4, 4, 4, 1)',text:'rgba(101, 101, 101, 1)',placeholder:'rgba(255,255,255,1)', onGradient:'rgba(255,255,255,1)'
+    accent:'rgba(4, 4, 4, 1)',text:'rgba(60, 60, 60, 1)',placeholder:'rgba(255,255,255,1)', onGradient:'rgba(255,255,255,1)'
   }
 };
 // -------------------------------------------------------------------

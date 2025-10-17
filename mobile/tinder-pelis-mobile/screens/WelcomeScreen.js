@@ -36,7 +36,7 @@ export default function WelcomeScreen({ navigation }) {
               <Text style={{ color: theme.colors.primary, fontWeight: '700' }}>Mingle</Text>
             </Text>
 
-            <Text variant="bodyLarge" style={{ color: theme.colors.text, marginTop: 8, textAlign: 'center' }}>
+            <Text variant="bodyLarge" style={{ color: theme.colors.text, marginTop: 8, textAlign: 'center', fontWeight:'700' }}>
               Watch better, together
             </Text>
           </View>
