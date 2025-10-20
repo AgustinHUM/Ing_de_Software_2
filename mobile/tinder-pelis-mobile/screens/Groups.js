@@ -190,9 +190,9 @@ export default function GroupsHome({ navigation }) {
             {filteredGroups.map((item) => {
               const members = item.members ?? 1;
               const label = item.name ?? "Untitled group";
-              const red_variation = (item.id % 81 - 40) * Math.sqrt(item.members);
-              const green_variation = (item.id % 81 - 40) * Math.sqrt(item.members);
-              const blue_variation = (item.id % 81 - 40) * Math.sqrt(item.members);
+              const red_variation = ((item.id*732) % 81 - 40) * Math.sqrt(item.members);
+              const green_variation = ((item.id*127) % 81 - 40) * Math.sqrt(item.members);
+              const blue_variation = ((item.id*247) % 81 - 40) * Math.sqrt(item.members);
               return (
                 <TouchableOpacity
                   key={String(item.id)}

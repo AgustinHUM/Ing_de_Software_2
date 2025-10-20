@@ -20,7 +20,7 @@ const DetailList = ({ list, visibleCount = 3, onShowMore, containerStyle, textSt
         fontWeight: '600',
     };
 
-    if (!list || list.length === 0) {
+    if (!list || list.length === 0 || (list.length===1 && !list[0])) {
         return (
             <View
                 style={[baseContainerStyle, containerStyle]}
@@ -28,7 +28,7 @@ const DetailList = ({ list, visibleCount = 3, onShowMore, containerStyle, textSt
                 <Text
                     style={[baseTextStyle, textStyle]}
                 >
-                    Datos no disponibles.
+                    N/A
                 </Text>
             </View>
         );
