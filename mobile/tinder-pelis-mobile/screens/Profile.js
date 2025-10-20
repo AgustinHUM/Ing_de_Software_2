@@ -233,9 +233,9 @@ export default function ProfileScreen({ navigation, setAppTheme, themesMap, curr
                   >
                     <Text style={[styles.themeName, { color: selected ? theme.colors.primary : theme.colors.text }]}>{tkey}</Text>
                     <View style={{ height: 18, flexDirection: 'row', gap: 8 }}>
-                      <View style={{ height: '100%', aspectRatio: 1, borderRadius: 99, backgroundColor: colors.primary, borderWidth: 1, borderColor: colors.surface }} />
-                      <View style={{ height: '100%', aspectRatio: 1, borderRadius: 99, backgroundColor: colors.secondary, borderWidth: 1, borderColor: colors.surface }} />
-                      <View style={{ height: '100%', aspectRatio: 1, borderRadius: 99, backgroundColor: colors.accent, borderWidth: 1, borderColor: colors.surface }} />
+                      <View style={{ height: '100%', aspectRatio: 1, borderRadius: 99, backgroundColor: colors.primary, borderWidth: 2, borderColor: colors.surface }} />
+                      <View style={{ height: '100%', aspectRatio: 1, borderRadius: 99, backgroundColor: colors.secondary, borderWidth: 2, borderColor: colors.surface }} />
+                      <View style={{ height: '100%', aspectRatio: 1, borderRadius: 99, backgroundColor: colors.accent, borderWidth: 2, borderColor: colors.surface }} />
                     </View>
                   </TouchableOpacity>
                 );

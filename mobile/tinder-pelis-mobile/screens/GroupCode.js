@@ -208,7 +208,7 @@ useEffect(() => {
         </Text>
       </View>
       <Text style={{ color: textColor, opacity: 0.85 }}>
-        Has joined your group
+        Has joined the group
       </Text>
     </View>
   );
@@ -395,9 +395,9 @@ useEffect(() => {
                   alignItems: "center",
                   justifyContent: "center",
                   backgroundColor: startWithoutPrefs
-                    ? (theme.colors?.secondary ?? "rgba(251,195,76,1)")
+                    ? (theme.colors.surface)
                     : "transparent",
-                  borderWidth: startWithoutPrefs ? 0 : 2,
+                  borderWidth: 2,
                   borderColor: theme.colors.text,
                 }}
               >

@@ -10,11 +10,12 @@ import { useNavigation } from "@react-navigation/native";
 export default function SelectableListForm({
   items = [], // { name: string, icon?: img }
   title = "",
-  buttonText = "Siguiente",
+  buttonText = "Next",
   mandatory = false,
   onSubmit = null, // (selectedItems) => {}
   showGoBack = true,
-  showSelectButton = true
+  showSelectButton = true,
+  unitarySelection = false, 
 }) {
   const theme = useTheme();
   const navigation = useNavigation();
@@ -29,8 +30,12 @@ export default function SelectableListForm({
 
   useEffect(() => {
     setFilteredItems(items);
-    setSelectedNames((prev) => prev.filter((n) => items.some((it) => it.name === n)));
-  }, [items]);
+    setSelectedNames((prev) => {
+      const filtered = prev.filter((n) => items.some((it) => it.name === n));
+      if (unitarySelection && filtered.length > 1) return [filtered[0]];
+      return filtered;
+    });
+  }, [items, unitarySelection]);
 
   const filterByQuery = useCallback(
     (query) => {
@@ -44,18 +49,36 @@ export default function SelectableListForm({
     [items]
   );
 
-  const toggleSelected = useCallback((name, selected) => {
-    setSelectedNames((prev) => {
-      const exists = prev.includes(name);
-      if (selected) {
-        if (!exists) return [...prev, name];
-        return prev;
-      } else {
-        if (exists) return prev.filter((n) => n !== name);
-        return prev;
-      }
-    });
-  }, []);
+  const toggleSelected = useCallback(
+    (name, selected) => {
+      setSelectedNames((prev) => {
+        const exists = prev.includes(name);
+
+        // Unit-only selection mode
+        if (unitarySelection) {
+          if (selected) {
+            // selecting an item -> replace with this single selection
+            if (exists) return prev; // already selected
+            return [name];
+          } else {
+            // deselecting -> remove it
+            if (exists) return prev.filter((n) => n !== name);
+            return prev;
+          }
+        }
+
+        // Multi-selection mode (original behavior)
+        if (selected) {
+          if (!exists) return [...prev, name];
+          return prev;
+        } else {
+          if (exists) return prev.filter((n) => n !== name);
+          return prev;
+        }
+      });
+    },
+    [unitarySelection]
+  );
 
   const handleMainButton = useCallback(() => {
     if (typeof onSubmit === "function") {
@@ -72,14 +95,21 @@ export default function SelectableListForm({
     setSelectedNames((prev) => {
       const allSelected = visibleNames.length > 0 && visibleNames.every((n) => prev.includes(n));
       if (!allSelected) {
+        // If unitarySelection, only pick the first visible item
+        if (unitarySelection) {
+          if (visibleNames.length === 0) return prev;
+          return [visibleNames[0]];
+        }
+        // otherwise add all visible to the selection
         const set = new Set(prev);
         visibleNames.forEach((n) => set.add(n));
         return Array.from(set);
       } else {
+        // Deselect visible
         return prev.filter((n) => !visibleNames.includes(n));
       }
     });
-  }, [filteredItems]);
+  }, [filteredItems, unitarySelection]);
 
   return (
     <View style={{ flex: 1, paddingTop: 40, paddingHorizontal: 25, backgroundColor: theme.colors.background }}>
@@ -100,20 +130,22 @@ export default function SelectableListForm({
 
       <View style={{ flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
         <View style={{ alignItems: "center", width: "75%" }}>
-          <Text variant="headlineSmall" style={{ marginVertical:12, textAlign: "center", color: theme.colors.text, fontWeight: 700 }}>
+          <Text variant="headlineSmall" style={{ marginVertical: 12, textAlign: "center", color: theme.colors.text, fontWeight: 700 }}>
             {title}
           </Text>
         </View>
 
-        <View style={{ flexDirection: "row", width: "100%", marginVertical: "3%",gap:'3%' }}>
+        <View style={{ flexDirection: "row", width: "100%", marginVertical: "3%", gap: "3%" }}>
           <View style={{ flex: 1 }}>
             <SearchBar onSubmit={filterByQuery} />
           </View>
-        {showSelectButton ? (<View style={{ alignItems: "center"}}>
-            <GradientButton mode="outlined" onPress={toggleSelectAllVisible}>
+          {showSelectButton ? (
+            <View style={{ alignItems: "center" }}>
+              <GradientButton mode="outlined" onPress={toggleSelectAllVisible}>
                 {allVisibleSelected ? "Deselect all" : "Select all"}
-            </GradientButton>
-        </View>) : (null)}
+              </GradientButton>
+            </View>
+          ) : null}
         </View>
 
         <Divider

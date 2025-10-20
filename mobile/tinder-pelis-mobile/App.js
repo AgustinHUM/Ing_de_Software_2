@@ -65,7 +65,7 @@ const TEMAS = {
   },
   TheBatman: {background:'rgba(0, 0, 0, 1)',surface:'rgba(42, 8, 8, 1)',
     primary:'rgba(164, 14, 14, 1)',secondary:'rgba(91, 3, 3, 1)',
-    accent:'rgba(48, 28, 28, 1)',text:'rgba(215, 8, 8, 1)'
+    accent:'rgba(48, 28, 28, 1)',text:'rgba(215, 8, 8, 1)', onGradient:'rgba(0,0,0,1)'
   },
   Matrix: {background:'rgba(0, 0, 0, 1)',surface:'rgba(17, 42, 8, 1)',
     primary:'rgba(51, 169, 19, 1)',secondary:'rgba(34, 66, 31, 1)',
