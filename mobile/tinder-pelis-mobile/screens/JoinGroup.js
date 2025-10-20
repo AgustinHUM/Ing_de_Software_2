@@ -60,7 +60,7 @@ export default function JoinGroup({ navigation }) {
     try {
       const data = await joinGroup(code, token); // { message: "..." }
       setLoading(false); // limpiar loading antes de mostrar el alert / navegar
-      Alert.alert('Listo', data?.message || 'Te uniste al grupo', [
+      Alert.alert('Listo', data?.message || 'Group joined!', [
         { text: 'OK', onPress: () => navigation.navigate('Groups') },
       ]);
     } catch (e) {
@@ -68,7 +68,7 @@ export default function JoinGroup({ navigation }) {
       if (isGenericBackendError(e)) {
         setShowGenericError(true); // se cierra solo a los 5s
       } else {
-        Alert.alert('Error', e.message || 'No te pudimos unir al grupo');
+        Alert.alert('Error', e.message || 'Sorry! We could not join you to the group.');
       }
     }
   }

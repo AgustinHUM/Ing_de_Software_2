@@ -2,6 +2,7 @@ from flask import request, jsonify
 from ..models.models import *
 from ..db import db
 from ..functions.aux_functions import *
+from ..functions.pusher_client import pusher_client
 import jwt
 
 
@@ -75,6 +76,15 @@ def add_user_to_group():
         
         grupo.usuarios.append(usuario_agregado)
         db.session.commit()
+
+        pusher_client.trigger(
+            f"group-{id_grupo}",  
+            "new-member",       
+            {
+                "email": usuario_agregado.mail,
+                "username": usuario_agregado.nombre_cuenta
+            }
+        )
 
         return jsonify({"message": "el usuario se agregó con éxito"}), 200
     
