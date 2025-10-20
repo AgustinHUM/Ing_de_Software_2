@@ -17,18 +17,18 @@ def create_group():
 
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         if not token:
-            return jsonify({"Error": "No se recibió token"}), 401
+            return jsonify({"msg": "No se recibió token"}), 401
 
         payload = jwt.decode(token, options={"verify_signature": False})
         mail_usuario = payload.get("email")
 
         if not mail_usuario:
-            return jsonify({"Error": "No se pudo obtener email del token"}), 401
+            return jsonify({"msg": "No se pudo obtener email del token"}), 401
         
         usuario_creador = Usuario.query.filter_by(mail=mail_usuario).first()
 
         if not usuario_creador:
-            return jsonify({"Error": "No se encuentra al usuario creador el grupo"})
+            return jsonify({"msg": "No se encuentra al usuario creador el grupo"})
         
         id_nuevo_grupo = generate_id()
         nuevo_grupo = Grupo(id_grupo=id_nuevo_grupo, nombre_grupo=nombre_grupo_nuevo)
@@ -55,23 +55,23 @@ def add_user_to_group():
 
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         if not token:
-            return jsonify({"Error": "No se recibió token"}), 401
+            return jsonify({"msg": "No se recibió token"}), 401
 
         payload = jwt.decode(token, options={"verify_signature": False})
         mail_usuario = payload.get("email")
 
         if not mail_usuario:
-            return jsonify({"Error": "No se pudo obtener email del token"}), 401
+            return jsonify({"msg": "No se pudo obtener email del token"}), 401
         
         usuario_agregado = Usuario.query.filter_by(mail=mail_usuario).first()
 
         if not usuario_agregado:
-            return jsonify({"Error": "No se encuentra al usuario"})
+            return jsonify({"msg": "No se encuentra al usuario"})
         
         grupo = Grupo.query.filter_by(id_grupo=id_grupo).first()
 
         if not grupo:
-            return jsonify({"Error": "No se encuentra el grupo"}), 404
+            return jsonify({"msg": "No se encuentra el grupo"}), 404
         
         grupo.usuarios.append(usuario_agregado)
         db.session.commit()
@@ -83,21 +83,21 @@ def get_user_groups():
     if request.method == "GET":
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         if not token:
-            return jsonify({"Error": "No se recibió token"}), 401
+            return jsonify({"msg": "No se recibió token"}), 401
 
         try:
             payload = jwt.decode(token, options={"verify_signature": False})
             mail_usuario = payload.get("email")
         except jwt.DecodeError:
-            return jsonify({"Error": "Token inválido"}), 401
+            return jsonify({"msg": "Token inválido"}), 401
 
         if not mail_usuario:
-            return jsonify({"Error": "No se pudo obtener email del token"}), 401
+            return jsonify({"msg": "No se pudo obtener email del token"}), 401
 
         usuario = Usuario.query.filter_by(mail=mail_usuario).first()
 
         if not usuario:
-            return jsonify({"Error": "No se encuentra al usuario"}), 404
+            return jsonify({"msg": "No se encuentra al usuario"}), 404
 
         lista_grupos = [
             {"id": grupo.id_grupo, "name": grupo.nombre_grupo, "members": len(grupo.usuarios)}
@@ -112,12 +112,12 @@ def get_group_users():
         # 1) leer ?group_id=... de la URL
         group_id = request.args.get("group_id", type=int)
         if not group_id:
-            return jsonify({"Error": "Falta group_id"}), 400
+            return jsonify({"msg": "Falta group_id"}), 400
 
         # 2) buscar UNA fila, no un Query
         grupo = Grupo.query.filter_by(id_grupo=group_id).first()
         if grupo is None:
-            return jsonify({"Error": "No se encuentra el grupo"}), 404
+            return jsonify({"msg": "No se encuentra el grupo"}), 404
 
         # 3) devolver la lista (vacía si no hay)
         usuarios = grupo.usuarios or []

@@ -21,7 +21,7 @@ def handle_register(info = None):
         contrasenia = info.get("password")
 
         if Usuario.query.filter_by(mail=mail).first():
-            return jsonify({"error": "Ya existe el usuario"}), 400
+            return jsonify({"msg": "Ya existe el usuario"}), 400
         
         hash_contr = bcrypt.generate_password_hash(contrasenia).decode("utf-8")
         print("hash: ",hash_contr)
@@ -48,7 +48,7 @@ def handle_register(info = None):
         except Config.COGNITO_CLIENT.exceptions.UsernameExistsException:
             return jsonify({"error":"Ya existe en Cognito"}), 400 
         
-        n_usuario = Usuario(mail=mail, nombre_cuenta = nombre_usuario, contrasenia = hash_contr, formulario_pendiente=True)
+        n_usuario = Usuario(mail=mail, nombre_cuenta = nombre_usuario, contrasenia = hash_contr, formulario_pendiente = True, id_icono = 0) #El 0 es el icono por defecto
         db.session.add(n_usuario)
         db.session.commit()
 
@@ -75,12 +75,7 @@ def handle_login():
             return jsonify({"error": "Error en las credenciales"}), 401
 
         if not bcrypt.check_password_hash(usuario.contrasenia, contrasenia):
-            print("contraseña recibida:", repr(contrasenia))
-            print("hash almacenado:", repr(usuario.contrasenia))
-            print("check:", bcrypt.check_password_hash(usuario.contrasenia, contrasenia))
-
             return jsonify({"error": "Error en las credenciales"}), 401
-
 
         auth_params = {
             "USERNAME": mail,

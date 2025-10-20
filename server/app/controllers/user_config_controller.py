@@ -6,7 +6,7 @@ import jwt
 
 
 """
-+------------------------------------ USER INFO ------------------------------------+
++---------------------------------- USER INFO ----------------------------------+
 """
 
 def show_user_info():
@@ -15,13 +15,13 @@ def show_user_info():
             token = request.headers.get("Authorization", "").replace("Bearer ", "")
             if not token:
                 print("No se recibió token")
-                return jsonify({"Error": "No se recibió token"}), 401
+                return jsonify({"msg": "No se recibió token"}), 401
 
             payload = jwt.decode(token, options={"verify_signature": False})
             mail_usuario = payload.get("email")
 
             if not mail_usuario:
-                return jsonify({"Error": "No se pudo obtener email del token"}), 401
+                return jsonify({"msg": "No se pudo obtener email del token"}), 401
             
             usuario = Usuario.query.options(
                 joinedload(Usuario.plataformas)
@@ -29,59 +29,65 @@ def show_user_info():
 
             if not usuario:
                 print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
-                return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"})
+                return jsonify({"msg": f"Usuario con mail \"{mail_usuario}\" no encontrado"})
             
             pais = usuario.pais
             lista_plataformas = [{"id": p.id_plataforma,
-                                  "nombre": p.nombre_plataforma,
-                                  "logo": p.url_logo} for p in usuario.plataformas]
+                                  "name": p.nombre_plataforma,
+                                  "image": p.url_logo} for p in usuario.plataformas]
             
             res = {"email": usuario.mail,
-                   "nombre": usuario.nombre_cuenta,
-                   "id_pais": pais.id_pais,
+                   "name": usuario.nombre_cuenta,
+                   "country": pais.id_pais,
                    "flag": pais.url_bandera,
-                   "plataformas": lista_plataformas,  
+                   "platforms": lista_plataformas,
+                   "icon": usuario.id_icono,  
                    }
             
             return jsonify(res), 200
         
 
 def update_user_info():
-    if request.method != "POST":
-        return jsonify({"error": "Método no permitido"}), 405
+    # Deberia ser un UPDATE
+    if request.method != "POST":   
+        return jsonify({"msg": "Método no permitido"}), 405
 
     token = request.headers.get("Authorization", "").replace("Bearer ", "")
     if not token:
-        return jsonify({"Error": "No se recibió token"}), 401
+        return jsonify({"msg": "No se recibió token"}), 401
     payload = jwt.decode(token, options={"verify_signature": False})
     mail_usuario = payload.get("email")
     if not mail_usuario:
-        return jsonify({"Error": "No se pudo obtener email del token"}), 401
+        return jsonify({"msg": "No se pudo obtener email del token"}), 401
 
     usuario = Usuario.query.options(
         joinedload(Usuario.plataformas)
         ).filter_by(mail=mail_usuario).first()
+    
     if not usuario:
-        return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+        return jsonify({"msg": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
 
     data = request.get_json() if request.is_json else request.form
 
-    if "nombre" in data:
-        usuario.nombre_cuenta = data["nombre"]
+    if "name" in data:
+        usuario.nombre_cuenta = data["name"]
 
-    if "id_pais" in data:
-        usuario.id_pais = data["id_pais"]
+    if "country" in data:
+        usuario.id_pais = data["country"]
 
-    if "plataformas" in data:
+    if "platforms" in data:
         usuario.plataformas.clear()
-        for plat_id in data["plataformas"]:
+        for plat_id in data["platforms"]:
             plat = Plataforma.query.get(plat_id)
             if plat:
                 usuario.plataformas.append(plat)
+    
+    if "icon" in data:
+        usuario.id_icono = data["icon"]
 
     db.session.commit()
 
-    return jsonify({"message": "Los parametros se actualizaron con exito"}), 200
+    return jsonify({"msg": "Los parametros se actualizaron con exito"}), 200
 
 
 
@@ -122,18 +128,18 @@ def save_user_form():
 
         if not token:
             print("No se recibió token")
-            return jsonify({"Error": "No se recibió token"}), 401
+            return jsonify({"msg": "No se recibió token"}), 401
 
         payload = jwt.decode(token, options={"verify_signature": False})
         mail_usuario = payload.get("email")
 
         if not mail_usuario:
-            return jsonify({"Error": "No se pudo obtener email del token"}), 401
+            return jsonify({"msg": "No se pudo obtener email del token"}), 401
         
         usuario = Usuario.query.filter_by(mail=mail_usuario).first()
         if not usuario:
             print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
-            return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+            return jsonify({"msg": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
 
         countries = info.get("countries", [])
         if countries:
