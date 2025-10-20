@@ -17,6 +17,7 @@ import * as SecureStore from "expo-secure-store";
 import { getGroupUsersById } from "../src/services/api";
 import ErrorOverlay from "../components/ErrorOverlay";
 import * as Clipboard from 'expo-clipboard';
+import Pusher from 'pusher-js/react-native';
 
 const APPBAR_HEIGHT = 60;
 const APPBAR_BOTTOM_INSET = 10;
@@ -56,7 +57,7 @@ export default function GroupCode({ navigation, route }) {
   // Error overlay (solo para errores genéricos del back)
   const [showGenericError, setShowGenericError] = useState(false);
   const outageShownRef = useRef(false); // evita overlay repetido durante la misma caída
-  const [loading, setLoading] = useState(false); 
+  const [loading, setLoading] = useState(false);
 
   const isGenericBackendError = (err) => {
     const msg = (err?.message || "").toLowerCase();
@@ -68,12 +69,9 @@ export default function GroupCode({ navigation, route }) {
     );
   };
 
-  // Polling de miembros cada 2s (si hay groupId)
-  const pollingRef = useRef(null);
-
+  // --- Fetch initial members once (replaces the old polling) ---
   useEffect(() => {
     let cancelled = false;
-
     async function fetchMembers() {
       try {
         setLoading(true);
@@ -96,20 +94,94 @@ export default function GroupCode({ navigation, route }) {
       }
     }
 
-    if (pollingRef.current) clearInterval(pollingRef.current);
-
     if (groupId) {
       fetchMembers(); // carga inicial
-      pollingRef.current = setInterval(fetchMembers, 2000);
     } else {
       setMembers([]);
     }
 
     return () => {
       cancelled = true;
-      if (pollingRef.current) clearInterval(pollingRef.current);
     };
   }, [groupId]);
+  
+useEffect(() => {
+  if (!groupId) return;          // subscribe by internal id (not joinCode)
+  let pusher = null;
+  let channel = null;
+  let mounted = true;
+
+  (async () => {
+    try {
+      // enable pusher debug logs (helps a lot when troubleshooting)
+      Pusher.logToConsole = true;
+
+      pusher = new Pusher('fcb8b1c83278ac43036d', {
+        cluster: 'sa1',
+        // forceTLS: true, // uncomment if your app requires TLS
+      });
+
+      console.log('Pusher init, connection state:', pusher.connection.state);
+
+      // subscribe to internal-id channel
+      channel = pusher.subscribe(`group-${groupId}`);
+
+      // debug connection state changes
+      pusher.connection.bind('state_change', (states) => {
+        console.log('Pusher state change:', states);
+      });
+      pusher.connection.bind('connected', () => {
+        console.log('Pusher connected, socket id:', pusher.connection.socket_id);
+      });
+      pusher.connection.bind('error', (err) => {
+        console.log('Pusher connection error', err);
+      });
+
+      // bind the event
+      channel.bind('new-member', (payload) => {
+        try {
+          // defensive parsing and logging
+          const data = typeof payload === 'string' ? (() => {
+            try { return JSON.parse(payload); } catch { return payload; }
+          })() : payload;
+
+          console.log('PUSHER EVENT new-member payload:', JSON.stringify(data));
+
+          const name = data?.username || (data?.email ? data.email.split('@')[0] : 'User');
+          const email = data?.email ?? null;
+
+          if (!mounted) return;
+          setMembers(prev => {
+            const exists = prev.some(m => (email && m.email === email) || (m.username === name));
+            if (exists) return prev;
+            return [...prev, { email, username: name }];
+          });
+        } catch (err) {
+          console.log('pusher event handling error', err);
+        }
+      });
+
+    } catch (err) {
+      console.log('Pusher setup error', err);
+    }
+  })();
+
+  return () => {
+    mounted = false;
+    try {
+      if (channel) {
+        channel.unbind_all && channel.unbind_all();
+        pusher && pusher.unsubscribe && pusher.unsubscribe(`group-${groupId}`);
+      }
+      if (pusher) {
+        pusher.disconnect && pusher.disconnect();
+      }
+    } catch (e) {
+      console.log('Pusher cleanup error', e);
+    }
+  };
+}, [groupId]);
+
 
   const goStart = () => navigation.navigate("Home");
 
@@ -282,7 +354,7 @@ export default function GroupCode({ navigation, route }) {
               }}
             />
 
-            {/* Lista de miembros (refresco cada 2s) */}
+            {/* Lista de miembros (actualizada en tiempo real vía Pusher) */}
             <FlatList
               data={members}
               keyExtractor={(u, i) => (u.email || u.username || `m${i}`)}
