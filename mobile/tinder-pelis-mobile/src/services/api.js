@@ -1,5 +1,6 @@
 import axios from "axios";
 
+
 export const API_URL = "http://172.20.10.10:5050"; // Local server
 
 const api = axios.create({
@@ -131,4 +132,7 @@ export function getFavourites(token) {
   return get('/user/favorites', {
     headers: { Authorization: `Bearer ${token}` },
   });
+}
+export function homeMovies(token) {
+ return get('/home/movies', {headers: { Authorization: `Bearer ${token}` }});
 }

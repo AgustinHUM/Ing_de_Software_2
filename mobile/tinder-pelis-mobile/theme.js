@@ -124,6 +124,13 @@ export function setAlpha(color, newAlpha) {
   return fmtRgba({ r: c.r, g: c.g, b: c.b, a: Math.round(a * 1000) / 1000 });
 }
 
+export function tweakColor(color, red_variation, green_variation, blue_variation) {
+  const c = parseRgbaSimple(color);
+  const r = clamp(Number(c.r + red_variation),0,255);
+  const g = clamp(Number(c.g + green_variation),0,255);
+  const b = clamp(Number(c.b + blue_variation),0,255);
+  return fmtRgba({ r: r, g: g, b: b, a: c.a });
+}
 
 function scaled(n) {
   return Math.round((n * (tweak.scaleFactor || 1)) * 100) / 100;

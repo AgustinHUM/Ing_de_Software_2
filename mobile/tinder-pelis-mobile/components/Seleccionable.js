@@ -53,7 +53,7 @@ export default function Seleccionable({
     }
 
     const textColor = selected
-      ? (theme.colors?.text ?? '#fff')
+      ? (theme.colors?.onGradient ?? (theme.colors?.text ?? '#fff'))
       : (theme.colors?.placeholderText ?? theme.colors?.placeholder ?? 'rgba(255,255,255,0.6)');
 
     // Si el icono es elemento React lo renderiza, si no asume que es una imagen

@@ -1,12 +1,5 @@
 # necesario para que Python trate a 'routes' como paquete
-from .login_route import login_bp
-from .register_route import register_bp
-from .pantalla_principal_route import pantalla_principal_bp
-from .general_info_route import movie_info_bp
-from .group_routes import grupo_bp
-from .form_routes import forms_bp
-from .user_routes import usuario_bp
-from .seen_movies_route import seen_movies_bp
+from .routes import *
 
 def register_routes(app):
     app.register_blueprint(login_bp)
