@@ -104,7 +104,7 @@ export default function GroupCode({ navigation, route }) {
       cancelled = true;
     };
   }, [groupId]);
-  
+
 useEffect(() => {
   if (!groupId) return;          // subscribe by internal id (not joinCode)
   let pusher = null;
@@ -378,9 +378,7 @@ useEffect(() => {
 
             {/* Botón principal */}
             <GradientButton onPress={goStart} style={{ paddingVertical: 18, borderRadius: 16 }}>
-              <Text style={{ fontSize: 20, fontWeight: "900", textAlign: "center", color:theme.colors.text }}>
                 Start swiping
-              </Text>
             </GradientButton>
 
             {/* Checkbox */}
@@ -400,11 +398,11 @@ useEffect(() => {
                     ? (theme.colors?.secondary ?? "rgba(251,195,76,1)")
                     : "transparent",
                   borderWidth: startWithoutPrefs ? 0 : 2,
-                  borderColor: "rgba(255,255,255,0.7)",
+                  borderColor: theme.colors.text,
                 }}
               >
                 {startWithoutPrefs ? (
-                  <MaterialCommunityIcons name="check-bold" size={16} color="#000" />
+                  <MaterialCommunityIcons name="check-bold" size={16} color={theme.colors.primary} />
                 ) : null}
               </View>
               <Text style={{ color: textColor, opacity: 0.95 }}>

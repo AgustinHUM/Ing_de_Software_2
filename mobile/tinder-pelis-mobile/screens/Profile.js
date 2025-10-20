@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, ScrollView, StyleSheet, Dimensions, Alert, Image } from 'react-native';
+import {
+  View,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Dimensions,
+  Alert,
+  Image,
+  Modal,
+  Pressable,
+  Platform,
+} from 'react-native';
 import { Text, useTheme, Avatar, Divider, Surface } from 'react-native-paper';
 import { useAuth } from '../AuthContext';
 import GradientButton from '../components/GradientButton';
@@ -22,12 +33,11 @@ export default function ProfileScreen({ navigation, setAppTheme, themesMap, curr
   }
 
   function onEditProfile() {
-    // Try to navigate to an EditProfile screen if it exists in your navigator.
     if (navigation?.navigate) navigation.navigate('EditProfile');
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>      
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Big centered avatar + name */}
         <View style={styles.avatarWrap}>
@@ -43,14 +53,24 @@ export default function ProfileScreen({ navigation, setAppTheme, themesMap, curr
         </View>
 
         {/* Surface with user info fields */}
-        <Surface style={[styles.infoSurface, { backgroundColor: theme.colors.surface, borderColor:theme.colors.primary,
-          boxShadow: [{
-                      offsetX: 0,
-                      offsetY: 0,
-                      blurRadius: 16,
-                      spread: 0,
-                      color: setAlpha(theme.colors.primary,0.6),}]
-         }]}>
+        <Surface
+          style={[
+            styles.infoSurface,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.primary,
+              boxShadow: [
+                {
+                  offsetX: 0,
+                  offsetY: 0,
+                  blurRadius: 16,
+                  spread: 0,
+                  color: setAlpha(theme.colors.primary, 0.6),
+                },
+              ],
+            },
+          ]}
+        >
           {/* Email */}
           <View style={styles.infoRow}>
             <Text style={[styles.infoLabel, { color: theme.colors.text }]}>Email</Text>
@@ -62,7 +82,11 @@ export default function ProfileScreen({ navigation, setAppTheme, themesMap, curr
           <View style={styles.infoRow}>
             <Text style={[styles.infoLabel, { color: theme.colors.text }]}>Country</Text>
             <View style={styles.countryRight}>
-              <Image width={30} height={30} source={{uri: "https://cdn.watchmode.com/misc_images/icons/usFlag2.png"}} resizeMode='contain'/>
+              <Image
+                style={{ width: 30, height: 30 }}
+                source={{ uri: 'https://cdn.watchmode.com/misc_images/icons/usFlag2.png' }}
+                resizeMode="contain"
+              />
             </View>
           </View>
           <Divider style={[styles.divider, { backgroundColor: theme.colors.primary }]} />
@@ -87,10 +111,7 @@ export default function ProfileScreen({ navigation, setAppTheme, themesMap, curr
 
         {/* Buttons: Edit Profile then Sign Out */}
         <View style={styles.buttonsWrap}>
-          <GradientButton
-            onPress={onEditProfile}
-            style={styles.editButton}
-          >
+          <GradientButton onPress={onEditProfile} style={styles.editButton}>
             Edit Profile
           </GradientButton>
 
@@ -103,70 +124,133 @@ export default function ProfileScreen({ navigation, setAppTheme, themesMap, curr
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.themeSection, { backgroundColor: theme.colors.surface, borderColor:theme.colors.primary,
-              boxShadow: [{
-                      offsetX: 0,
-                      offsetY: 0,
-                      blurRadius: 16,
-                      spread: 0,
-                      color: setAlpha(theme.colors.primary,0.6),}]
-             }]}>
+        {/* Theme section header (now opens modal) */}
+        <View
+          style={[
+            styles.themeSection,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.primary,
+              boxShadow: [
+                {
+                  offsetX: 0,
+                  offsetY: 0,
+                  blurRadius: 16,
+                  spread: 0,
+                  color: setAlpha(theme.colors.primary, 0.6),
+                },
+              ],
+            },
+          ]}
+        >
           <TouchableOpacity
             style={styles.themeHeader}
-            onPress={() => setShowThemeSelector((s) => !s)}
+            onPress={() => setShowThemeSelector(true)}
             activeOpacity={0.8}
           >
             <Text style={[styles.themeLabel, { color: theme.colors.text }]}>App theme</Text>
             <Text style={[styles.themeCurrent, { color: theme.colors.primary }]}>{currentThemeName}</Text>
           </TouchableOpacity>
+        </View>
+      </ScrollView>
 
-          {showThemeSelector && (
-            <>
-            <Divider style={{...styles.divider, backgroundColor:theme.colors.primary}} />
-            <View style={styles.themeGrid}>
+      {/* Modal for theme selector */}
+      <Modal
+        visible={showThemeSelector}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowThemeSelector(false)}
+      >
+        {/* Backdrop: pressing it closes modal */}
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setShowThemeSelector(false)}
+        >
+          {/* Empty: backdrop handled by Pressable */}
+        </Pressable>
+
+        {/* Modal content container - appears above backdrop */}
+        <View style={styles.modalContainer}>
+          <Surface
+            style={[
+              styles.modalSurface,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.primary,
+                boxShadow: [
+                  {
+                    offsetX: 0,
+                    offsetY: 0,
+                    blurRadius: 16,
+                    spread: 0,
+                    color: setAlpha(theme.colors.primary, 0.6),
+                  },
+                ],
+              },
+            ]}
+          >
+            {/* Header row inside modal: title + close */}
+            <View style={[styles.themeHeader, { paddingHorizontal: 16 }]}>
+              <Text style={[styles.themeLabel, { color: theme.colors.text }]}>App theme</Text>
+              <TouchableOpacity onPress={() => setShowThemeSelector(false)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Text style={{ color: theme.colors.primary, fontWeight: '700' }}>Close</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Divider style={[styles.divider, { backgroundColor: theme.colors.primary }]} />
+
+            <ScrollView contentContainerStyle={styles.themeGrid} showsVerticalScrollIndicator={false}>
               {Object.keys(themesMap || {}).map((tkey) => {
                 const colors = themesMap[tkey] || {};
                 const selected = currentThemeName === tkey;
                 return (
                   <TouchableOpacity
                     key={tkey}
-                    onPress={() => setAppTheme(tkey)}
+                    onPress={() => {
+                      setAppTheme(tkey);
+                      // keep modal open to allow user to see change; comment next line if you want it to auto-close
+                      setShowThemeSelector(false);
+                    }}
                     style={[
                       styles.themeOption,
-                      { borderColor: theme.colors.secondary, 
+                      {
+                        borderColor: theme.colors.secondary,
                         backgroundColor: theme.colors.surface,
-                        boxShadow: selected ? [{
-                          offsetX: 0,
-                          offsetY: 0,
-                          blurRadius: 16,
-                          spread: 0,
-                          color: setAlpha(theme.colors.primary,0.6),}] : [{}]
-                       },
+                        boxShadow: selected
+                          ? [
+                              {
+                                offsetX: 0,
+                                offsetY: 0,
+                                blurRadius: 16,
+                                spread: 0,
+                                color: setAlpha(theme.colors.primary, 0.6),
+                              },
+                            ]
+                          : [{}],
+                      },
                     ]}
                     activeOpacity={0.85}
                   >
                     <Text style={[styles.themeName, { color: selected ? theme.colors.primary : theme.colors.text }]}>{tkey}</Text>
-                    <View style={{height:18, flexDirection:'row', gap:8}} >
-                      <View style={{height:'100%', aspectRatio:1, borderRadius:99, backgroundColor:colors.primary, borderWidth:1, borderColor:colors.surface}} />
-                      <View style={{height:'100%', aspectRatio:1, borderRadius:99, backgroundColor:colors.secondary, borderWidth:1, borderColor:colors.surface}} />
-                      <View style={{height:'100%', aspectRatio:1, borderRadius:99, backgroundColor:colors.accent, borderWidth:1, borderColor:colors.surface}} />
+                    <View style={{ height: 18, flexDirection: 'row', gap: 8 }}>
+                      <View style={{ height: '100%', aspectRatio: 1, borderRadius: 99, backgroundColor: colors.primary, borderWidth: 1, borderColor: colors.surface }} />
+                      <View style={{ height: '100%', aspectRatio: 1, borderRadius: 99, backgroundColor: colors.secondary, borderWidth: 1, borderColor: colors.surface }} />
+                      <View style={{ height: '100%', aspectRatio: 1, borderRadius: 99, backgroundColor: colors.accent, borderWidth: 1, borderColor: colors.surface }} />
                     </View>
                   </TouchableOpacity>
                 );
               })}
-            </View>
-            </>
-          )}
+            </ScrollView>
+          </Surface>
         </View>
-
-      </ScrollView>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { paddingHorizontal: 24, paddingVertical: 64, paddingBottom:256 },
+  scrollContent: { paddingHorizontal: 24, paddingVertical: 64, paddingBottom: 256 },
   avatarWrap: { alignItems: 'center', marginTop: 8, marginBottom: 20 },
   avatar: { elevation: 4 },
   nameText: { marginTop: 12, fontSize: 24, fontWeight: '700' },
@@ -175,7 +259,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     overflow: 'hidden',
     marginBottom: 20,
-    borderWidth:1,
+    borderWidth: 1,
   },
   infoRow: {
     flexDirection: 'row',
@@ -202,31 +286,53 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: 'center',
     elevation: 2,
-    marginBottom:10
+    marginBottom: 10,
   },
   signOutText: { fontSize: 16, fontWeight: '700' },
 
   themeSection: {
     borderRadius: 12,
-    borderWidth:1
-   },
+    borderWidth: 1,
+  },
   themeHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding:12
+    padding: 12,
   },
   themeLabel: { fontSize: 15, fontWeight: '600' },
   themeCurrent: { fontSize: 15 },
-  themeGrid: { flexDirection: 'row', flexWrap: 'wrap',marginTop:6,padding:12, paddingHorizontal:24, justifyContent:'center' },
+  themeGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 6, padding: 12, paddingHorizontal: 24, justifyContent: 'center' },
   themeOption: {
-    flexDirection:'row',
+    flexDirection: 'row',
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 20,
     marginBottom: 12,
     borderWidth: 1,
-    width:'90%', justifyContent:'space-between', alignItems:'center'
+    width: '90%',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   themeName: { fontSize: 13, fontWeight: '600' },
+
+  /* Modal styles */
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  modalContainer: {
+    maxHeight: '80%',
+    width: '100%',
+    position: 'absolute',
+    left: 0,
+    top: Platform.OS === 'ios' ? 75 : 50,
+    paddingHorizontal: 16,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 16,
+  },
+  modalSurface: {
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
 });

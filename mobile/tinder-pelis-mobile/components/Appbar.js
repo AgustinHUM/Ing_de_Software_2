@@ -112,7 +112,7 @@ export default function AppBar({ currentRouteName = 'Home', navigationRef }) {
           const IconComp = ICON_LIBS[libName] || MaterialCommunityIcons;
           const iconName = active ? r.icon.filled : r.icon.outline;
 
-          const color = active ? theme.colors.text : 'rgba(255,255,255,0.85)';
+          const color = active ? theme.colors?.onGradient ?? theme.colors.text : 'rgba(255,255,255,0.85)';
           const size = 30;
 
           return (
