@@ -19,27 +19,27 @@ def add_remove_favorite_movie():
 
         id_pelicula = info.get("movie_id")
         if not id_pelicula:
-            return jsonify({"Error": "Falta movie_id"}), 400
+            return jsonify({"msg": "Falta movie_id"}), 400
 
         pelicula = Pelicula.query.filter_by(id_pelicula=id_pelicula).first()
         if not pelicula:
-            return jsonify({"Error": "No se encuentra la película"}), 404
+            return jsonify({"msg": "No se encuentra la película"}), 404
 
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         if not token:
             print("No se recibió token")
-            return jsonify({"Error": "No se recibió token"}), 401
+            return jsonify({"msg": "No se recibió token"}), 401
 
         payload = jwt.decode(token, options={"verify_signature": False})
         mail_usuario = payload.get("email")
 
         if not mail_usuario:
-            return jsonify({"Error": "No se pudo obtener email del token"}), 401
+            return jsonify({"msg": "No se pudo obtener email del token"}), 401
         
         usuario = Usuario.query.filter_by(mail=mail_usuario).first()
         if not usuario:
             print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
-            return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+            return jsonify({"msg": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
 
         accion = info.get("action", "add").lower()
         if accion == "remove":
@@ -65,18 +65,18 @@ def show_favorites():
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         if not token:
             print("No se recibió token")
-            return jsonify({"Error": "No se recibió token"}), 401
+            return jsonify({"msg": "No se recibió token"}), 401
 
         payload = jwt.decode(token, options={"verify_signature": False})
         mail_usuario = payload.get("email")
 
         if not mail_usuario:
-            return jsonify({"Error": "No se pudo obtener email del token"}), 401
+            return jsonify({"msg": "No se pudo obtener email del token"}), 401
         
         usuario = Usuario.query.filter_by(mail=mail_usuario).first()
         if not usuario:
             print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
-            return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+            return jsonify({"msg": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
 
         favoritas = usuario.favoritas or []
         lista = [{"id": peli.id_pelicula, 
@@ -99,35 +99,35 @@ def rate_movie():
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         if not token:
             print("No se recibió token")
-            return jsonify({"Error": "No se recibió token"}), 401
+            return jsonify({"msg": "No se recibió token"}), 401
 
         try:
             payload = jwt.decode(token, options={"verify_signature": False})
             mail_usuario = payload.get("email") if payload else None
         except jwt.DecodeError as e:
             print(f"Error decodificando token: {e}")
-            return jsonify({"Error": "Token inválido"}), 401
+            return jsonify({"msg": "Token inválido"}), 401
         except Exception as e:
             print(f"Error inesperado con token: {e}")
-            return jsonify({"Error": "Error procesando token"}), 401
+            return jsonify({"msg": "Error procesando token"}), 401
 
         if not mail_usuario:
-            return jsonify({"Error": "No se pudo obtener email del token"}), 401
+            return jsonify({"msg": "No se pudo obtener email del token"}), 401
         
         usuario = Usuario.query.filter_by(mail=mail_usuario).first()
         if not usuario:
             print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
-            return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+            return jsonify({"msg": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
 
         movie_id = int(info.get("movie_id")) if info.get("movie_id") else None
         rating = int(info.get("rating")) if info.get("rating") else None
 
         if not movie_id or rating is None:
-            return jsonify({"error": "movie_id y rating son requeridos"}), 400
+            return jsonify({"msg": "movie_id y rating son requeridos"}), 400
 
         pelicula = Pelicula.query.filter_by(id_pelicula=movie_id).first()
         if not pelicula:
-            return jsonify({"error": "Película no encontrada"}), 404
+            return jsonify({"msg": "Película no encontrada"}), 404
 
         user_movie = UsuarioVioPeli.query.filter_by(
             mail_usuario=mail_usuario,
@@ -146,7 +146,7 @@ def rate_movie():
 
         db.session.commit()
 
-        return jsonify({"message": "Calificación guardada con éxito"}), 200
+        return jsonify({"msg": "Calificación guardada con éxito"}), 200
 
 
 def get_user_rating():
@@ -154,18 +154,18 @@ def get_user_rating():
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         if not token:
             print("No se recibió token")
-            return jsonify({"Error": "No se recibió token"}), 401
+            return jsonify({"msg": "No se recibió token"}), 401
 
         payload = jwt.decode(token, options={"verify_signature": False})
         mail_usuario = payload.get("email")
 
         if not mail_usuario:
-            return jsonify({"Error": "No se pudo obtener email del token"}), 401
+            return jsonify({"msg": "No se pudo obtener email del token"}), 401
         
         usuario = Usuario.query.filter_by(mail=mail_usuario).first()
         if not usuario:
             print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
-            return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+            return jsonify({"msg": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
 
         movie_id = request.args.get("movie_id", type=int)
         
@@ -191,18 +191,18 @@ def get_seen_movies():
         token = request.headers.get("Authorization", "").replace("Bearer ", "")
         if not token:
             print("No se recibió token")
-            return jsonify({"Error": "No se recibió token"}), 401
+            return jsonify({"msg": "No se recibió token"}), 401
 
         payload = jwt.decode(token, options={"verify_signature": False})
         mail_usuario = payload.get("email")
 
         if not mail_usuario:
-            return jsonify({"Error": "No se pudo obtener email del token"}), 401
+            return jsonify({"msg": "No se pudo obtener email del token"}), 401
 
         usuario = Usuario.query.filter_by(mail=mail_usuario).first()
         if not usuario:
             print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
-            return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+            return jsonify({"msg": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
 
         peliculas_vistas = db.session.query(UsuarioVioPeli, Pelicula).join(
             Pelicula, UsuarioVioPeli.id_pelicula == Pelicula.id_pelicula
