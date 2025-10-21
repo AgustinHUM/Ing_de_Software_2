@@ -33,6 +33,7 @@ import DirectorsFormScreen from './screens/DirectorsForm';
 import MoviesFormScreen from './screens/MoviesFormScreen';
 import RateFilm from './screens/RateFilm';
 import GroupSwiping from './screens/GroupSwiping';
+import MatchedMovie from './screens/MatchedMovie';
 
 import { API_URL } from './src/services/api';
 
@@ -235,6 +236,7 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
           <Stack.Screen name="JoinGroup" component={JoinGroup} options={{ headerShown: false }} />
           <Stack.Screen name="GroupCode" component={GroupCode} options={{ headerShown: false }} />
           <Stack.Screen name="GroupSwiping" component={GroupSwiping} options={{ headerShown: false }} />
+          <Stack.Screen name="MatchedMovie" component={MatchedMovie} options={{headerShown: false}} />
 
           <Stack.Screen name="RateFilm" component={RateFilm} options={{ headerShown: false }} />
           

@@ -14,7 +14,9 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 
+
 const { width } = Dimensions.get("window");
+
 
 // ---------- Peliculas hardcodeadas ----------
 const movies = [
@@ -128,36 +130,17 @@ export default function MovieMatch() {
   };
 
   const movie = movies[currentIndex];
-  if (!movie)
-    return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          paddingTop: Platform.OS === "ios" ? 80 : 45,
-        }}
-      >
-        <Text
-          style={{
-            color: theme.colors.text,
-            fontSize: 26,
-            fontWeight: "700",
-          }}
-        >
-          No more movies!
-        </Text>
-        <Text
-          style={{
-            color: theme.colors.secondary,
-            fontSize: 16,
-            marginTop: 8,
-          }}
-        >
-          Wait for your friends to finish swiping.
-        </Text>
-      </View>
-    );
+  
+  // Navigate to MatchedMovie screen when all movies are finished
+  React.useEffect(() => {
+    if (!movie) {
+      navigation.navigate("MatchedMovie");
+    }
+  }, [movie, navigation]);
+  
+  if (!movie) {
+    return null; // Return null while navigating
+  }
 
   return (
     <View
@@ -166,19 +149,19 @@ export default function MovieMatch() {
         backgroundColor: theme.colors.background,
         justifyContent: "center",
         alignItems: "center",
-        paddingTop: Platform.OS === "ios" ? 80 : 45,
+        paddingTop: 5,
       }}
     >
       {/* Screen title */}
       <Text
         style={{
           color: theme.colors.text,
-          fontSize: 28,
+          fontSize: 30,
           fontWeight: "800",
           marginBottom: 30,
         }}
       >
-        Movie Matching
+         Movie <Text style={{ color: theme.colors.primary }}>Matching</Text>
       </Text>
 
        {/* Card (button-swipeable only) */}
@@ -216,7 +199,8 @@ export default function MovieMatch() {
           >
             <Image
               source={movie.poster}
-              style={{ width: "100%", height: 460, resizeMode: "cover" }}
+              style={{ width: "100%", height: 480, resizeMode: "cover" }}
+              
             />
           </View>
 
@@ -271,6 +255,7 @@ export default function MovieMatch() {
                     size={16}
                     color="#FFA500"
                     style={{ marginRight: 4 }}
+                    
                   />
                   <Text style={{ color: "white", fontWeight: "600" }}>
                     {movie.rating}
