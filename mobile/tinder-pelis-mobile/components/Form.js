@@ -8,7 +8,7 @@ import GradientButton from "../components/GradientButton";
 import { useNavigation } from "@react-navigation/native";
 
 export default function SelectableListForm({
-  items = [], // { name: string, icon?: img }
+  items = [], // { id:int, name: string, icon?: img }
   title = "",
   buttonText = "Next",
   mandatory = false,
@@ -16,11 +16,12 @@ export default function SelectableListForm({
   showGoBack = true,
   showSelectButton = true,
   unitarySelection = false, 
+  initialSelected = [], // [id1, id2, ...]
 }) {
   const theme = useTheme();
   const navigation = useNavigation();
   const [filteredItems, setFilteredItems] = useState(items);
-  const [selectedNames, setSelectedNames] = useState([]);
+  const [selectedNames, setSelectedNames] = useState(items.filter((it) => initialSelected.includes(it.id)).map((it) => it.name) || []);
 
   const normalize = (str = "") =>
     String(str)

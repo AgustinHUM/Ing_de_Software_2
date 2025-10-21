@@ -1,7 +1,7 @@
 import axios from "axios";
 
 
-export const API_URL = "http://10.56.81.178:5050"; // Local server
+export const API_URL = "http://192.168.1.10:5050"; // Local server
 
 const api = axios.create({
   baseURL: API_URL,
@@ -135,4 +135,16 @@ export function getFavourites(token) {
 }
 export function homeMovies(token) {
  return get('/home/movies', {headers: { Authorization: `Bearer ${token}` }});
+}
+
+export function getUserInfo(token) {
+  return get('/user', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function updateUserInfo(data, token) {
+  return post('/user/update', data, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 }

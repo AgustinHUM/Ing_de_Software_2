@@ -24,7 +24,7 @@ const SHADOW_KEYS = [
   'shadowRadius',
 ];
 
-const LoadingBox = forwardRef(({ style, children, shimmerWidth = 0.75, speed = 1400, shimmerOpacity = 0.18, ...rest }, ref) => {
+const LoadingBox = forwardRef(({ style, children, shimmerWidth = 0.75, speed = 1400, shimmerOpacity = 0.18, onSurface = false, ...rest }, ref) => {
   const theme = useTheme();
   const anim = useRef(new Animated.Value(0)).current;
   const [layout, setLayout] = useState({ width: 0, height: 0 });
@@ -98,7 +98,7 @@ const LoadingBox = forwardRef(({ style, children, shimmerWidth = 0.75, speed = 1
     <View onLayout={onLayout} style={[styles.wrapper, wrapperStyle]}>
       <Surface
         ref={ref}
-        style={[styles.surface, { backgroundColor: theme.colors.surface }, surfaceStyle]}
+        style={[styles.surface, { backgroundColor: onSurface ? theme.colors.background : theme.colors.surface }, surfaceStyle]}
         {...rest}
       >
         {children}

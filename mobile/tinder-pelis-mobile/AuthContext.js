@@ -15,6 +15,8 @@ function reducer(state, action) {
       return { ...state, userToken: action.token, user: action.user, isLoading: false };
     case 'SIGN_OUT':
       return { ...signedOutState };
+    case 'UPDATE_USER':
+      return { ...state, user: action.user };
     default:
       return state;
   }
@@ -127,7 +129,7 @@ export function AuthProvider({ children }) {
 
   function guestSignIn() {
     const token = `guest_${Math.random().toString(36).slice(2)}_${Date.now()}`;
-    const user = { email: 'guest@tinderpelis.com', name: 'Invitado' };
+    const user = { email: 'guest@moviemingle.com', name: 'Guest' };
     dispatch({ type: 'SIGN_IN', token, user });
     return { token };
   }
@@ -142,6 +144,12 @@ export function AuthProvider({ children }) {
     }
   }
 
+
+  function updateUser(update) {
+    const updatedUser = typeof update === 'function' ? update(state.user) : { ...(state.user || {}), ...update };
+    dispatch({ type: 'UPDATE_USER', user: updatedUser });
+  }
+
   const value = {
     state,
     busy,
@@ -151,7 +159,8 @@ export function AuthProvider({ children }) {
     signUp,
     signOut,
     guestSignIn,
-    setFormPendingAsync
+    setFormPendingAsync,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

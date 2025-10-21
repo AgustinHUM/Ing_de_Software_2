@@ -35,13 +35,14 @@ def show_user_info():
             lista_plataformas = [{"id": p.id_plataforma,
                                   "name": p.nombre_plataforma,
                                   "image": p.url_logo} for p in usuario.plataformas]
-            
+            print(usuario.mail, usuario.nombre_cuenta, pais.id_pais)
             res = {"email": usuario.mail,
                    "name": usuario.nombre_cuenta,
                    "country": pais.id_pais,
                    "flag": pais.url_bandera,
                    "platforms": lista_plataformas,
                    "icon": usuario.id_icono,  
+                   "genres": [g.nombre_genero for g in usuario.generos_fav],
                    }
             
             return jsonify(res), 200
@@ -84,6 +85,13 @@ def update_user_info():
     
     if "icon" in data:
         usuario.id_icono = data["icon"]
+    
+    if "genres" in data:
+        usuario.generos_fav.clear()
+        for genre_name in data["genres"]:
+            genre = Genero.query.filter_by(nombre_genero=genre_name).first()
+            if genre:
+                usuario.generos_fav.append(genre)
 
     db.session.commit()
 

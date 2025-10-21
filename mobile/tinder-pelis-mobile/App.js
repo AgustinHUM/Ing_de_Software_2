@@ -31,6 +31,7 @@ import CountriesForm from './screens/CountriesForm';
 import DirectorsFormScreen from './screens/DirectorsForm';
 import MoviesFormScreen from './screens/MoviesFormScreen';
 import RateFilm from './screens/RateFilm';
+import EditProfileScreen from './screens/EditProfile';
 
 const Stack = createNativeStackNavigator();
 
@@ -239,6 +240,7 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
               />
             )}
           </Stack.Screen>
+          <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{headerShown:false}} />
           <Stack.Screen name="Groups" component={Groups} options={{ headerShown: false }} />
           <Stack.Screen name="CreateGroup" component={CreateGroup} options={{ headerShown: false }} />
           <Stack.Screen name="JoinGroup" component={JoinGroup} options={{ headerShown: false }} />
