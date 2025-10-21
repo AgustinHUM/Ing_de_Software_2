@@ -210,7 +210,7 @@ export default function ProfileScreen({ navigation, setAppTheme, themesMap, curr
             <Text style={[styles.infoLabel, { color: theme.colors.text }]}>Streaming platforms</Text>
 
             {shouldShowLoader('platforms') ? (
-              <LoadingBox style={{ width: 60, height: 22, borderRadius: 8}} onSurface={true} />
+              <LoadingBox style={{ width: 22, height: 22, borderRadius: 8}} onSurface={true} />
             ) : (
               <View style={styles.expandableRight}>
                 {user?.platforms && user?.platforms.length === 1 ? (
@@ -348,7 +348,10 @@ export default function ProfileScreen({ navigation, setAppTheme, themesMap, curr
 
         {/* Buttons: Edit Profile then Sign Out */}
         <View style={styles.buttonsWrap}>
-          <GradientButton onPress={onEditProfile} style={styles.editButton}>
+          <GradientButton onPress={onEditProfile} style={styles.editButton} 
+          disabled={shouldShowLoader("country") || shouldShowLoader("genres") || 
+          shouldShowLoader("name") || shouldShowLoader("icon") ||
+          shouldShowLoader("platforms") || shouldShowLoader("email")}>
             Edit Profile
           </GradientButton>
 
@@ -618,7 +621,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   modalContainer: {
-    maxHeight: '80%',
+    height: '81.5%',
     width: '100%',
     position: 'absolute',
     left: 0,

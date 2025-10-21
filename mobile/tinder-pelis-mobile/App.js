@@ -87,6 +87,10 @@ const TEMAS = {
   Ghost:  {background:'rgba(228, 227, 227, 1)',surface:'rgba(130, 130, 130, 1)',
     primary:'rgba(0, 0, 0, 1)',secondary:'rgba(194, 194, 194, 1)',
     accent:'rgba(4, 4, 4, 1)',text:'rgba(60, 60, 60, 1)',placeholder:'rgba(255,255,255,1)', onGradient:'rgba(255,255,255,1)'
+  },
+  Peñarol:  {background:'rgba(0, 0, 0, 1)',surface:'rgba(132, 121, 6, 1)',
+    primary:'rgba(226, 226, 3, 1)',secondary:'rgba(56, 44, 3, 1)',
+    accent:'rgba(4, 4, 4, 1)',text:'rgba(227, 224, 3, 1)',placeholder:'rgba(255,255,255,1)', onGradient:'rgba(0, 0, 0, 1)'
   }
 };
 // -------------------------------------------------------------------
