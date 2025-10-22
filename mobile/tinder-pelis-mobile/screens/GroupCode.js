@@ -8,7 +8,7 @@ import {
   Alert,
   FlatList,
 } from "react-native";
-import { Text } from "react-native-paper";
+import { ActivityIndicator, Text } from "react-native-paper";
 import { useTheme } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
@@ -16,6 +16,7 @@ import GradientButton from "../components/GradientButton";
 import * as SecureStore from "expo-secure-store";
 import { getGroupUsersById } from "../src/services/api";
 import ErrorOverlay from "../components/ErrorOverlay";
+import * as Clipboard from 'expo-clipboard';
 
 const APPBAR_HEIGHT = 60;
 const APPBAR_BOTTOM_INSET = 10;
@@ -55,6 +56,7 @@ export default function GroupCode({ navigation, route }) {
   // Error overlay (solo para errores genéricos del back)
   const [showGenericError, setShowGenericError] = useState(false);
   const outageShownRef = useRef(false); // evita overlay repetido durante la misma caída
+  const [loading, setLoading] = useState(false); 
 
   const isGenericBackendError = (err) => {
     const msg = (err?.message || "").toLowerCase();
@@ -74,6 +76,7 @@ export default function GroupCode({ navigation, route }) {
 
     async function fetchMembers() {
       try {
+        setLoading(true);
         if (!groupId) return;
         const token = await SecureStore.getItemAsync("userToken");
         if (!token) return;
@@ -88,6 +91,8 @@ export default function GroupCode({ navigation, route }) {
           setShowGenericError(true);     // se autocierrra a los 5s
           outageShownRef.current = true;
         }
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -160,7 +165,7 @@ export default function GroupCode({ navigation, route }) {
       >
         {/* Header simple */}
         <View style={{ flexDirection: "row", alignItems: "center", height: 48 }}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 8 }}>
+          <TouchableOpacity onPress={() => navigation.navigate("Groups")} style={{ padding: 8 }}>
             <MaterialCommunityIcons name="chevron-left" size={28} color={textColor} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
@@ -231,8 +236,9 @@ export default function GroupCode({ navigation, route }) {
                 justifyContent: "center",
               }}
             >
+              {/* Copy button */}
               <TouchableOpacity
-                onPress={() => Alert.alert("Copied", "Invite code copied to clipboard")}
+                onPress={async () => { await Clipboard.setStringAsync(codeLabel); }}
                 style={{
                   paddingVertical: 10,
                   paddingHorizontal: 16,
@@ -240,9 +246,13 @@ export default function GroupCode({ navigation, route }) {
                   backgroundColor: theme.colors?.accent ?? "rgba(50,23,68,1)",
                 }}
               >
-                <Text style={{ color: textColor, fontWeight: "700" }}>📋 Copy</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <MaterialCommunityIcons name="content-copy" size={18} color={textColor} style={{ marginRight: 8 }} />
+                  <Text style={{ color: textColor, fontWeight: "700" }}>Copy</Text>
+                </View>
               </TouchableOpacity>
 
+              {/* Share button */}
               <TouchableOpacity
                 onPress={async () => {
                   try {
@@ -256,8 +266,12 @@ export default function GroupCode({ navigation, route }) {
                   backgroundColor: theme.colors?.accent ?? "rgba(50,23,68,1)",
                 }}
               >
-                <Text style={{ color: textColor, fontWeight: "700" }}>🔗 Share</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <MaterialCommunityIcons name="share-variant" size={18} color={textColor} style={{ marginRight: 8 }} />
+                  <Text style={{ color: textColor, fontWeight: "700" }}>Share</Text>
+                </View>
               </TouchableOpacity>
+
             </View>
 
             {/* Separador */}
@@ -275,9 +289,16 @@ export default function GroupCode({ navigation, route }) {
               keyExtractor={(u, i) => (u.email || u.username || `m${i}`)}
               renderItem={renderItem}
               ListEmptyComponent={
-                <Text style={{ color: textColor, opacity: 0.8, textAlign: "center" }}>
-                  Waiting for friends to join…
-                </Text>
+                <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: 20 }} />
+              }
+              ListFooterComponent={
+                members.length === 1 ? (
+                  <View style={{ marginTop: 16, alignItems: "center" }}>
+                    <Text style={{ color: textColor, opacity: 0.8, fontStyle: "italic" }}>
+                      Waiting for others to join...
+                    </Text>
+                  </View>
+                ) : null
               }
               contentContainerStyle={{ paddingBottom: 16 }}
             />
@@ -285,8 +306,8 @@ export default function GroupCode({ navigation, route }) {
             <View style={{ height: 20 }} />
 
             {/* Botón principal */}
-            <GradientButton onPress={goSwipe} style={{ paddingVertical: 18, borderRadius: 16 }}>
-              <Text style={{ fontSize: 20, fontWeight: "900", textAlign: "center" }}>
+            <GradientButton onPress={goStart} style={{ paddingVertical: 18, borderRadius: 16 }}>
+              <Text style={{ fontSize: 20, fontWeight: "900", textAlign: "center", color:theme.colors.text }}>
                 Start swiping
               </Text>
             </GradientButton>

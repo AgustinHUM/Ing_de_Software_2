@@ -132,3 +132,6 @@ export function getFavourites(token) {
     headers: { Authorization: `Bearer ${token}` },
   });
 }
+export function homeMovies(token) {
+ return get('/home/movies', {headers: { Authorization: `Bearer ${token}` }});
+}

@@ -2,8 +2,8 @@
 
 import datetime
 from app import create_app
-from app.db import db
-from app.models.models import Cuenta, Genero, Grupo, Pais, Pelicula, Plataforma, PeliculaPlataformaPais
+from ..db import db
+from ..models.models import Cuenta, Genero, Grupo, Pais, Pelicula, Plataforma, PeliculaPlataformaPais
 import requests 
 
 def seed_watchmode():

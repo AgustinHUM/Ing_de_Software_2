@@ -1,14 +1,14 @@
 import React, { useState } from "react";
-import { View, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native";
+import { View, KeyboardAvoidingView, Platform, TouchableOpacity, Alert } from "react-native";
 import { Text } from "react-native-paper";
 import { useTheme } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import GradientButton from "../components/GradientButton";
-import Input from "../components/TextInput";
+import TextInput from "../components/TextInput";
+import LoadingOverlay from "../components/LoadingOverlay"; // ← agregado
 
 // Para conectar al back
-import { Alert } from 'react-native';
 import { useAuth } from '../AuthContext';
 import { joinGroup } from '../src/services/api';
 
@@ -27,6 +27,9 @@ export default function JoinGroup({ navigation }) {
   const { state } = useAuth();
   const token = state?.userToken;
 
+  // loading state
+  const [loading, setLoading] = useState(false);
+
   // Overlay de error genérico
   const [showGenericError, setShowGenericError] = useState(false);
   const isGenericBackendError = (err) => {
@@ -41,6 +44,8 @@ export default function JoinGroup({ navigation }) {
 
   // FUNCIÓN QUE LLAMA AL BACK
   async function handleJoin() {
+    if (loading) return; // evitar doble submit
+
     if (!token) {
       Alert.alert('Sesión', 'Necesitás iniciar sesión para unirte a un grupo.');
       return;
@@ -51,12 +56,15 @@ export default function JoinGroup({ navigation }) {
       return;
     }
 
+    setLoading(true);
     try {
       const data = await joinGroup(code, token); // { message: "..." }
+      setLoading(false); // limpiar loading antes de mostrar el alert / navegar
       Alert.alert('Listo', data?.message || 'Te uniste al grupo', [
         { text: 'OK', onPress: () => navigation.navigate('Groups') },
       ]);
     } catch (e) {
+      setLoading(false);
       if (isGenericBackendError(e)) {
         setShowGenericError(true); // se cierra solo a los 5s
       } else {
@@ -73,6 +81,9 @@ export default function JoinGroup({ navigation }) {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={{ flex: 1, backgroundColor: theme.colors.background }}
     >
+      {/* Loading overlay */}
+      <LoadingOverlay visible={loading} />
+
       {/* Overlay de error genérico */}
       <ErrorOverlay
         visible={showGenericError}
@@ -101,31 +112,29 @@ export default function JoinGroup({ navigation }) {
 
         <View style={{ height: 32 }} />
 
-        <Text style={{ fontSize: 28, fontWeight: "800", lineHeight: 34, color: textColor }}>
-          What’s the invite code?
+        <Text style={{ fontSize: 28, fontWeight: "800", lineHeight: 34, color: textColor, textAlign: "center" }}>
+          What's the invite code?
         </Text>
         <View style={{ height: 8 }} />
-        <Text style={{ opacity: 0.85, color: textColor }}>
+        <Text style={{ opacity: 0.85, color: textColor, textAlign: "center" }}>
           Enter the code your friend shared with you.
         </Text>
 
         <View style={{ height: 24 }} />
 
-        <Input
+        <TextInput
           value={joinCode}
           onChangeText={onChangeCode}
           placeholder="e.g. 12345"
           keyboardType="number-pad"
-          mode="flat"
-          underlineColor="rgba(255,255,255,0.9)"
-          style={{ backgroundColor: "transparent" }}
+          label="Group Code"
         />
 
         <View style={{ height: 40 }} />
 
         <GradientButton
           onPress={handleJoin}
-          disabled={!canSubmit}
+          disabled={!canSubmit || loading}
         >
           Join Group
         </GradientButton>

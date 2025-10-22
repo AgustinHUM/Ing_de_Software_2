@@ -66,7 +66,7 @@ export default function GradientButton({
           ]}
         >
           <View style={{ alignItems: 'center', justifyContent: 'center', minHeight: buttonHeight }}>
-            <Content color={text} />
+            <Content color={theme.colors?.onGradient ?? text} />
           </View>
         </LinearGradient>
       </TouchableOpacity>

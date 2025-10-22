@@ -128,6 +128,8 @@ export default function RateFilm() {
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
+                justifyContent: 'center',
+                paddingRight: 32,
                 backgroundColor: theme.colors.surface,
                 paddingVertical: 12,
                 paddingHorizontal: 16,
@@ -185,10 +187,10 @@ export default function RateFilm() {
         >
           <GradientButton
             onPress={onSave}
-            disabled={saving}
+            disabled={saving || rating === route.params?.userRating}
             style={{ width: btnWidth, alignSelf: 'center' }}
           >
-            {saving ? 'Saving…' : 'Save Rating'}
+            {saving ? 'Saving…' : !!route.params.userRating ? 'Update Rating' : 'Save Rating'}
           </GradientButton>
         </View>
       </View>
