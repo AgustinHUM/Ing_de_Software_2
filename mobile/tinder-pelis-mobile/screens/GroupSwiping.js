@@ -22,7 +22,7 @@ const { width } = Dimensions.get("window");
 const movies = [
   {
     id: "m1",
-    title: "Clueless",
+    title: "Jaws",
     genres: ["Romantic comedy"],
     poster: require("../assets/jaws.jpg"),
     rating: 6.9,
@@ -179,7 +179,6 @@ export default function MovieMatch() {
        >
         {/* Touching poster toggles the bottom panel */}
         <TouchableOpacity activeOpacity={0.95} onPress={togglePanel}>
-          {/* Poster image with glow effect */}
           <View
             style={{
               borderRadius: 18,
@@ -204,12 +203,7 @@ export default function MovieMatch() {
             />
           </View>
 
-          {/* ========================
-              Bottom panel (anchored to bottom)
-              - We animate its height (panelHeight) so it grows upward
-              - Inside: first the info row (always visible), then the synopsis area (opacity-controlled)
-             ======================== */}
-          <Animated.View
+          <Animated.View //Bottom panel
             style={{
               position: "absolute",
               bottom: 0, // anchor to bottom of the card
@@ -218,7 +212,7 @@ export default function MovieMatch() {
               height: panelHeight, // animated height
             }}
           >
-            {/* Gradient overlay for nicer legibility */}
+            {/* Gradient overlay */}
             <LinearGradient
               colors={["transparent", "rgba(0,0,0,0.95)"]}
               style={{ flex: 1 }}
@@ -282,7 +276,7 @@ export default function MovieMatch() {
                     },
                   ],
                   paddingHorizontal: 16,
-                  paddingBottom: 12,
+                  paddingBottom: 10,
                 }}
                 pointerEvents={isOpen ? "auto" : "none"} // disable interaction when closed
               >
@@ -318,35 +312,36 @@ export default function MovieMatch() {
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Action buttons */}
+      {/* Barra de botones inferior (dislike, guardar, like) */}
       <View
         style={{
           flexDirection: "row",
           justifyContent: "space-evenly",
-          width: "70%",
+          width: "80%",
           marginTop: 25,
         }}
       >
         <TouchableOpacity
           onPress={() => swipe("left")}
           style={{
-            width: 60,
-            height: 60,
-            borderRadius: 30,
+            width: 70,
+            height: 70,
+            borderRadius: 50,
             backgroundColor: "#FF4444",
             justifyContent: "center",
             alignItems: "center",
           }}
         >
-          <MaterialCommunityIcons name="close" size={30} color="white" />
+          <MaterialCommunityIcons name="close" size={30} color="white" fontWeight />
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => navigation.navigate("AddToFavourites")}
+        //  Hay que cambiar esto para que guarde la peli en favoritos
           style={{
-            width: 60,
-            height: 60,
+            width: 55,
+            height: 55,
             borderRadius: 30,
+            marginTop: 5, 
             backgroundColor: "#FF8A00",
             justifyContent: "center",
             alignItems: "center",
@@ -358,9 +353,9 @@ export default function MovieMatch() {
         <TouchableOpacity
           onPress={() => swipe("right")}
           style={{
-            width: 60,
-            height: 60,
-            borderRadius: 30,
+            width: 70,
+            height: 70,
+            borderRadius: 50,
             backgroundColor: "#4CAF50",
             justifyContent: "center",
             alignItems: "center",
