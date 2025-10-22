@@ -4,6 +4,7 @@ from ..config import Config
 from ..db import db
 from sqlalchemy import func, or_, desc
 from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import exists
 import jwt
 
 
@@ -38,6 +39,10 @@ def show_home_movies():
         #Capaz que funciona horrible
         peliculas = (
             Pelicula.query
+            .options(
+                joinedload(Pelicula.generos),
+                joinedload(Pelicula.plataformas_paises)
+            )
             .join(Pelicula.generos)
             .join(Pelicula.plataformas_paises)
             .filter(Genero.id_genero.in_(id_generos))
@@ -141,16 +146,22 @@ def movie_details_screen_info():
         if not peli:
             return jsonify({"Error": "La pelicula no existe"}), 401
        
-        pelicula_select = { "id": peli.id_pelicula,
-                            "genres": peli.generos,
-                            "platforms": peli.plataformas,
-                            "year": peli.anio_lanzamiento,
-                            "runtime":peli.duracion,
-                            "director":peli.directores,
-                            "rating":peli.score_critica,
-                            "description":peli.trama,
-                            "ageRating":peli.clasificacion_edad,
-                            "is_favorite": peli.id_pelicula in list(map(lambda x: x.id_pelicula,usuario.favoritas))
-                          }  
+        is_fav = db.session.query(pelis_favoritas).filter_by(
+            mail_usuario=usuario.mail,
+            id_pelicula=id_peli
+        ).first() is not None
+    
+        pelicula_select = {
+            "id": peli.id_pelicula,
+            "genres": peli.generos,
+            "platforms": peli.plataformas,
+            "year": peli.anio_lanzamiento,
+            "runtime": peli.duracion,
+            "director": peli.directores,
+            "rating": peli.score_critica,
+            "description": peli.trama,
+            "ageRating": peli.clasificacion_edad,
+            "is_favorite": is_fav
+        }
         
         return jsonify(pelicula_select), 200
