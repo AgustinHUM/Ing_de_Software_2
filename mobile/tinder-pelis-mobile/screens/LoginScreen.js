@@ -25,7 +25,7 @@ export default function LoginScreen({ navigation }) {
       await signIn(email, password);
       // App.js maneja automaticamente navigation con el formPending
     } catch (e) {
-      setError(String(e?.message || 'Could not log in. Please try again.'));
+      setError(String(e?.msg || 'Could not log in. Please try again.'));
     }
   }
 

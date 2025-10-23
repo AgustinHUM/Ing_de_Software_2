@@ -16,7 +16,7 @@ export default function ProfileScreen({ navigation, setAppTheme, themesMap, curr
     try {
       await signOut();
     } catch (e) {
-      Alert.alert('Error', String(e?.message || 'No se pudo cerrar sesión'));
+      Alert.alert('Error', String(e?.msg || 'No se pudo cerrar sesión'));
     }
   }
 

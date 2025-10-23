@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const API_URL = "http://192.168.1.8:5050"; // Local server
+export const API_URL = "http://192.168.1.2:5000"; // Local server
 
 const api = axios.create({
   baseURL: API_URL,
@@ -63,7 +63,7 @@ export function getMovies(query,page) {
 
 export function getMovieDetails(movieId, token) {
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  return get('/movies/detailsScreen', {params:{movieId}, headers });
+  return get('/movies/detailsScreen', {params:{movie_id: movieId}, headers });
 }
 
 
@@ -76,7 +76,7 @@ export function createGroup(groupName, token) {
 
 // Se une a un grupo con el código y devuelve { message }
 export function joinGroup(groupJoinId, token) {
-  return post('/groups/join', { group_join_id: groupJoinId }, {
+  return post('/groups/join', { id: groupJoinId }, {
     headers: { Authorization: `Bearer ${token}` },
   });
 }
@@ -121,10 +121,10 @@ export function getSeenMovies(token) {
   });
 }
 
-export function getUserRating(movie_id, token) {
+export function getUserRating(movieId, token) {
   return get('/seen_movies/get_user_rating', {
     headers: { Authorization: `Bearer ${token}` },
-    params: { movie_id }
+    params: { movie_id: movieId }
   });
 }
 export function getFavourites(token) {

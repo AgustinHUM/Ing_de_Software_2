@@ -30,7 +30,7 @@ export default function JoinGroup({ navigation }) {
   // Overlay de error genérico
   const [showGenericError, setShowGenericError] = useState(false);
   const isGenericBackendError = (err) => {
-    const msg = (err?.message || "").toLowerCase();
+    const msg = (err?.msg || "").toLowerCase();
     return (
       msg.startsWith("http ") ||       // "HTTP 500", etc.
       msg.includes("timeout") ||       // "Request timeout"
@@ -60,7 +60,7 @@ export default function JoinGroup({ navigation }) {
       if (isGenericBackendError(e)) {
         setShowGenericError(true); // se cierra solo a los 5s
       } else {
-        Alert.alert('Error', e.message || 'No te pudimos unir al grupo');
+        Alert.alert('Error', e.msg || 'No te pudimos unir al grupo');
       }
     }
   }

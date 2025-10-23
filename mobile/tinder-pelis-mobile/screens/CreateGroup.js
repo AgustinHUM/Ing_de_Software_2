@@ -27,7 +27,7 @@ export default function CreateGroup({ navigation }) {
   // Overlay de error genérico
   const [showGenericError, setShowGenericError] = useState(false);
   const isGenericBackendError = (err) => {
-    const msg = (err?.message || "").toLowerCase();
+    const msg = (err?.msg || "").toLowerCase();
     return (
       msg.startsWith("http ") ||       // "HTTP 500", etc.
       msg.includes("timeout") ||       // "Request timeout"
@@ -51,14 +51,14 @@ export default function CreateGroup({ navigation }) {
     }
 
     try {
-      const data = await createGroup(name, token); // { group_join_id: N }
-      navigation.navigate('GroupCode', { code: data.group_join_id, groupName: name});
+      const data = await createGroup(name, token); // { id: N }
+      navigation.navigate('GroupCode', { code: data.id, groupName: name});
     } catch (e) {
       // Mostrar overlay SOLO si el back no especifica el error
       if (isGenericBackendError(e)) {
         setShowGenericError(true); // se oculta solo a los 5s
       } else {
-        Alert.alert('Error', e.message || 'No se pudo crear el grupo');
+        Alert.alert('Error', e.msg || 'No se pudo crear el grupo');
       }
     }
   }

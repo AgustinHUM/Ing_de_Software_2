@@ -1,5 +1,6 @@
 from flask import request, jsonify
 from sqlalchemy.orm import joinedload
+from ..functions.aux_functions import *
 from ..models.models import *
 from ..db import db
 import jwt
@@ -12,24 +13,7 @@ import jwt
 def show_user_info():
         if request.method == "GET":
 
-            token = request.headers.get("Authorization", "").replace("Bearer ", "")
-            if not token:
-                print("No se recibió token")
-                return jsonify({"msg": "No se recibió token"}), 401
-
-            payload = jwt.decode(token, options={"verify_signature": False})
-            mail_usuario = payload.get("email")
-
-            if not mail_usuario:
-                return jsonify({"msg": "No se pudo obtener email del token"}), 401
-            
-            usuario = Usuario.query.options(
-                joinedload(Usuario.plataformas)
-            ).filter_by(mail=mail_usuario).first()
-
-            if not usuario:
-                print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
-                return jsonify({"msg": f"Usuario con mail \"{mail_usuario}\" no encontrado"})
+            usuario = get_token_full_user(request)
             
             pais = usuario.pais
             lista_plataformas = [{"id": p.id_plataforma,
@@ -41,6 +25,7 @@ def show_user_info():
                    "country": pais.id_pais,
                    "flag": pais.url_bandera,
                    "platforms": lista_plataformas,
+                   "genres": usuario.generos_fav,
                    "icon": usuario.id_icono,  
                    }
             
@@ -52,20 +37,7 @@ def update_user_info():
     if request.method != "POST":   
         return jsonify({"msg": "Método no permitido"}), 405
 
-    token = request.headers.get("Authorization", "").replace("Bearer ", "")
-    if not token:
-        return jsonify({"msg": "No se recibió token"}), 401
-    payload = jwt.decode(token, options={"verify_signature": False})
-    mail_usuario = payload.get("email")
-    if not mail_usuario:
-        return jsonify({"msg": "No se pudo obtener email del token"}), 401
-
-    usuario = Usuario.query.options(
-        joinedload(Usuario.plataformas)
-        ).filter_by(mail=mail_usuario).first()
-    
-    if not usuario:
-        return jsonify({"msg": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+    usuario = get_token_full_user(request)
 
     data = request.get_json() if request.is_json else request.form
 
@@ -87,7 +59,7 @@ def update_user_info():
 
     db.session.commit()
 
-    return jsonify({"msg": "Los parametros se actualizaron con exito"}), 200
+    return jsonify({"msg": "Information saved successfully"}), 200
 
 
 
@@ -124,22 +96,8 @@ def save_user_form():
             info = request.get_json()
         else:
             info = request.form
-        token = request.headers.get("Authorization", "").replace("Bearer ", "")
 
-        if not token:
-            print("No se recibió token")
-            return jsonify({"msg": "No se recibió token"}), 401
-
-        payload = jwt.decode(token, options={"verify_signature": False})
-        mail_usuario = payload.get("email")
-
-        if not mail_usuario:
-            return jsonify({"msg": "No se pudo obtener email del token"}), 401
-        
-        usuario = Usuario.query.filter_by(mail=mail_usuario).first()
-        if not usuario:
-            print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
-            return jsonify({"msg": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+        usuario = get_token_user(request, "User not found")
 
         countries = info.get("countries", [])
         if countries:
@@ -169,4 +127,4 @@ def save_user_form():
 
         db.session.commit()
 
-        return jsonify({"msg": "Formulario guardado con éxito"}), 200
+        return jsonify({"msg": "Information saved successfully"}), 200

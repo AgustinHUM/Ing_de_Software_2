@@ -96,7 +96,7 @@ export default function GroupsHome({ navigation }) {
 
 
   const isGenericBackendError = (err) => {
-    const msg = (err?.message || "").toLowerCase();
+    const msg = (err?.msg || "").toLowerCase();
     return (
       msg.startsWith("http ") ||       // "HTTP 500", etc.
       msg.includes("timeout") ||       // "Request timeout"
@@ -123,7 +123,7 @@ export default function GroupsHome({ navigation }) {
           if (isGenericBackendError(error)) {
             setShowGenericError(true);
           } else {
-            Alert.alert("Error", error.message || "Could not fetch groups.");
+            Alert.alert("Error", error.msg || "Could not fetch groups.");
           }
           setGroups([]);
         } finally {
