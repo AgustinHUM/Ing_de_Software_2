@@ -7,20 +7,65 @@ import {
   Share,
   Alert,
   FlatList,
+  Modal,
+  StyleSheet,
+  ScrollView,
 } from "react-native";
-import { ActivityIndicator, Text } from "react-native-paper";
+import { ActivityIndicator, Text, Divider } from "react-native-paper";
 import { useTheme } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import GradientButton from "../components/GradientButton";
+import Seleccionable from "../components/Seleccionable";
 import * as SecureStore from "expo-secure-store";
 import { getGroupUsersById } from "../src/services/api";
 import ErrorOverlay from "../components/ErrorOverlay";
 import * as Clipboard from 'expo-clipboard';
 import Pusher from 'pusher-js/react-native';
+import { createMatchingSession, joinMatchingSession, startMatching, getGroupSession } from '../src/services/api';
 
 const APPBAR_HEIGHT = 60;
 const APPBAR_BOTTOM_INSET = 10;
+
+// Genres available for selection
+const allGenres = [
+  "Action",
+  "Action & Adventure", 
+  "Adventure",
+  "Animation",
+  "Anime",
+  "Biography",
+  "Comedy",
+  "Crime",
+  "Documentary",
+  "Drama",
+  "Family",
+  "Fantasy",
+  "Food",
+  "Game Show",
+  "History",
+  "Horror",
+  "Kids",
+  "Music",
+  "Musical",
+  "Mystery",
+  "Nature",
+  "News",
+  "Reality",
+  "Romance",
+  "Sci-Fi & Fantasy",
+  "Science Fiction",
+  "Soap",
+  "Sports",
+  "Supernatural",
+  "Talk",
+  "Thriller",
+  "Travel",
+  "TV Movie",
+  "War",
+  "War & Politics",
+  "Western"
+];
 
 // helper: id interno -> código lindo
 const toJoinCode = (groupId) => groupId * 7 + 13;
@@ -59,6 +104,19 @@ export default function GroupCode({ navigation, route }) {
   const outageShownRef = useRef(false); // evita overlay repetido durante la misma caída
   const [loading, setLoading] = useState(false);
 
+  // Matching session state
+  const [sessionData, setSessionData] = useState(null);
+  const [showGenreModal, setShowGenreModal] = useState(false);
+  // Track if modal is for creating a session (creator flow)
+  const [creatingSession, setCreatingSession] = useState(false);
+  // Store the sessionId just created (for immediate join)
+  const [createdSessionId, setCreatedSessionId] = useState(null);
+  const [sessionActionLoading, setSessionActionLoading] = useState(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState(null);
+  
+  // Genre selection state
+  const [selectedGenres, setSelectedGenres] = useState([]);
+
   const isGenericBackendError = (err) => {
     const msg = (err?.message || "").toLowerCase();
     return (
@@ -68,6 +126,59 @@ export default function GroupCode({ navigation, route }) {
       msg === "request error"
     );
   };
+
+  // Simple polling for session status - checks every 2 seconds
+  useEffect(() => {
+    if (!groupId) return;
+
+    let pollInterval;
+
+    const pollSessionStatus = async () => {
+      try {
+        const token = await SecureStore.getItemAsync("userToken");
+        if (!token) return;
+
+        const response = await getGroupSession(groupId, token);
+        setSessionData(response);
+      } catch (error) {
+        // Check if it's just "no active session" which is normal
+        const errorMsg = error.message?.toLowerCase() || '';
+        if (errorMsg.includes("no active session") || errorMsg === "http 404") {
+          setSessionData(null); // Clear session data when no active session
+        } else {
+          // Only log actual errors, not normal "no session" state
+          console.log("Session polling error:", error.message);
+        }
+      }
+    };
+
+    // Poll immediately, then every 2 seconds
+    pollSessionStatus();
+    pollInterval = setInterval(pollSessionStatus, 2000);
+
+    return () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+    };
+  }, [groupId]);
+
+  // Get current user email
+  useEffect(() => {
+    async function getCurrentUser() {
+      try {
+        const token = await SecureStore.getItemAsync("userToken");
+        if (token) {
+          // Decode token to get user email (basic decode without verification)
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          setCurrentUserEmail(payload.email);
+        }
+      } catch (e) {
+        console.log("Error getting current user:", e);
+      }
+    }
+    getCurrentUser();
+  }, []);
 
   // --- Fetch initial members once (replaces the old polling) ---
   useEffect(() => {
@@ -183,35 +294,173 @@ useEffect(() => {
 }, [groupId]);
 
 
-  const goStart = () => navigation.navigate("Home");
+  // Matching session functions: inlined join logic where used
 
-  const renderItem = ({ item }) => (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        marginBottom: 12,
-      }}
-    >
+  // Genre selection functions
+  const toggleGenre = (genre, selected) => {
+    console.log("Toggling genre:", genre, "selected:", selected);
+    if (selected) {
+      setSelectedGenres(prev => [...prev, genre]);
+    } else {
+      setSelectedGenres(prev => prev.filter(g => g !== genre));
+    }
+  };
+
+  // handleGenreModalSubmit logic will be inlined where used
+
+  // handleGenreModalClose logic will be inlined where used
+
+  const handleGenreSubmit = async (genres) => {
+    try {
+      setSessionActionLoading(true);
+      const token = await SecureStore.getItemAsync("userToken");
+      
+      if (!sessionData) {
+        // Creator: Create session first, then join it
+        const response = await createMatchingSession(groupId, token);
+        const sessionId = response.session_id;
+        await joinMatchingSession(sessionId, genres, token);
+      } else {
+        // Other users: Join existing session
+        await joinMatchingSession(sessionData.session_id, genres, token);
+      }
+      
+      setShowGenreModal(false);
+      setSelectedGenres([]);
+    } catch (error) {
+      Alert.alert("Error", error.message || "Failed to join session");
+    } finally {
+      setSessionActionLoading(false);
+    }
+  };
+
+  const handleStartMatching = async () => {
+    try {
+      setSessionActionLoading(true);
+      const token = await SecureStore.getItemAsync("userToken");
+      await startMatching(sessionData.session_id, token);
+      // Navigate to matching screen when implemented
+      Alert.alert("Success", "Matching started! All participants can now vote on movies.");
+    } catch (error) {
+      Alert.alert("Error", error.message || "Failed to start matching");
+    } finally {
+      setSessionActionLoading(false);
+    }
+  };
+
+  // Determine what button to show
+  const getSessionButton = () => {
+    if (!sessionData) {
+      // No session exists - show "Start Session" for everyone
+      return {
+        text: "Start Session",
+        action: () => {
+          console.log("Opening genre modal for session creation");
+          setCreatingSession(true);
+          setShowGenreModal(true);
+        },
+        disabled: sessionActionLoading
+      };
+    }
+
+    const isCreator = sessionData.creator_email === currentUserEmail;
+    const isParticipant = currentUserEmail && sessionData.participants?.[currentUserEmail];
+    
+    if (sessionData.status === "waiting_for_participants") {
+      if (isCreator) {
+        const readyCount = Object.values(sessionData.participants || {})
+          .filter(p => p.status === "ready").length;
+        return {
+          text: readyCount > 0 ? "Start Match" : "Waiting for participants...",
+          action: handleStartMatching,
+          disabled: sessionActionLoading || readyCount === 0
+        };
+      } else if (!isParticipant) {
+        return {
+          text: "Join Session",
+          action: () => {
+            // Only ever called when a session exists
+            console.log("Opening genre modal to join session:", sessionData.session_id);
+            setCreatingSession(false);
+            setShowGenreModal(true);
+          },
+          disabled: sessionActionLoading
+        };
+      } else {
+        return {
+          text: "Waiting for match to start...",
+          action: null,
+          disabled: true
+        };
+      }
+    } else if (sessionData.status === "matching") {
+      return {
+        text: "Go to Matching",
+        action: () => Alert.alert("Info", "Matching screen will be implemented next"),
+        disabled: false
+      };
+    }
+
+    return {
+      text: "Start Session",
+      action: () => {
+        console.log("Opening genre modal for session creation");
+        setShowGenreModal(true);
+      },
+      disabled: sessionActionLoading
+    };
+  };
+
+  // Get participant status styling
+  const getParticipantStyle = (memberEmail) => {
+    if (!sessionData) return {};
+    
+    const participant = sessionData.participants?.[memberEmail];
+    const isCreator = sessionData.creator_email === memberEmail;
+    
+    if (isCreator) {
+      return { borderWidth: 2, borderColor: theme.colors?.primary ?? "#FF8A00" };
+    } else if (participant?.status === "ready") {
+      return { borderWidth: 2, borderColor: theme.colors?.secondary ?? "#FFC300" };
+    } else if (participant?.status === "joined") {
+      return { borderWidth: 1, borderColor: theme.colors?.primary ?? "#FF8A00", opacity: 0.7 };
+    }
+    
+    return {};
+  };
+
+  const renderItem = ({ item }) => {
+    const participantStyle = getParticipantStyle(item.email);
+    
+    return (
       <View
         style={{
-          backgroundColor: "rgba(255,255,255,0.12)",
-          paddingVertical: 8,
-          paddingHorizontal: 16,
-          borderRadius: 14,
-          maxWidth: "60%",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 12,
         }}
       >
-        <Text style={{ color: textColor, fontWeight: "800" }} numberOfLines={1}>
-          {item.username || item.email || "User"}
+        <View
+          style={{
+            backgroundColor: "rgba(255,255,255,0.12)",
+            paddingVertical: 8,
+            paddingHorizontal: 16,
+            borderRadius: 14,
+            maxWidth: "60%",
+            ...participantStyle,
+          }}
+        >
+          <Text style={{ color: textColor, fontWeight: "800" }} numberOfLines={1}>
+            {item.username || item.email || "User"}
+          </Text>
+        </View>
+        <Text style={{ color: textColor, opacity: 0.85 }}>
+          Has joined your group
         </Text>
       </View>
-      <Text style={{ color: textColor, opacity: 0.85 }}>
-        Has joined your group
-      </Text>
-    </View>
-  );
+    );
+  };
 
   const codeLabel = (joinCode ?? "------").toString().toUpperCase();
 
@@ -376,12 +625,36 @@ useEffect(() => {
 
             <View style={{ height: 20 }} />
 
-            {/* Botón principal */}
-            <GradientButton onPress={goStart} style={{ paddingVertical: 18, borderRadius: 16 }}>
-                Start swiping
-            </GradientButton>
+            {/* Session Management Button */}
+            {(() => {
+              const sessionButton = getSessionButton();
+              return (
+                <GradientButton 
+                  onPress={sessionButton.action} 
+                  style={{ paddingVertical: 18, borderRadius: 16 }}
+                  disabled={sessionButton.disabled}
+                  loading={sessionActionLoading}
+                >
+                  {sessionButton.text}
+                </GradientButton>
+              );
+            })()}
 
-            {/* Checkbox */}
+            {/* Session Status Info */}
+            {sessionData && (
+              <View style={{ marginTop: 16 }}>
+                <Text style={{ color: textColor, opacity: 0.8, textAlign: 'center' }}>
+                  Session Status: {sessionData.status.replace('_', ' ')}
+                </Text>
+                {sessionData.status === 'waiting_for_participants' && (
+                  <Text style={{ color: textColor, opacity: 0.6, textAlign: 'center', fontSize: 12, marginTop: 4 }}>
+                    {Object.values(sessionData.participants || {}).filter(p => p.status === 'ready').length} participants ready
+                  </Text>
+                )}
+              </View>
+            )}
+
+            {/* Checkbox (kept for UI consistency) */}
             <TouchableOpacity
               onPress={() => setStartWithoutPrefs((v) => !v)}
               style={{ flexDirection: "row", alignItems: "center", marginTop: 16 }}
@@ -409,9 +682,93 @@ useEffect(() => {
                 Start without setting preferences
               </Text>
             </TouchableOpacity>
+
           </>
         )}
       </View>
+
+      {/* Genre Selection Modal */}
+      <Modal
+        visible={showGenreModal}
+        animationType="slide"
+        onRequestClose={() => {
+          setSelectedGenres([]);
+          setShowGenreModal(false);
+          setCreatingSession(false);
+        }}
+        transparent={false}
+      >
+        <View style={{ flex: 1, flexDirection:'column', padding: 25, paddingVertical: Platform.OS === 'ios' ? 70 : 35, backgroundColor: theme.colors.background }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <View style={{ width: 40 }} />
+            <Text style={{ color: theme.colors.text, fontWeight: '700', fontSize: 18, textAlign: 'center', flex: 1 }}>Select Genres</Text>
+            <TouchableOpacity
+              onPress={async () => {
+                console.log("Submitting genres:", selectedGenres);
+                try {
+                  setSessionActionLoading(true);
+                  const token = await SecureStore.getItemAsync("userToken");
+                  if (creatingSession) {
+                    // Creator: Create session first, then join it
+                    const response = await createMatchingSession(groupId, token);
+                    const sessionId = response.session_id;
+                    setCreatedSessionId(sessionId); // for completeness, if needed elsewhere
+                    await joinMatchingSession(sessionId, selectedGenres, token);
+                  } else {
+                    // Other users: Join existing session
+                    await joinMatchingSession(sessionData.session_id, selectedGenres, token);
+                  }
+                  setShowGenreModal(false);
+                  setSelectedGenres([]);
+                  setCreatingSession(false);
+                } catch (error) {
+                  Alert.alert("Error", error.message || "Failed to join session");
+                } finally {
+                  setSessionActionLoading(false);
+                }
+              }}
+              disabled={sessionActionLoading}
+            >
+              <Text style={{ color: theme.colors.primary, fontSize: 16, fontWeight: '600', opacity: sessionActionLoading ? 0.5 : 1 }}>
+                {selectedGenres.length > 0 ? (sessionActionLoading ? 'Joining...' : 'Join') : 'Skip'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          
+          <Divider
+            style={{
+              backgroundColor: theme.colors.primary,
+              width: "100%",
+              height: 5,
+              borderRadius: 5,
+            }}
+          />
+          
+          <ScrollView contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+            {allGenres.map(genre => (
+              <View key={genre} style={{ marginTop: 12 }}>
+                <Seleccionable
+                  label={genre}
+                  initialSelected={selectedGenres.includes(genre)}
+                  onSelect={(selected) => toggleGenre(genre, selected)}
+                  width='100%'
+                  fontSize={18}
+                />
+              </View>
+            ))}
+          </ScrollView>
+          
+          <Divider
+            style={{
+              backgroundColor: theme.colors.primary,
+              width: "100%",
+              height: 5,
+              borderRadius: 5,
+              marginBottom: 16
+            }}
+          />
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }

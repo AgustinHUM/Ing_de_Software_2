@@ -1,7 +1,7 @@
 import axios from "axios";
 
 
-export const API_URL = "http://10.56.81.178:5050"; // Local server
+export const API_URL = "http://172.20.10.10:5050"; // Local server
 
 const api = axios.create({
   baseURL: API_URL,
@@ -135,4 +135,51 @@ export function getFavourites(token) {
 }
 export function homeMovies(token) {
  return get('/home/movies', {headers: { Authorization: `Bearer ${token}` }});
+}
+
+// Matching session API functions
+export function createMatchingSession(groupId, token) {
+  return post('/matching/create-session', 
+    { group_id: groupId }, 
+    { headers: { Authorization: `Bearer ${token}` }}
+  );
+}
+
+export function joinMatchingSession(sessionId, genres, token) {
+  return post('/matching/join-session', 
+    { session_id: sessionId, genres }, 
+    { headers: { Authorization: `Bearer ${token}` }}
+  );
+}
+
+export function getSessionStatus(sessionId, token) {
+  return get(`/matching/session-status/${sessionId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+}
+
+export function getGroupSession(groupId, token) {
+  return get(`/matching/group-session/${groupId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+}
+
+export function startMatching(sessionId, token) {
+  return post('/matching/start-matching', 
+    { session_id: sessionId }, 
+    { headers: { Authorization: `Bearer ${token}` }}
+  );
+}
+
+export function voteMovie(sessionId, movieId, vote, token) {
+  return post('/matching/vote', 
+    { session_id: sessionId, movie_id: movieId, vote }, 
+    { headers: { Authorization: `Bearer ${token}` }}
+  );
+}
+
+export function getUserNextMovie(sessionId, token) {
+  return get(`/matching/next-movie/${sessionId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
 }

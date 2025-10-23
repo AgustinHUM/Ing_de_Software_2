@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Modal, TouchableOpacity, FlatList, ScrollView, Image, Platform } from 'react-native';
+import { View, Modal, StyleSheet, TouchableOpacity, FlatList, ScrollView, Image, Platform } from 'react-native';
 import { Divider, Text, useTheme } from 'react-native-paper';
 import SearchBar from '../components/Searchbar';
 import Seleccionable from '../components/Seleccionable';

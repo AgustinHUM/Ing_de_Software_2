@@ -154,3 +154,5 @@ def movie_details_screen_info():
                           }  
         
         return jsonify(pelicula_select), 200
+    
+

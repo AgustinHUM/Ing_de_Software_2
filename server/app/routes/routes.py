@@ -4,6 +4,7 @@ from ..controllers.user_actions_controller import *
 from ..controllers.movie_controller import *
 from ..controllers.group_controller import *
 from ..controllers.user_config_controller import *
+from ..controllers.match_session_controller import *
 
 
 """
@@ -150,3 +151,39 @@ def show_favorites_route():
 @usuario_bp.route("/user/to_favorite", methods=["POST"])
 def add_favourite_route():
     return add_remove_favorite_movie()
+
+
+"""
++--------------------------------- MATCHING SESSIONS ---------------------------------+
+Blueprints: Gestionar match 
+"""
+
+matching_bp = Blueprint("matching", __name__)
+
+@matching_bp.route("/matching/create-session", methods=["POST"])
+def create_session_route():
+    return create_session()
+
+@matching_bp.route("/matching/join-session", methods=["POST"])
+def join_session_route():
+    return join_session()
+
+@matching_bp.route("/matching/session-status/<session_id>", methods=["GET"])
+def get_session_status_route(session_id):
+    return get_session_status()
+
+@matching_bp.route("/matching/group-session/<group_id>", methods=["GET"])
+def get_group_session_route(group_id):
+    return get_group_session()
+
+@matching_bp.route("/matching/start-matching", methods=["POST"])
+def start_matching_route():
+    return start_matching()
+
+@matching_bp.route("/matching/vote", methods=["POST"])
+def vote_movie_route():
+    return vote_movie()
+
+@matching_bp.route("/matching/next-movie/<session_id>", methods=["GET"])
+def get_user_next_movie_route(session_id):
+    return get_user_next_movie()
