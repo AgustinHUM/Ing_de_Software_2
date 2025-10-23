@@ -255,7 +255,7 @@ export default function ProfileScreen({ navigation, setAppTheme, themesMap, curr
                   {(user?.platforms && user.platforms.length > 0) ? (
                     user.platforms.map((p) => (
                       <View
-                        key={p?.id ?? p?.name}
+                        key={`platform-${p?.id ?? p?.name}`}
                         style={styles.platformTile}
                       >
                         <View style={styles.platformTileInner}>
@@ -331,14 +331,14 @@ export default function ProfileScreen({ navigation, setAppTheme, themesMap, curr
               <View style={styles.expandedList}>
                 <ScrollView contentContainerStyle={styles.genresWrap} showsVerticalScrollIndicator={true}>
                   {(!isEmpty(user?.genres)) ? (
-                    user.genres.map((g,idx) => (
-                      <View key={`${g.id}-${idx}`} style={[styles.genreBadge, { backgroundColor: setAlpha(theme.colors.primary, 0.08), borderColor: setAlpha(theme.colors.primary, 0.16) }]}>
+                    user.genres.map((g) => (
+                      <View key={`genre-${g.id}`} style={[styles.genreBadge, { backgroundColor: setAlpha(theme.colors.primary, 0.08), borderColor: setAlpha(theme.colors.primary, 0.16) }]}>
                         <Text style={{ color: theme.colors.text }}>{g.name}</Text>
-                      </View>
-                    ))
+                      </View>)
+                    )
                   ) : (
                     <View style={styles.listItem}>
-                      <Text style={{ color: theme.colors.text }}>No genres set</Text>
+                      <Text style={{ color: theme.colors.text }}>No genres set in your account.</Text>
                     </View>
                   )}
                 </ScrollView>
