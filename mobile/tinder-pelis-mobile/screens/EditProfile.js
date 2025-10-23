@@ -397,6 +397,7 @@ export default function EditProfileScreen({ navigation }) {
       >
         <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
               <SelectableListForm
+              pTop={0}
                 items={buildItemsForModal()}
                 title={
                   modalType === "country"

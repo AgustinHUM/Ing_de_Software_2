@@ -66,6 +66,7 @@ export default function ProfileScreen({ navigation, setAppTheme, themesMap, curr
         const token = await SecureStore.getItemAsync('userToken');
         const data = await getUserInfo(token);
         if (data) {
+          console.log(data);
           setUser(data);
           updateUser(data);
         }

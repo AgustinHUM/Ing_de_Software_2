@@ -17,6 +17,7 @@ export default function SelectableListForm({
   showSelectButton = true,
   unitarySelection = false, 
   initialSelected = [], // [id1, id2, ...]
+  pTop = 40, // paddingTop
 }) {
   const theme = useTheme();
   const navigation = useNavigation();
@@ -82,7 +83,7 @@ export default function SelectableListForm({
   );
 
   const handleMainButton = useCallback(() => {
-    if (typeof onSubmit === "function") {
+    if (typeof onSubmit === "function" && (!mandatory || selectedNames.length > 0)) {
       const selectedItems = items.filter((item) => selectedNames.includes(item.name));
       onSubmit(selectedItems);
     }
@@ -113,20 +114,16 @@ export default function SelectableListForm({
   }, [filteredItems, unitarySelection]);
 
   return (
-    <View style={{ flex: 1, paddingTop: 40, paddingHorizontal: 25, backgroundColor: theme.colors.background }}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+    <View style={{ flex: 1, paddingTop: pTop, paddingHorizontal: 25, backgroundColor: theme.colors.background }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-start" }}>
         {showGoBack ? (
           <IconButton
             icon={() => <MaterialCommunityIcons name="chevron-left" size={32} color={theme.colors.text} />}
             onPress={() => navigation.goBack()}
           />
         ) : (
-          <View style={{ width: 48 }} />
+          <View style={{ width: 48, height:48 }} />
         )}
-
-        <GradientButton mode="text" onPress={handleMainButton} disabled={!!(mandatory && selectedNames.length === 0)}>
-          {buttonText}
-        </GradientButton>
       </View>
 
       <View style={{ flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
@@ -160,7 +157,7 @@ export default function SelectableListForm({
         />
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 128 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 64 }} showsVerticalScrollIndicator={false}>
         {filteredItems.map((it) => (
           <View key={`${it.name}-${selectedNames.includes(it.name)}`} style={{ marginTop: 12 }}>
             <Seleccionable
@@ -177,6 +174,24 @@ export default function SelectableListForm({
           </View>
         ))}
       </ScrollView>
+      <Divider
+          style={{
+            backgroundColor: theme.colors.primary,
+            width: "100%",
+            height: 5,
+            borderRadius: 5,
+            marginBottom: 16,
+          }}
+        />
+        <View style={{ marginBottom: 64, alignItems: "center", paddingVertical: 8 }}>
+          <GradientButton 
+          mode={!!(mandatory && selectedNames.length === 0) ? "outlined" : "contained"} 
+          onPress={handleMainButton} 
+          disabled={!!(mandatory && selectedNames.length === 0)}
+          style={{width:'80%'}}>
+            {buttonText}
+          </GradientButton>
+        </View>
     </View>
   );
 }

@@ -65,7 +65,7 @@ export function AuthProvider({ children }) {
 
       if (!res.ok) {
         let msg = `HTTP ${res.status}`;
-        try { const j = await res.json(); msg = j?.error || j?.detail || msg; } catch {}
+        try { const j = await res.json(); msg = j?.msg || msg; } catch {}
         throw new Error(msg);
       }
 
@@ -103,7 +103,7 @@ export function AuthProvider({ children }) {
       try { data = await res.json(); } catch {}
 
       if (!res.ok) {
-        const msg = data?.error || data?.detail || `HTTP ${res.status}`;
+        const msg = data?.msg || `HTTP ${res.status}`;
         throw new Error(msg);
       }
       return { status: data?.status || 'OK' };

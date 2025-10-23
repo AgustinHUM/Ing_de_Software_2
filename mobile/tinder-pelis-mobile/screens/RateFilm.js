@@ -51,7 +51,7 @@ export default function RateFilm() {
       }
       await rateMovie(movie.id, rating, token);
       Alert.alert('Saved', 'Your rating was saved.', [
-        { text: 'OK', onPress: () => navigation.goBack() }
+        { text: 'OK', onPress: () => navigation.navigate('FilmDetails', { movie }) },
       ]);
     } catch (error) {
       console.error('Rating save error:', error);
@@ -85,7 +85,7 @@ export default function RateFilm() {
         <View style={{ flexDirection: 'row', alignItems: 'center', height: 48, marginBottom: 6 }}>
           <IconButton
             icon={() => <MaterialIcons name="chevron-left" size={28} color={theme.colors.text} />}
-            onPress={() => navigation.goBack()}
+            onPress={() => navigation.navigate('FilmDetails', { movie })}
             style={{ margin: 0 }}
           />
           <View style={{ flex: 1 }}>
