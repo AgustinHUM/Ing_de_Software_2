@@ -62,14 +62,17 @@ export function AuthProvider({ children }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-
+      let data = null;
+      try {data = await res.json();} catch {}
+      console.log(data);
       if (!res.ok) {
-        let msg = `HTTP ${res.status}`;
-        try { const j = await res.json(); msg = j?.msg || msg; } catch {}
+        let msg = null;
+        try { msg = data?.msg || `HTTP ${res.status}`; } catch {}
+        console.log(msg);
         throw new Error(msg);
       }
 
-      const data = await res.json();
+      
       const token = data?.id_token || data?.access_token || 'session-ok';
       const user = {
         email: email,

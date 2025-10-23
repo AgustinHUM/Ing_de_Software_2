@@ -1,7 +1,7 @@
 import axios from "axios";
 
 
-export const API_URL = "http://192.168.1.10:5050"; // Local server
+export const API_URL = "http://10.56.81.178:5050"; // Local server
 
 const api = axios.create({
   baseURL: API_URL,
@@ -64,7 +64,7 @@ export function getMovies(query,page) {
 
 export function getMovieDetails(movieId, token) {
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  return get('/movies/detailsScreen', {params:{movieId}, headers });
+  return get('/movies/detailsScreen', {params:{movie_id:movieId}, headers });
 }
 
 

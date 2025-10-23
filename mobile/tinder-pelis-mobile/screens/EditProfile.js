@@ -97,7 +97,7 @@ export default function EditProfileScreen({ navigation }) {
     if (modalType === "genres") {
       const gs = (formData?.genres || []).map((g) => ({
         name: g.name,
-        id: g.name,
+        id: g.id,
         raw: g,
       }));
       return gs;
@@ -130,7 +130,7 @@ export default function EditProfileScreen({ navigation }) {
       const arr = selectedItems.map((s) => s.raw ?? { id: s.id, name: s.name, logo: s.icon?.uri });
       setPlatforms(arr);
     } else if (modalType === "genres") {
-      const arr = selectedItems.map((s) => s.name);
+      const arr = selectedItems.map((s) => s.id);
       setGenres(arr);
     } else if (modalType === "icon") {
       const sel = selectedItems[0];
@@ -178,10 +178,14 @@ export default function EditProfileScreen({ navigation }) {
         setLoadingFormData(false);
       }
     };
+    try{
     await saveUserInfo();
     Alert.alert("Saved", "Changes have been saved.", [
       { text: "OK", onPress: () => navigation.navigate("Profile") },
-    ]);
+    ]);}
+    catch {
+      Alert.alert("Error","An error occurred while saving your data. Try again later.")
+    }
   };
 
 
@@ -419,7 +423,9 @@ export default function EditProfileScreen({ navigation }) {
                 showGoBack={false}
                 showSelectButton={modalType !== "icon" && modalType !== "country"}
                 unitarySelection={modalType === "country" || modalType === "icon"}
-                initialSelected={modalType === "icon" ? [icon] : modalType === "country" && country?.id ? [country.id] : modalType === "platforms" ? platforms.map((p) => p.id) : modalType === "genres" ? genres : []}
+                initialSelected={modalType === "icon" ? [icon] : modalType === "country" && country?.id ? [country.id] 
+                  : modalType === "platforms" ? platforms.map((p) => p.id) 
+                  : modalType === "genres" ? genres.map(g=>g.id) : []}
               />
         </View>
       </Modal>

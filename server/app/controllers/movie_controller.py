@@ -96,7 +96,7 @@ def movie_details_screen_info():
         if (not request.args) or (not request.args.get("movie_id")):
             return jsonify({"msg": "Movie id is missing"}), 400
        
-        id_peli = request.args.get("movieId")
+        id_peli = request.args.get("movie_id")
 
         usuario = get_token_user(request, "Cannot find user")
        

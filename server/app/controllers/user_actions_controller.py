@@ -73,7 +73,7 @@ def rate_movie():
 
         movie_id = int(info.get("movie_id")) if info.get("movie_id") else None
         rating = int(info.get("rating")) if info.get("rating") else None
-
+        
         if not movie_id or rating is None:
             return jsonify({"msg": "movieId y rating son requeridos"}), 400
 

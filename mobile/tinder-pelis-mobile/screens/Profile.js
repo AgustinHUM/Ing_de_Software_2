@@ -331,9 +331,9 @@ export default function ProfileScreen({ navigation, setAppTheme, themesMap, curr
               <View style={styles.expandedList}>
                 <ScrollView contentContainerStyle={styles.genresWrap} showsVerticalScrollIndicator={true}>
                   {(!isEmpty(user?.genres)) ? (
-                    user.genres.map((g, idx) => (
-                      <View key={`${g}-${idx}`} style={[styles.genreBadge, { backgroundColor: setAlpha(theme.colors.primary, 0.08), borderColor: setAlpha(theme.colors.primary, 0.16) }]}>
-                        <Text style={{ color: theme.colors.text }}>{g}</Text>
+                    user.genres.map((g,idx) => (
+                      <View key={`${g.id}-${idx}`} style={[styles.genreBadge, { backgroundColor: setAlpha(theme.colors.primary, 0.08), borderColor: setAlpha(theme.colors.primary, 0.16) }]}>
+                        <Text style={{ color: theme.colors.text }}>{g.name}</Text>
                       </View>
                     ))
                   ) : (

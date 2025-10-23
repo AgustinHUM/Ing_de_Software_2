@@ -27,7 +27,7 @@ def show_user_info():
                    "platforms": lista_plataformas,
                    "genres": usuario.generos_fav,
                    "icon": usuario.id_icono,  
-                   "genres": [g.nombre_genero for g in usuario.generos_fav],
+                   "genres": [{"id":g.id_genero,"name":g.nombre_genero} for g in usuario.generos_fav],
                    }
             
             return jsonify(res), 200
@@ -49,22 +49,15 @@ def update_user_info():
         usuario.id_pais = data["country"]
 
     if "platforms" in data:
-        plataformas = Plataforma.query.filter(Plataforma.id_plataforma.in_(data["plataformas"])).all()
+        plataformas = Plataforma.query.filter(Plataforma.id_plataforma.in_(data["platforms"])).all()
         usuario.plataformas = plataformas
 
     if "genres" in data:
-        generos = Plataforma.query.filter(Genero.id_genero.in_(data["genres"])).all()
+        generos = Genero.query.filter(Genero.id_genero.in_(data["genres"])).all()
         usuario.generos_fav = generos
     
     if "icon" in data:
         usuario.id_icono = data["icon"]
-    
-    if "genres" in data:
-        usuario.generos_fav.clear()
-        for genre_name in data["genres"]:
-            genre = Genero.query.filter_by(nombre_genero=genre_name).first()
-            if genre:
-                usuario.generos_fav.append(genre)
 
     db.session.commit()
 

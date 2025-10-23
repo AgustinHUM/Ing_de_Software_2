@@ -33,7 +33,8 @@ export default function LoginScreen({ navigation }) {
       await signIn(email, password);
       // App.js handles navigation with formPending
     } catch (e) {
-      setError(String(e?.msg || 'Could not log in. Please try again.'));
+      console.log(e);
+      setError(String(e ?? 'Could not log in. Please try again.'));
     }
   }
 

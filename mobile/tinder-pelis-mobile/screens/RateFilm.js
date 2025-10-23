@@ -39,7 +39,7 @@ export default function RateFilm() {
   const posterContainerWidth = '48%';
 
   function inc() { setRating(r => Math.min(10, Math.round(r + 1))); }
-  function dec() { setRating(r => Math.max(0, Math.round(r - 1))); }
+  function dec() { setRating(r => Math.max(1, Math.round(r - 1))); }
 
   async function onSave() {
     setSaving(true);
