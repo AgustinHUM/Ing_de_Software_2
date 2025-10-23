@@ -32,5 +32,12 @@ package-lock.json
 # Python bytecode
 *.pytest_cache/
 
+# Testing
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+.pytest_cache/
+
 # Alembic
 migrations/versions/*.pyc

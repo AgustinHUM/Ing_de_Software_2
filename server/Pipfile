@@ -18,6 +18,12 @@ flask-migrate = "*"
 pyjwt = "*"
 
 [dev-packages]
+pytest = "*"
+pytest-flask = "*"
+pytest-cov = "*"
+factory-boy = "*"
+faker = "*"
+responses = "*"
 
 [requires]
 python_version = "3.11"
