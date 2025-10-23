@@ -60,7 +60,7 @@ export default function GroupCode({ navigation, route }) {
   const [loading, setLoading] = useState(false);
 
   const isGenericBackendError = (err) => {
-    const msg = (err?.message || "").toLowerCase();
+    const msg = (err?.msg || "").toLowerCase();
     return (
       msg.startsWith("http ") ||       // "HTTP 500", etc.
       msg.includes("timeout") ||       // "Request timeout"

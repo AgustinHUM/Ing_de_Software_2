@@ -1,35 +1,14 @@
 from flask import request, redirect, jsonify
 from ..models.models import *
-from ..config import Config
+from ..functions.aux_functions import *
 from ..db import db
 from sqlalchemy import func, or_, desc
-from sqlalchemy.orm import joinedload
-import jwt
 
 
 def show_home_movies():
     if request.method == "GET":
 
-        token = request.headers.get("Authorization", "").replace("Bearer ", "")
-       
-        if not token:
-            print("No se recibió token")
-            return jsonify({"msg": "No se recibió token"}), 401
-
-        payload = jwt.decode(token, options={"verify_signature": False})
-        mail_usuario = payload.get("email")
-
-        if not mail_usuario:
-            return jsonify({"msg": "No se pudo obtener email del token"}), 401
-       
-        usuario = Usuario.query.options(
-            joinedload(Usuario.generos_fav),
-            joinedload(Usuario.plataformas)
-        ).filter_by(mail=mail_usuario).first()
-
-        if not usuario:
-            print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
-            return jsonify({"msg": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+        usuario = get_token_full_user(request)
        
         id_generos = [g.id_genero for g in usuario.generos_fav]
         id_plataformas = [p.id_plataforma for p in usuario.plataformas]
@@ -58,10 +37,11 @@ def show_home_movies():
         return jsonify(res), 200
 
 
+
 def request_movie_info():
     if request.method == "GET":
         if (not request.args) or (not request.args.get("query")):
-            return jsonify({"msg": "no se recibió query"}), 400
+            return jsonify({"msg": "Query is missing"}), 400
        
         nombre_peli = request.args.get("query")
 
@@ -109,38 +89,27 @@ def request_movie_info():
         return jsonify(lista_peliculas)
          
 
+
 def movie_details_screen_info():
     if request.method == "GET":
-        if (not request.args) or (not request.args.get("movieId")):
-            return jsonify({"msg": "no se recibió movieId"}), 400
+
+        if (not request.args) or (not request.args.get("movie_id")):
+            return jsonify({"msg": "Movie id is missing"}), 400
        
         id_peli = request.args.get("movieId")
 
-
-        token = request.headers.get("Authorization", "").replace("Bearer ", "")
-       
-        if not token:
-            print("No se recibió token")
-            return jsonify({"msg": "No se recibió token"}), 401
-
-
-        payload = jwt.decode(token, options={"verify_signature": False})
-        mail_usuario = payload.get("email")
-
-        if not mail_usuario:
-            return jsonify({"msg": "No se pudo obtener email del token"}), 401
-       
-        usuario = Usuario.query.filter_by(mail=mail_usuario).first()
-
-        if not usuario:
-            print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
-            return jsonify({"msg": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+        usuario = get_token_user(request, "Cannot find user")
        
         peli = PeliculaCompleta.query.filter_by(id_pelicula = id_peli).first()
 
         if not peli:
-            return jsonify({"msg": "La pelicula no existe"}), 401
+            return jsonify({"msg": "Movie does not exists in the database"}), 400
        
+        is_fav = db.session.query(pelis_favoritas).filter_by(
+            mail_usuario=usuario.mail,
+            id_pelicula=id_peli
+        ).first() is not None
+        
         pelicula_select = { "id": peli.id_pelicula,
                             "genres": peli.generos,
                             "platforms": peli.plataformas,
@@ -150,7 +119,7 @@ def movie_details_screen_info():
                             "rating":peli.score_critica,
                             "description":peli.trama,
                             "ageRating":peli.clasificacion_edad,
-                            "is_favorite": peli.id_pelicula in list(map(lambda x: x.id_pelicula,usuario.favoritas))
+                            "is_favorite": is_fav
                           }  
         
         return jsonify(pelicula_select), 200
