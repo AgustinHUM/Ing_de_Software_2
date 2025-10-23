@@ -2,6 +2,7 @@ from flask import request, jsonify
 from ..models.models import *
 from ..db import db
 from ..functions.aux_functions import *
+from ..functions.pusher_client import pusher_client
 import jwt
 
 
@@ -25,9 +26,7 @@ def create_group():
         db.session.commit()
 
         codigo_union = id_nuevo_grupo*7 + 13
-        codigo_grupo = {"id": codigo_union}
-
-        return jsonify(codigo_grupo), 200
+        return jsonify({"group_join_id": codigo_union}), 200
     
 
 def add_user_to_group():
@@ -38,20 +37,27 @@ def add_user_to_group():
         else:
             info = request.form
 
-        codigo_union = info.get("id")
+        codigo_union = info.get("group_join_id")
         id_grupo = (codigo_union - 13) // 7
 
         usuario = get_token_user(request, "Cannot find user to add")
         
-        grupo = Grupo.query.filter_by(id_grupo=id_grupo).first()
+        grupo = Grupo.query.options(joinedload(Grupo.usuarios)).filter_by(id_grupo=id_grupo).first()
 
         if not grupo:
             return jsonify({"msg": "Cannot find specified group"}), 404
         
-        grupo.usuarios.append(usuario)
-        db.session.commit()
+        if usuario not in grupo.usuarios:
+            grupo.usuarios.append(usuario)
+            db.session.commit()
 
-        return jsonify({"message": "User added successfully"}), 200
+        pusher_client.trigger(
+            f"group-{id_grupo}",
+            "new-member",
+            {"email": usuario.mail, "username": usuario.nombre_cuenta}
+        )
+
+        return jsonify({"msg": "User added successfully"}), 200
     
         
 def get_user_groups():
@@ -74,11 +80,10 @@ def get_group_users():
         if not group_id:
             return jsonify({"msg": "Group id is missing"}), 400
 
-        grupo = Grupo.query.filter_by(id_grupo=group_id).first()
-        if grupo is None:
-            return jsonify({"msg": "Cannot find group"}), 404
+        grupo = Grupo.query.options(joinedload(Grupo.usuarios)).filter_by(id_grupo=group_id).first()
+        if not grupo:
+            return jsonify({"Error": "No se encuentra el grupo"}), 404
 
-        usuarios = grupo.usuarios or []
-        lista = [{"email": u.mail, "username": u.nombre_cuenta} for u in usuarios]
+        lista = [{"email": u.mail, "username": u.nombre_cuenta} for u in grupo.usuarios]
 
         return jsonify(lista), 200

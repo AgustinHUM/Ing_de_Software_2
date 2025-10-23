@@ -105,6 +105,11 @@ def movie_details_screen_info():
         if not peli:
             return jsonify({"msg": "Movie does not exists in the database"}), 400
        
+        is_fav = db.session.query(pelis_favoritas).filter_by(
+            mail_usuario=usuario.mail,
+            id_pelicula=id_peli
+        ).first() is not None
+        
         pelicula_select = { "id": peli.id_pelicula,
                             "genres": peli.generos,
                             "platforms": peli.plataformas,
@@ -114,7 +119,7 @@ def movie_details_screen_info():
                             "rating":peli.score_critica,
                             "description":peli.trama,
                             "ageRating":peli.clasificacion_edad,
-                            "is_favorite": peli.id_pelicula in list(map(lambda x: x.id_pelicula,usuario.favoritas))
+                            "is_favorite": is_fav
                           }  
         
         return jsonify(pelicula_select), 200

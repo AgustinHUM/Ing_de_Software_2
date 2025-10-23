@@ -1,5 +1,6 @@
 from flask import request, redirect, jsonify
 from ..functions.aux_functions import *
+from sqlalchemy.orm import joinedload
 from ..models.models import *
 from ..config import Config
 from ..db import db
@@ -23,7 +24,7 @@ def add_remove_favorite_movie():
         if not pelicula:
             return jsonify({"msg": "Cannot find specified movie"}), 404
 
-        usuario = get_token_user(request, "User not found")
+        usuario = get_token_user_fav(request)
 
         accion = info.get("action", "add").lower()
 
@@ -33,6 +34,7 @@ def add_remove_favorite_movie():
 
             usuario.favoritas.remove(pelicula)
             db.session.commit()
+
             return jsonify({"msg": "Movie removed from favourites successfully"}), 200
 
         else:  # acción por defecto es "add"
@@ -48,12 +50,11 @@ def add_remove_favorite_movie():
 def show_favorites():
     if request.method == "GET":
 
-        usuario = get_token_user(request, "User not found")
+        usuario = get_token_user_fav(request)
 
-        favoritas = usuario.favoritas or []
         lista = [{"id": peli.id_pelicula, 
                   "title": peli.titulo, 
-                  "poster": peli.url_poster} for peli in favoritas]
+                  "poster": peli.url_poster} for peli in usuario.favoritas]
         
         return jsonify(lista), 200
 
@@ -69,7 +70,6 @@ def rate_movie():
             info = request.form
 
         usuario = get_token_user(request, "User not found")
-        mail_usuario = usuario.mail
 
         movie_id = int(info.get("movie_id")) if info.get("movie_id") else None
         rating = int(info.get("rating")) if info.get("rating") else None
@@ -82,19 +82,15 @@ def rate_movie():
             return jsonify({"msg": "Película no encontrada"}), 404
 
         user_movie = UsuarioVioPeli.query.filter_by(
-            mail_usuario=mail_usuario,
+            mail_usuario=usuario.mail,
             id_pelicula=movie_id
         ).first()
 
         if user_movie:
             user_movie.rating = rating
         else:
-            nueva_relacion = UsuarioVioPeli(
-                mail_usuario=mail_usuario,
-                id_pelicula=movie_id,
-                rating=rating
-            )
-            db.session.add(nueva_relacion)
+            db.session.add(UsuarioVioPeli(mail_usuario=usuario.mail, id_pelicula=movie_id, rating=rating))
+
 
         db.session.commit()
 
@@ -105,21 +101,15 @@ def get_user_rating():
     if request.method == "GET":
 
         usuario = get_token_user(request, "User not found")
-        mail_usuario = usuario.mail
 
         movie_id = request.args.get("movie_id", type=int)
         
         user_movie = UsuarioVioPeli.query.filter_by(
-            mail_usuario=mail_usuario,
+            mail_usuario=usuario.mail,
             id_pelicula=movie_id
         ).first()
             
-        if user_movie:
-            return jsonify({
-                "rating": user_movie.rating
-            }), 200
-        else:
-            return jsonify({"rating": None}), 200
+        return jsonify({"rating": user_movie.rating if user_movie else None}), 200
         
 
 """
@@ -131,14 +121,12 @@ def get_seen_movies():
 
         usuario = get_token_user(request, "User not found")
 
-        mail_usuario = usuario.mail
-
         peliculas_vistas = db.session.query(UsuarioVioPeli, Pelicula).join(
             Pelicula, UsuarioVioPeli.id_pelicula == Pelicula.id_pelicula
-        ).filter(UsuarioVioPeli.mail_usuario == mail_usuario).all()
+        ).filter(UsuarioVioPeli.mail_usuario == usuario.mail).all()
         
         if not peliculas_vistas:
-            return jsonify([]), 200
+            return jsonify({"msg": "Could not fetch seen movies"}), 200
 
         return jsonify([{
             "id": user_movie.id_pelicula,

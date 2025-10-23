@@ -35,9 +35,9 @@ def show_user_info():
 def update_user_info():
     # Deberia ser un UPDATE
     if request.method != "POST":   
-        return jsonify({"msg": "Método no permitido"}), 405
+        return jsonify({"msg": "Method not allowed"}), 405
 
-    usuario = get_token_full_user(request)
+    usuario = get_token_user_join(request)
 
     data = request.get_json() if request.is_json else request.form
 
@@ -48,11 +48,12 @@ def update_user_info():
         usuario.id_pais = data["country"]
 
     if "platforms" in data:
-        usuario.plataformas.clear()
-        for plat_id in data["platforms"]:
-            plat = Plataforma.query.get(plat_id)
-            if plat:
-                usuario.plataformas.append(plat)
+        plataformas = Plataforma.query.filter(Plataforma.id_plataforma.in_(data["plataformas"])).all()
+        usuario.plataformas = plataformas
+
+    if "genres" in data:
+        generos = Plataforma.query.filter(Genero.id_genero.in_(data["genres"])).all()
+        usuario.generos_fav = generos
     
     if "icon" in data:
         usuario.id_icono = data["icon"]
@@ -71,23 +72,14 @@ def show_form():
     if request.method == "GET":
        
         paises = Pais.query.all()
-       
-        lista_paises = [{"id": pais.id_pais,
-                         "name": pais.nombre_pais,
-                         'flag': pais.url_bandera} for pais in paises]
-
         plataformas = Plataforma.query.all()
-
-        lista_plataformas = [{"id": plataforma.id_plataforma,
-                            "name": plataforma.nombre_plataforma,
-                            "logo": plataforma.url_logo} for plataforma in plataformas]
-       
         generos = Genero.query.all()
-        lista_genero = [{"id": genero.id_genero,
-                        "name": genero.nombre_genero} for genero in generos]
-       
-        res = {"countries": lista_paises, "platforms": lista_plataformas, "genres": lista_genero}
-        return jsonify(res), 200
+
+        lista_paises = [{"id": p.id_pais, "name": p.nombre_pais, "flag": p.url_bandera} for p in paises]
+        lista_plataformas = [{"id": p.id_plataforma, "name": p.nombre_plataforma, "logo": p.url_logo} for p in plataformas]
+        lista_genero = [{"id": g.id_genero, "name": g.nombre_genero} for g in generos]
+
+        return jsonify({"countries": lista_paises, "platforms": lista_plataformas, "genres": lista_genero}), 200
     
 
 def save_user_form():

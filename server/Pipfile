@@ -16,6 +16,7 @@ cp = "*"
 flask = "*"
 flask-migrate = "*"
 pyjwt = "*"
+pusher = "*"
 
 [dev-packages]
 
