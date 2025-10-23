@@ -221,6 +221,8 @@ useEffect(() => {
   let pusher = null;
   let channel = null;
   let mounted = true;
+  const goStart = () => navigation.navigate("Home");
+  const goSwipe = () => navigation.navigate("GroupSwiping", { groupId, groupName, startWithoutPrefs });
 
   (async () => {
     try {
