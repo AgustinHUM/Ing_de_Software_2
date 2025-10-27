@@ -3,6 +3,7 @@ from ..models.models import *
 from ..config import Config, bcrypt
 import hmac, hashlib, base64
 from flask import request, jsonify
+from sqlalchemy import func, desc
 from sqlalchemy.orm import joinedload
 import jwt
 
@@ -118,5 +119,74 @@ def get_token_user_join(request):
         if not usuario:
             return jsonify({"msg": f"User with email as \"{mail_usuario}\" cannot be found"}), 404
 
-        return usuario          
+        return usuario     
+
+
+
+"""
++------------------------------------ ADMIN FUNCTIONS ------------------------------------+
+"""
+def get_token_admin(request, msg):
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        if not token:
+            return jsonify({"msg": "No Token Received"}), 401
+
+        try:
+            payload = jwt.decode(token, options={"verify_signature": False})
+            mail_admin = payload.get("email")
+        except jwt.DecodeError:
+            return jsonify({"msg": "Invalid token"}), 401
+
+        if not mail_admin:
+            return jsonify({"msg": "Cannot obtain email from token"}), 401
+        
+        admin = Admin.query.filter_by(mail=mail_admin).first()
+
+        if not admin:
+            return jsonify({"msg": msg}), 404
+
+        return admin
+
+
+def most_rated_movies_query():
+    query = (
+        db.session.query(
+            Pelicula,
+            func.avg(UsuarioVioPeli.rating).label("promedio_rating"),
+            func.count(UsuarioVioPeli.rating).label("cantidad_ratings")
+        )
+        .join(UsuarioVioPeli)
+        .filter(UsuarioVioPeli.rating.isnot(None))
+        .group_by(Pelicula.id_pelicula)
+        .order_by(desc("cantidad_ratings"), desc("promedio_rating"))
+    )
+    return query
+
+
+def get_paginated_rm(page=1, per_page=10):
+    query = most_rated_movies_query()
+    offset = (page - 1) * per_page
+    res = query.limit(per_page).offset(offset).all()
+    return res
+
+
+
+def users_most_favourite_movies_query():  
+    query = (
+        db.session.query(
+            Pelicula,
+            func.count(pelis_favoritas.c.mail_usuario).label("cantidad_favoritos")
+        )
+        .join(pelis_favoritas, Pelicula.id_pelicula == pelis_favoritas.c.id_pelicula)
+        .group_by(Pelicula.id_pelicula)
+        .order_by(desc("cantidad_favoritos"))
+    )
+    return query
+
+
+def get_paginated_fm(page=1, per_page=10):
+    query = users_most_favourite_movies_query()
+    offset_value = (page - 1) * per_page
+    res = query.limit(per_page).offset(offset_value).all()
+    return res
 
