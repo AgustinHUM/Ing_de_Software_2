@@ -161,12 +161,13 @@ useEffect(() => {
           if (!mounted) return;
           setMembers(prev => {
             const exists = prev.some(m => (email && m.email === email));
-            if (exists) return prev;
+            if (exists) {
+              return prev;
+            }
+            updateUser({groups:state.user.groups.map(group => group.id != groupId ? group : {...group,members:group.members + 1})});
             return [...prev, { email, username: name }];
           });
-          if (groupRef.members != members.length) {
-            updateUser({groups:state.user.groups.map(group => group.id != groupId ? group : {...group,members:members.length})});
-          }
+
         } catch (err) {
           console.log('pusher event handling error', err);
         }
