@@ -57,7 +57,7 @@ def add_user_to_group():
             {"email": usuario.mail, "username": usuario.nombre_cuenta}
         )
 
-        return jsonify({"msg": "User added successfully"}), 200
+        return jsonify({"id":id_grupo,"name":grupo.nombre_grupo,"members":len(grupo.usuarios)}), 200
     
         
 def get_user_groups():

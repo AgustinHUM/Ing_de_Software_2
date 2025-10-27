@@ -24,7 +24,7 @@ export default function JoinGroup({ navigation }) {
   const [joinCode, setJoinCode] = useState("");
 
   // OBTENER TOKEN
-  const { state } = useAuth();
+  const { state,updateUser } = useAuth();
   const token = state?.userToken;
 
   // loading state
@@ -58,10 +58,11 @@ export default function JoinGroup({ navigation }) {
 
     setLoading(true);
     try {
-      const data = await joinGroup(code, token); // { message: "..." }
+      const data = await joinGroup(code, token);
+      updateUser({groups:[...state.user.groups,{id:data.id,name:data.name,members:data.members}]});
       setLoading(false); // limpiar loading antes de mostrar el alert / navegar
       Alert.alert('Listo', data?.message || 'Group joined!', [
-        { text: 'OK', onPress: () => navigation.navigate('Groups') },
+        { text: 'OK', onPress: () => navigation.navigate('GroupCode',{groupId:data.id,groupName:data.name}) },
       ]);
     } catch (e) {
       setLoading(false);

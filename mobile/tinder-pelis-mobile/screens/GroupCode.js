@@ -18,6 +18,7 @@ import { getGroupUsersById } from "../src/services/api";
 import ErrorOverlay from "../components/ErrorOverlay";
 import * as Clipboard from 'expo-clipboard';
 import Pusher from 'pusher-js/react-native';
+import { useAuth } from "../AuthContext";
 
 const APPBAR_HEIGHT = 60;
 const APPBAR_BOTTOM_INSET = 10;
@@ -29,7 +30,7 @@ export default function GroupCode({ navigation, route }) {
   const theme = useTheme();
   const { top, bottom } = useSafeAreaInsets();
   const textColor = theme.colors?.text ?? "#fff";
-
+  const {state,updateUser} = useAuth();
   // Params posibles:
   const codeParam = route?.params?.code;            // flujo viejo (join code)
   const groupIdParam = route?.params?.groupId;      // flujo nuevo (desde Groups)
@@ -69,6 +70,10 @@ export default function GroupCode({ navigation, route }) {
     );
   };
 
+  const groupRef = useMemo(() => {
+    return state.user.groups.find(item => item.id === groupId);
+  },[state.user.groups, groupId]);
+
   // --- Fetch initial members once (replaces the old polling) ---
   useEffect(() => {
     let cancelled = false;
@@ -81,6 +86,9 @@ export default function GroupCode({ navigation, route }) {
         const list = await getGroupUsersById(groupId, token);
         if (!cancelled && Array.isArray(list)) {
           setMembers(list);
+          if (groupRef.members != list.length) {
+            updateUser({groups:state.user.groups.map(group => group.id != groupId ? group : {...group,members:list.length})});
+          }
           outageShownRef.current = false; // volvió a responder OK
         }
       } catch (e) {
@@ -152,10 +160,13 @@ useEffect(() => {
 
           if (!mounted) return;
           setMembers(prev => {
-            const exists = prev.some(m => (email && m.email === email) || (m.username === name));
+            const exists = prev.some(m => (email && m.email === email));
             if (exists) return prev;
             return [...prev, { email, username: name }];
           });
+          if (groupRef.members != members.length) {
+            updateUser({groups:state.user.groups.map(group => group.id != groupId ? group : {...group,members:members.length})});
+          }
         } catch (err) {
           console.log('pusher event handling error', err);
         }
