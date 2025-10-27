@@ -116,22 +116,27 @@ export default function GroupsHome({ navigation }) {
     [updateUser]
   );
 
-  useFocusEffect(
-    React.useCallback(() => {
-      mountedRef.current = true;
-      // If we already have groups in state.user use them immediately,
-      // otherwise fetch (this keeps your original behavior)
-      if (!!state?.user?.groups && (state.user.groups || []).length > 0) {
-        setGroups(state.user.groups);
-      } else {
-        fetchGroups({ showLoading: true });
-      }
+useFocusEffect(
+  React.useCallback(() => {
+    mountedRef.current = true;
 
-      return () => {
-        mountedRef.current = false;
-      };
-    }, [fetchGroups, state?.user?.groups])
-  );
+    const user = state?.user;
+    const userHasGroupsProp =
+      user != null && Object.prototype.hasOwnProperty.call(user, "groups");
+
+    if (userHasGroupsProp) {
+      // user.groups exists (could be [], null, or an array) — use it
+      setGroups(user.groups ?? []);
+    } else {
+      // we haven't fetched groups yet
+      fetchGroups({ showLoading: true });
+    }
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [fetchGroups, state?.user])
+);
 
   // onRefresh triggered by pull-to-refresh
   const onRefresh = React.useCallback(async () => {

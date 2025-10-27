@@ -203,7 +203,7 @@ useEffect(() => {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        marginBottom: 12,
+        marginVertical: 6,
       }}
     >
       <View
@@ -362,7 +362,7 @@ useEffect(() => {
               style={{
                 height: 1,
                 backgroundColor: "rgba(255,255,255,0.2)",
-                marginVertical: 24,
+                marginTop: 24,
               }}
             />
 
@@ -384,6 +384,12 @@ useEffect(() => {
                 ) : null
               }
               contentContainerStyle={{ paddingBottom: 16 }}
+            />
+            <View
+              style={{
+                height: 1,
+                backgroundColor: "rgba(255,255,255,0.2)",
+              }}
             />
 
             <View style={{ height: 20 }} />
