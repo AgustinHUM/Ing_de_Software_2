@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const API_URL = "http://172.20.10.2:5050"; // Local server
+export const API_URL = "http://192.168.68.55:5050"; // Local server
 
 const api = axios.create({
   baseURL: API_URL,
@@ -136,35 +136,34 @@ export function homeMovies(token) {
  return get('/home/movies', {headers: { Authorization: `Bearer ${token}` }});
 }
 
-// Matching session API functions
 export function createMatchingSession(groupId, token) {
-  return post('/matching/create-session', 
+  return post('/matching/create_session', 
     { group_id: groupId }, 
     { headers: { Authorization: `Bearer ${token}` }}
   );
 }
 
 export function joinMatchingSession(sessionId, genres, token) {
-  return post('/matching/join-session', 
+  return post('/matching/join_session', 
     { session_id: sessionId, genres }, 
     { headers: { Authorization: `Bearer ${token}` }}
   );
 }
 
 export function getSessionStatus(sessionId, token) {
-  return get(`/matching/session-status/${sessionId}`, {
+  return get(`/matching/session_status/${sessionId}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
 }
 
 export function getGroupSession(groupId, token) {
-  return get(`/matching/group-session/${groupId}`, {
+  return get(`/matching/group_session/${groupId}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
 }
 
 export function startMatching(sessionId, token) {
-  return post('/matching/start-matching', 
+  return post('/matching/start_matching', 
     { session_id: sessionId }, 
     { headers: { Authorization: `Bearer ${token}` }}
   );

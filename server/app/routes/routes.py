@@ -160,23 +160,23 @@ Blueprints: Gestionar match
 
 matching_bp = Blueprint("matching", __name__)
 
-@matching_bp.route("/matching/create-session", methods=["POST"])
+@matching_bp.route("/matching/create_session", methods=["POST"])
 def create_session_route():
     return create_session()
 
-@matching_bp.route("/matching/join-session", methods=["POST"])
+@matching_bp.route("/matching/join_session", methods=["POST"])
 def join_session_route():
     return join_session()
 
-@matching_bp.route("/matching/session-status/<session_id>", methods=["GET"])
+@matching_bp.route("/matching/session_status/<session_id>", methods=["GET"])
 def get_session_status_route(session_id):
     return get_session_status()
 
-@matching_bp.route("/matching/group-session/<group_id>", methods=["GET"])
+@matching_bp.route("/matching/group_session/<group_id>", methods=["GET"])
 def get_group_session_route(group_id):
     return get_group_session()
 
-@matching_bp.route("/matching/start-matching", methods=["POST"])
+@matching_bp.route("/matching/start_matching", methods=["POST"])
 def start_matching_route():
     return start_matching()
 
@@ -184,6 +184,6 @@ def start_matching_route():
 def vote_movie_route():
     return vote_movie()
 
-@matching_bp.route("/matching/next-movie/<session_id>", methods=["GET"])
+@matching_bp.route("/matching/next_movie/<session_id>", methods=["GET"])
 def get_user_next_movie_route(session_id):
     return get_user_next_movie()

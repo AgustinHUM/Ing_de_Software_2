@@ -35,6 +35,7 @@ import GroupSwiping from './screens/GroupSwiping';
 import MatchedMovie from './screens/MatchedMovie';
 
 import { API_URL } from './src/services/api';
+import EditProfileScreen from './screens/EditProfile';
 
 const Stack = createNativeStackNavigator();
 
@@ -69,7 +70,7 @@ const TEMAS = {
   },
   TheBatman: {background:'rgba(0, 0, 0, 1)',surface:'rgba(42, 8, 8, 1)',
     primary:'rgba(164, 14, 14, 1)',secondary:'rgba(91, 3, 3, 1)',
-    accent:'rgba(48, 28, 28, 1)',text:'rgba(215, 8, 8, 1)'
+    accent:'rgba(48, 28, 28, 1)',text:'rgba(215, 8, 8, 1)', onGradient:'rgba(0,0,0,1)'
   },
   Matrix: {background:'rgba(0, 0, 0, 1)',surface:'rgba(17, 42, 8, 1)',
     primary:'rgba(51, 169, 19, 1)',secondary:'rgba(34, 66, 31, 1)',
@@ -90,6 +91,10 @@ const TEMAS = {
   Ghost:  {background:'rgba(228, 227, 227, 1)',surface:'rgba(130, 130, 130, 1)',
     primary:'rgba(0, 0, 0, 1)',secondary:'rgba(194, 194, 194, 1)',
     accent:'rgba(4, 4, 4, 1)',text:'rgba(60, 60, 60, 1)',placeholder:'rgba(255,255,255,1)', onGradient:'rgba(255,255,255,1)'
+  },
+  Peñarol:  {background:'rgba(0, 0, 0, 1)',surface:'rgba(132, 121, 6, 1)',
+    primary:'rgba(226, 226, 3, 1)',secondary:'rgba(56, 44, 3, 1)',
+    accent:'rgba(4, 4, 4, 1)',text:'rgba(227, 224, 3, 1)',placeholder:'rgba(255,255,255,1)', onGradient:'rgba(0, 0, 0, 1)'
   }
 };
 // -------------------------------------------------------------------
@@ -243,6 +248,7 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
               />
             )}
           </Stack.Screen>
+          <Stack.Screen name="EditProfile" component={EditProfileScreen} options={{headerShown:false}} />
           <Stack.Screen name="Groups" component={Groups} options={{ headerShown: false }} />
           <Stack.Screen name="CreateGroup" component={CreateGroup} options={{ headerShown: false }} />
           <Stack.Screen name="JoinGroup" component={JoinGroup} options={{ headerShown: false }} />

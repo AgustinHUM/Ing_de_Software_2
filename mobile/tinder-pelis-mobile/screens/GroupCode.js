@@ -341,8 +341,8 @@ useEffect(() => {
       setSessionActionLoading(true);
       const token = await SecureStore.getItemAsync("userToken");
       await startMatching(sessionData.session_id, token);
-      // Navigate to matching screen when implemented
-      Alert.alert("Success", "Matching started! All participants can now vote on movies.");
+      // Navigate to GroupSwiping screen
+      navigation.navigate("GroupSwiping", { sessionId: sessionData.session_id });
     } catch (error) {
       Alert.alert("Error", error.message || "Failed to start matching");
     } finally {
