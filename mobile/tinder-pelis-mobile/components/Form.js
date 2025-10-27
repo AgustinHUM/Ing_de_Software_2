@@ -8,18 +8,21 @@ import GradientButton from "../components/GradientButton";
 import { useNavigation } from "@react-navigation/native";
 
 export default function SelectableListForm({
-  items = [], // { name: string, icon?: img }
+  items = [], // { id:int, name: string, icon?: img }
   title = "",
-  buttonText = "Siguiente",
+  buttonText = "Next",
   mandatory = false,
   onSubmit = null, // (selectedItems) => {}
   showGoBack = true,
-  showSelectButton = true
+  showSelectButton = true,
+  unitarySelection = false, 
+  initialSelected = [], // [id1, id2, ...]
+  pTop = 40, // paddingTop
 }) {
   const theme = useTheme();
   const navigation = useNavigation();
   const [filteredItems, setFilteredItems] = useState(items);
-  const [selectedNames, setSelectedNames] = useState([]);
+  const [selectedNames, setSelectedNames] = useState(items.filter((it) => initialSelected.includes(it.id)).map((it) => it.name) || []);
 
   const normalize = (str = "") =>
     String(str)
@@ -29,8 +32,12 @@ export default function SelectableListForm({
 
   useEffect(() => {
     setFilteredItems(items);
-    setSelectedNames((prev) => prev.filter((n) => items.some((it) => it.name === n)));
-  }, [items]);
+    setSelectedNames((prev) => {
+      const filtered = prev.filter((n) => items.some((it) => it.name === n));
+      if (unitarySelection && filtered.length > 1) return [filtered[0]];
+      return filtered;
+    });
+  }, [items, unitarySelection]);
 
   const filterByQuery = useCallback(
     (query) => {
@@ -44,21 +51,39 @@ export default function SelectableListForm({
     [items]
   );
 
-  const toggleSelected = useCallback((name, selected) => {
-    setSelectedNames((prev) => {
-      const exists = prev.includes(name);
-      if (selected) {
-        if (!exists) return [...prev, name];
-        return prev;
-      } else {
-        if (exists) return prev.filter((n) => n !== name);
-        return prev;
-      }
-    });
-  }, []);
+  const toggleSelected = useCallback(
+    (name, selected) => {
+      setSelectedNames((prev) => {
+        const exists = prev.includes(name);
+
+        // Unit-only selection mode
+        if (unitarySelection) {
+          if (selected) {
+            // selecting an item -> replace with this single selection
+            if (exists) return prev; // already selected
+            return [name];
+          } else {
+            // deselecting -> remove it
+            if (exists) return prev.filter((n) => n !== name);
+            return prev;
+          }
+        }
+
+        // Multi-selection mode (original behavior)
+        if (selected) {
+          if (!exists) return [...prev, name];
+          return prev;
+        } else {
+          if (exists) return prev.filter((n) => n !== name);
+          return prev;
+        }
+      });
+    },
+    [unitarySelection]
+  );
 
   const handleMainButton = useCallback(() => {
-    if (typeof onSubmit === "function") {
+    if (typeof onSubmit === "function" && (!mandatory || selectedNames.length > 0)) {
       const selectedItems = items.filter((item) => selectedNames.includes(item.name));
       onSubmit(selectedItems);
     }
@@ -72,48 +97,53 @@ export default function SelectableListForm({
     setSelectedNames((prev) => {
       const allSelected = visibleNames.length > 0 && visibleNames.every((n) => prev.includes(n));
       if (!allSelected) {
+        // If unitarySelection, only pick the first visible item
+        if (unitarySelection) {
+          if (visibleNames.length === 0) return prev;
+          return [visibleNames[0]];
+        }
+        // otherwise add all visible to the selection
         const set = new Set(prev);
         visibleNames.forEach((n) => set.add(n));
         return Array.from(set);
       } else {
+        // Deselect visible
         return prev.filter((n) => !visibleNames.includes(n));
       }
     });
-  }, [filteredItems]);
+  }, [filteredItems, unitarySelection]);
 
   return (
-    <View style={{ flex: 1, paddingTop: 40, paddingHorizontal: 25, backgroundColor: theme.colors.background }}>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+    <View style={{ flex: 1, paddingTop: pTop, paddingHorizontal: 25, backgroundColor: theme.colors.background }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-start" }}>
         {showGoBack ? (
           <IconButton
             icon={() => <MaterialCommunityIcons name="chevron-left" size={32} color={theme.colors.text} />}
             onPress={() => navigation.goBack()}
           />
         ) : (
-          <View style={{ width: 48 }} />
+          <View style={{ width: 48, height:48 }} />
         )}
-
-        <GradientButton mode="text" onPress={handleMainButton} disabled={!!(mandatory && selectedNames.length === 0)}>
-          {buttonText}
-        </GradientButton>
       </View>
 
       <View style={{ flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
         <View style={{ alignItems: "center", width: "75%" }}>
-          <Text variant="headlineSmall" style={{ marginVertical:12, textAlign: "center", color: theme.colors.text, fontWeight: 700 }}>
+          <Text variant="headlineSmall" style={{ marginVertical: 12, textAlign: "center", color: theme.colors.text, fontWeight: 700 }}>
             {title}
           </Text>
         </View>
 
-        <View style={{ flexDirection: "row", width: "100%", marginVertical: "3%",gap:'3%' }}>
+        <View style={{ flexDirection: "row", width: "100%", marginVertical: "3%", gap: "3%" }}>
           <View style={{ flex: 1 }}>
             <SearchBar onSubmit={filterByQuery} />
           </View>
-        {showSelectButton ? (<View style={{ alignItems: "center"}}>
-            <GradientButton mode="outlined" onPress={toggleSelectAllVisible}>
+          {showSelectButton ? (
+            <View style={{ alignItems: "center" }}>
+              <GradientButton mode="outlined" onPress={toggleSelectAllVisible}>
                 {allVisibleSelected ? "Deselect all" : "Select all"}
-            </GradientButton>
-        </View>) : (null)}
+              </GradientButton>
+            </View>
+          ) : null}
         </View>
 
         <Divider
@@ -127,7 +157,7 @@ export default function SelectableListForm({
         />
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 128 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 64 }} showsVerticalScrollIndicator={false}>
         {filteredItems.map((it) => (
           <View key={`${it.name}-${selectedNames.includes(it.name)}`} style={{ marginTop: 12 }}>
             <Seleccionable
@@ -144,6 +174,24 @@ export default function SelectableListForm({
           </View>
         ))}
       </ScrollView>
+      <Divider
+          style={{
+            backgroundColor: theme.colors.primary,
+            width: "100%",
+            height: 5,
+            borderRadius: 5,
+            marginBottom: 16,
+          }}
+        />
+        <View style={{ marginBottom: 64, alignItems: "center", paddingVertical: 8 }}>
+          <GradientButton 
+          mode={!!(mandatory && selectedNames.length === 0) ? "outlined" : "contained"} 
+          onPress={handleMainButton} 
+          disabled={!!(mandatory && selectedNames.length === 0)}
+          style={{width:'80%'}}>
+            {buttonText}
+          </GradientButton>
+        </View>
     </View>
   );
 }

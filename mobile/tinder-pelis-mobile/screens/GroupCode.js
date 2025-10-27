@@ -17,6 +17,8 @@ import * as SecureStore from "expo-secure-store";
 import { getGroupUsersById } from "../src/services/api";
 import ErrorOverlay from "../components/ErrorOverlay";
 import * as Clipboard from 'expo-clipboard';
+import Pusher from 'pusher-js/react-native';
+import { useAuth } from "../AuthContext";
 
 const APPBAR_HEIGHT = 60;
 const APPBAR_BOTTOM_INSET = 10;
@@ -28,7 +30,7 @@ export default function GroupCode({ navigation, route }) {
   const theme = useTheme();
   const { top, bottom } = useSafeAreaInsets();
   const textColor = theme.colors?.text ?? "#fff";
-
+  const {state,updateUser} = useAuth();
   // Params posibles:
   const codeParam = route?.params?.code;            // flujo viejo (join code)
   const groupIdParam = route?.params?.groupId;      // flujo nuevo (desde Groups)
@@ -56,10 +58,10 @@ export default function GroupCode({ navigation, route }) {
   // Error overlay (solo para errores genéricos del back)
   const [showGenericError, setShowGenericError] = useState(false);
   const outageShownRef = useRef(false); // evita overlay repetido durante la misma caída
-  const [loading, setLoading] = useState(false); 
+  const [loading, setLoading] = useState(false);
 
   const isGenericBackendError = (err) => {
-    const msg = (err?.message || "").toLowerCase();
+    const msg = (err?.msg || "").toLowerCase();
     return (
       msg.startsWith("http ") ||       // "HTTP 500", etc.
       msg.includes("timeout") ||       // "Request timeout"
@@ -68,12 +70,13 @@ export default function GroupCode({ navigation, route }) {
     );
   };
 
-  // Polling de miembros cada 2s (si hay groupId)
-  const pollingRef = useRef(null);
+  const groupRef = useMemo(() => {
+    return state.user.groups.find(item => item.id === groupId);
+  },[state.user.groups, groupId]);
 
+  // --- Fetch initial members once (replaces the old polling) ---
   useEffect(() => {
     let cancelled = false;
-
     async function fetchMembers() {
       try {
         setLoading(true);
@@ -83,6 +86,9 @@ export default function GroupCode({ navigation, route }) {
         const list = await getGroupUsersById(groupId, token);
         if (!cancelled && Array.isArray(list)) {
           setMembers(list);
+          if (groupRef.members != list.length) {
+            updateUser({groups:state.user.groups.map(group => group.id != groupId ? group : {...group,members:list.length})});
+          }
           outageShownRef.current = false; // volvió a responder OK
         }
       } catch (e) {
@@ -96,20 +102,98 @@ export default function GroupCode({ navigation, route }) {
       }
     }
 
-    if (pollingRef.current) clearInterval(pollingRef.current);
-
     if (groupId) {
       fetchMembers(); // carga inicial
-      pollingRef.current = setInterval(fetchMembers, 2000);
     } else {
       setMembers([]);
     }
 
     return () => {
       cancelled = true;
-      if (pollingRef.current) clearInterval(pollingRef.current);
     };
   }, [groupId]);
+
+useEffect(() => {
+  if (!groupId) return;          // subscribe by internal id (not joinCode)
+  let pusher = null;
+  let channel = null;
+  let mounted = true;
+
+  (async () => {
+    try {
+      // enable pusher debug logs (helps a lot when troubleshooting)
+      Pusher.logToConsole = true;
+
+      pusher = new Pusher('fcb8b1c83278ac43036d', {
+        cluster: 'sa1',
+        // forceTLS: true, // uncomment if your app requires TLS
+      });
+
+      console.log('Pusher init, connection state:', pusher.connection.state);
+
+      // subscribe to internal-id channel
+      channel = pusher.subscribe(`group-${groupId}`);
+
+      // debug connection state changes
+      pusher.connection.bind('state_change', (states) => {
+        console.log('Pusher state change:', states);
+      });
+      pusher.connection.bind('connected', () => {
+        console.log('Pusher connected, socket id:', pusher.connection.socket_id);
+      });
+      pusher.connection.bind('error', (err) => {
+        console.log('Pusher connection error', err);
+      });
+
+      // bind the event
+      channel.bind('new-member', (payload) => {
+        try {
+          // defensive parsing and logging
+          const data = typeof payload === 'string' ? (() => {
+            try { return JSON.parse(payload); } catch { return payload; }
+          })() : payload;
+
+          console.log('PUSHER EVENT new-member payload:', JSON.stringify(data));
+
+          const name = data?.username || (data?.email ? data.email.split('@')[0] : 'User');
+          const email = data?.email ?? null;
+
+          if (!mounted) return;
+          setMembers(prev => {
+            const exists = prev.some(m => (email && m.email === email));
+            if (exists) {
+              return prev;
+            }
+            updateUser({groups:state.user.groups.map(group => group.id != groupId ? group : {...group,members:group.members + 1})});
+            return [...prev, { email, username: name }];
+          });
+
+        } catch (err) {
+          console.log('pusher event handling error', err);
+        }
+      });
+
+    } catch (err) {
+      console.log('Pusher setup error', err);
+    }
+  })();
+
+  return () => {
+    mounted = false;
+    try {
+      if (channel) {
+        channel.unbind_all && channel.unbind_all();
+        pusher && pusher.unsubscribe && pusher.unsubscribe(`group-${groupId}`);
+      }
+      if (pusher) {
+        pusher.disconnect && pusher.disconnect();
+      }
+    } catch (e) {
+      console.log('Pusher cleanup error', e);
+    }
+  };
+}, [groupId]);
+
 
   const goStart = () => navigation.navigate("Home");
   const goSwipe = () => navigation.navigate("GroupSwiping", { groupId, groupName, startWithoutPrefs });
@@ -120,7 +204,7 @@ export default function GroupCode({ navigation, route }) {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        marginBottom: 12,
+        marginVertical: 6,
       }}
     >
       <View
@@ -137,7 +221,7 @@ export default function GroupCode({ navigation, route }) {
         </Text>
       </View>
       <Text style={{ color: textColor, opacity: 0.85 }}>
-        Has joined your group
+        Has joined the group
       </Text>
     </View>
   );
@@ -279,11 +363,11 @@ export default function GroupCode({ navigation, route }) {
               style={{
                 height: 1,
                 backgroundColor: "rgba(255,255,255,0.2)",
-                marginVertical: 24,
+                marginTop: 24,
               }}
             />
 
-            {/* Lista de miembros (refresco cada 2s) */}
+            {/* Lista de miembros (actualizada en tiempo real vía Pusher) */}
             <FlatList
               data={members}
               keyExtractor={(u, i) => (u.email || u.username || `m${i}`)}
@@ -302,14 +386,18 @@ export default function GroupCode({ navigation, route }) {
               }
               contentContainerStyle={{ paddingBottom: 16 }}
             />
+            <View
+              style={{
+                height: 1,
+                backgroundColor: "rgba(255,255,255,0.2)",
+              }}
+            />
 
             <View style={{ height: 20 }} />
 
             {/* Botón principal */}
             <GradientButton onPress={goStart} style={{ paddingVertical: 18, borderRadius: 16 }}>
-              <Text style={{ fontSize: 20, fontWeight: "900", textAlign: "center", color:theme.colors.text }}>
                 Start swiping
-              </Text>
             </GradientButton>
 
             {/* Checkbox */}
@@ -326,14 +414,14 @@ export default function GroupCode({ navigation, route }) {
                   alignItems: "center",
                   justifyContent: "center",
                   backgroundColor: startWithoutPrefs
-                    ? (theme.colors?.secondary ?? "rgba(251,195,76,1)")
+                    ? (theme.colors.surface)
                     : "transparent",
-                  borderWidth: startWithoutPrefs ? 0 : 2,
-                  borderColor: "rgba(255,255,255,0.7)",
+                  borderWidth: 2,
+                  borderColor: theme.colors.text,
                 }}
               >
                 {startWithoutPrefs ? (
-                  <MaterialCommunityIcons name="check-bold" size={16} color="#000" />
+                  <MaterialCommunityIcons name="check-bold" size={16} color={theme.colors.primary} />
                 ) : null}
               </View>
               <Text style={{ color: textColor, opacity: 0.95 }}>
