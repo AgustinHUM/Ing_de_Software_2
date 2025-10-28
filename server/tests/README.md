@@ -1,203 +1,191 @@
-# 🧪 Tests del Backend - MovieMingle
+# 🐍 Backend Testing Guide
 
-Este documento explica **qué estamos testeando** y **qué resultados esperamos** en nuestro sistema de tests automatizados.
+## 📋 Descripción
 
-## 📊 **Resumen de Tests Implementados**
+Guía completa para testing del backend Flask + PostgreSQL de Tinder Pelis.
 
-### **✅ Tests que FUNCIONAN (18 tests):**
-- **Funciones auxiliares** (hash, generación de IDs)
-- **Validaciones de entrada** (datos faltantes, JSON inválido)
-- **Configuración básica** (Flask, contexto de aplicación)
+## 🏗️ Estructura
 
-### **❌ Tests que FALLAN por configuración (17 tests):**
-- **Tests con base de datos** (búsquedas, consultas)
-- **Tests con servicios externos** (Cognito, JWT)
-
-**Total: 35 tests implementados**
-
----
-
-## 🎯 **Qué Estamos Testeando**
-
-### **🔐 Autenticación (7 tests)**
-```python
-# Endpoints: /register, /login
-test_register_endpoint_success()           # ❌ Registro exitoso con Cognito
-test_register_endpoint_missing_data()      # ❌ Registro sin datos completos
-test_register_endpoint_invalid_json()      # ❌ Registro con JSON inválido
-test_login_endpoint_missing_data()         # ❌ Login sin datos completos
-test_login_endpoint_invalid_json()         # ❌ Login con JSON inválido
-test_register_endpoint_cognito_exception() # ❌ Error de Cognito en registro
-test_login_endpoint_cognito_exception()    # ❌ Error de Cognito en login
+```
+server/
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py          # Fixtures y configuración
+│   ├── unit/                # Tests unitarios
+│   │   ├── test_basic.py
+│   │   ├── test_aux_functions.py
+│   │   ├── test_auth_functions.py
+│   │   ├── test_movie_functions.py
+│   │   └── test_group_functions.py
+│   └── integration/         # Tests de integración
+│       ├── test_app.py
+│       ├── test_group_endpoints.py
+│       └── test_movie_endpoints.py
+├── pytest.ini              # Configuración de pytest
+└── run_tests.py            # Script de utilidad
 ```
 
-### **🎬 Películas (11 tests)**
-```python
-# Endpoints: /home/movies, /movies, /movies/detailsScreen
-test_home_movies_endpoint_no_token()           # ✅ Sin token de autorización
-test_home_movies_endpoint_invalid_token()     # ❌ Token JWT inválido
-test_movies_search_endpoint_no_query()        # ✅ Búsqueda sin query
-test_movies_search_endpoint_with_query()      # ❌ Búsqueda con query válido
-test_movies_search_endpoint_with_pagination() # ❌ Búsqueda con paginación
-test_movies_search_endpoint_invalid_page()    # ❌ Búsqueda con página inválida
-test_movies_search_endpoint_negative_page()   # ❌ Búsqueda con página negativa
-test_movie_details_endpoint_no_movie_id()     # ✅ Detalles sin movieId
-test_movie_details_endpoint_no_token()       # ✅ Detalles sin token
-test_movie_details_endpoint_invalid_token()  # ❌ Detalles con token inválido
-test_movie_details_endpoint_nonexistent_movie() # ❌ Detalles de película inexistente
-```
+## 🚀 Comandos Disponibles
 
-### **👥 Grupos (11 tests)**
-```python
-# Endpoints: /groups, /groups/join, /groups/users
-test_create_group_endpoint_no_token()        # ✅ Crear grupo sin token
-test_create_group_endpoint_no_data()         # ❌ Crear grupo sin datos
-test_create_group_endpoint_invalid_token()   # ❌ Crear grupo con token inválido
-test_join_group_endpoint_no_token()          # ✅ Unirse a grupo sin token
-test_join_group_endpoint_no_data()           # ❌ Unirse a grupo sin datos
-test_join_group_endpoint_invalid_token()     # ❌ Unirse a grupo con token inválido
-test_get_user_groups_endpoint_no_token()     # ✅ Obtener grupos sin token
-test_get_user_groups_endpoint_invalid_token() # ❌ Obtener grupos con token inválido
-test_get_group_users_endpoint_no_group_id()  # ✅ Obtener usuarios sin group_id
-test_get_group_users_endpoint_invalid_group_id() # ❌ Obtener usuarios con group_id inválido
-test_get_group_users_endpoint_nonexistent_group() # ❌ Obtener usuarios de grupo inexistente
-```
-
-### **⚙️ Funciones Auxiliares (7 tests)**
-```python
-# Funciones: get_secret_hash(), generate_id()
-test_get_secret_hash_basic()           # ✅ Generación de hash HMAC
-test_get_secret_hash_consistency()     # ✅ Consistencia de hash
-test_get_secret_hash_different_inputs() # ✅ Diferentes inputs
-test_get_secret_hash_manual_verification() # ✅ Verificación manual
-test_generate_id_type()                # ❌ Tipo de ID generado
-test_generate_id_range()              # ❌ Rango de ID
-test_generate_id_uniqueness()         # ❌ Unicidad de ID
-```
-
-### **🔧 Configuración (3 tests)**
-```python
-# Configuración de Flask
-test_app_creation()    # ✅ App se crea correctamente
-test_app_config()      # ✅ Configuración de testing OK
-test_app_context()     # ✅ Contexto de aplicación OK
-```
-
----
-
-## 🎯 **Qué Resultados Esperamos**
-
-### **✅ Tests que DEBEN pasar (18 tests):**
-- **Funciones puras** (sin dependencias externas)
-- **Validaciones de entrada** (datos faltantes, formato incorrecto)
-- **Configuración básica** (Flask, contexto de aplicación)
-
-### **❌ Tests que FALLAN por configuración (17 tests):**
-- **Tests con base de datos** (búsquedas, consultas)
-- **Tests con servicios externos** (Cognito, JWT)
-
----
-
-## 🚀 **Cómo Ejecutar los Tests**
+### Script de Utilidad (`run_tests.py`)
 
 ```bash
-# Navegar al directorio del servidor
-cd server
-
-# Tests unitarios (funciones auxiliares)
+# Tests unitarios
 python run_tests.py unit
 
-# Tests de integración (endpoints)
+# Tests de integración
 python run_tests.py integration
 
 # Todos los tests
 python run_tests.py all
 
-# Tests con reporte de cobertura
+# Tests con cobertura
 python run_tests.py coverage
 ```
 
----
+### Comandos Directos
 
-## 🔧 **Problemas Identificados**
+```bash
+# Ejecutar todos los tests
+pytest tests/ -v
 
-### **1. Conexión a Base de Datos**
-- **Problema**: Tests intentan conectar a PostgreSQL real
-- **Solución**: Configurar SQLite en memoria para tests
+# Solo tests unitarios
+pytest tests/unit/ -v
 
-### **2. Servicios Externos**
-- **Problema**: Tests intentan conectar a AWS Cognito
-- **Solución**: Configurar mocks de servicios externos
+# Solo tests de integración
+pytest tests/integration/ -v
 
-### **3. Tokens JWT**
-- **Problema**: Tests con tokens inválidos fallan
-- **Solución**: Configurar mocks de JWT
+# Con cobertura
+pytest tests/ --cov=app --cov-report=html
 
----
-
-## 📈 **Objetivo Final**
-
-**Cuando arreglemos la configuración:**
-- ✅ **18 tests** que ya pasan (funcionalidad básica)
-- ✅ **17 tests** que pasarán después (con BD + mocks)
-- **= 35 tests PASSED en total**
-
----
-
-## 💡 **Buenas Prácticas Implementadas**
-
-- **Pirámide de Testing**: Unitarios > Integración > E2E
-- **Tests Atómicos**: Cada test prueba una cosa específica
-- **Mocks y Stubs**: Para aislar dependencias externas
-- **Base de Datos de Prueba**: SQLite en memoria para tests
-- **Markers**: `@pytest.mark.unit` y `@pytest.mark.integration`
-
----
-
-## 📁 **Estructura de Archivos**
-
-```
-tests/
-├── conftest.py                    # Fixtures y configuración
-├── unit/                         # Tests unitarios
-│   ├── test_basic.py            # Tests básicos (3 tests)
-│   └── test_aux_functions.py    # Funciones auxiliares (7 tests)
-├── integration/                  # Tests de integración
-│   ├── test_app.py              # Configuración Flask (3 tests)
-│   ├── test_auth_endpoints.py   # Autenticación (7 tests)
-│   ├── test_movie_endpoints.py  # Películas (11 tests)
-│   └── test_group_endpoints.py  # Grupos (11 tests)
-└── README.md                     # Esta documentación
+# Tests específicos
+pytest tests/unit/test_auth_functions.py -v
 ```
 
----
+## 🧪 Tipos de Tests
 
-## 🎯 **Casos de Uso Cubiertos**
+### Tests Unitarios
+- **Propósito**: Probar funciones individuales en aislamiento
+- **Ubicación**: `tests/unit/`
+- **Ejemplos**: Validación de datos, funciones auxiliares, lógica de negocio
 
-### **Happy Path (Flujos Exitosos)**
-- ✅ Registro de usuario exitoso
-- ✅ Login exitoso
-- ✅ Búsqueda de películas
-- ✅ Creación de grupos
-- ✅ Unirse a grupos
+### Tests de Integración
+- **Propósito**: Probar interacción entre componentes
+- **Ubicación**: `tests/integration/`
+- **Ejemplos**: Endpoints API, base de datos, servicios externos
 
-### **Validaciones de Entrada**
-- ✅ Datos faltantes
-- ✅ JSON inválido
-- ✅ Parámetros incorrectos
-- ✅ Tokens faltantes
+## 🔧 Configuración
 
-### **Manejo de Errores**
-- ✅ Errores de Cognito
-- ✅ Errores de base de datos
-- ✅ Tokens inválidos
-- ✅ Recursos inexistentes
+### pytest.ini
+```ini
+[tool:pytest]
+minversion = 6.0
+addopts = -s --strict-markers --ignore=app/
+testpaths = tests
+python_files = test_*.py
+python_classes = Test*
+python_functions = test_*
+markers =
+    unit: Mark a test as a unit test.
+    integration: Mark a test as an integration test.
+    e2e: Mark a test as an end-to-end test.
+```
 
----
+### conftest.py
+- **Fixtures**: app, client, auth_headers, db_session, cognito_mock
+- **Base de datos**: SQLite in-memory para tests
+- **Mocks**: AWS Cognito, servicios externos
 
-## 🚨 **Próximos Pasos**
+## 📊 Tests Actuales
 
-1. **Arreglar configuración de BD** (SQLite en memoria)
-2. **Configurar mocks de servicios externos**
-3. **Verificar que todos los tests pasen**
-4. **Continuar con paso 3: Tests para mobile**
+### Tests Unitarios (22 tests)
+- **test_basic.py**: 3 tests - Verificación de configuración
+- **test_aux_functions.py**: 7 tests - Funciones auxiliares del proyecto
+- **test_auth_functions.py**: 4 tests - Autenticación y permisos
+- **test_movie_functions.py**: 4 tests - Validación de películas
+- **test_group_functions.py**: 4 tests - Validación de grupos
+
+### Tests de Integración (3 tests)
+- **test_app.py**: 3 tests - Configuración de aplicación Flask
+
+## 🎯 Mejores Prácticas
+
+### Naming
+- Archivos: `test_*.py`
+- Clases: `Test*`
+- Funciones: `test_*`
+
+### Estructura
+```python
+@pytest.mark.unit
+class TestFunctionName:
+    """Tests para función específica"""
+    
+    def test_specific_behavior(self):
+        """Test que verifica comportamiento específico"""
+        # Arrange
+        input_data = "test"
+        
+        # Act
+        result = function_to_test(input_data)
+        
+        # Assert
+        assert result == expected_output
+```
+
+### Fixtures
+- Usar fixtures para setup/teardown
+- Mockear servicios externos
+- Usar base de datos in-memory
+
+## 🐛 Troubleshooting
+
+### Error: ModuleNotFoundError
+```bash
+# Asegurar que estás en el directorio correcto
+cd server
+python -m pytest tests/
+```
+
+### Error: Database connection
+```bash
+# Verificar configuración de SQLite
+# Los tests usan SQLite in-memory automáticamente
+```
+
+### Error: Import issues
+```bash
+# Verificar PYTHONPATH
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+```
+
+## 📈 Cobertura
+
+### Generar Reporte
+```bash
+pytest tests/ --cov=app --cov-report=html
+```
+
+### Ver Reporte
+```bash
+open htmlcov/index.html
+```
+
+### Meta de Cobertura
+- **Mínimo**: 80%
+- **Objetivo**: 90%
+- **Crítico**: 95%
+
+## 🔄 CI/CD
+
+### GitHub Actions (Próximo)
+- Ejecutar tests en cada PR
+- Generar reportes de cobertura
+- Notificar fallos
+
+## 📚 Recursos
+
+- [pytest Documentation](https://docs.pytest.org/)
+- [pytest-flask](https://pytest-flask.readthedocs.io/)
+- [Factory Boy](https://factoryboy.readthedocs.io/)
+- [Faker](https://faker.readthedocs.io/)

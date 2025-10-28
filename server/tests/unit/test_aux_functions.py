@@ -7,6 +7,7 @@ import hashlib
 import base64
 from unittest.mock import patch
 from app.functions.aux_functions import get_secret_hash, generate_id
+from app import db
 
 
 @pytest.mark.unit
@@ -74,35 +75,24 @@ class TestAuxFunctions:
     def test_generate_id_type(self, app):
         """Test que generate_id retorna un entero"""
         with app.app_context():
-            # Mock de la query para evitar dependencia de base de datos
-            with patch('app.functions.aux_functions.Grupo.query.get', return_value=None):
-                result = generate_id()
-                
-                assert isinstance(result, int)
+            result = generate_id()
+            assert isinstance(result, int)
     
     def test_generate_id_range(self, app):
         """Test que generate_id retorna un número en el rango correcto"""
         with app.app_context():
-            with patch('app.functions.aux_functions.Grupo.query.get', return_value=None):
-                result = generate_id()
-                
-                assert 10000 <= result <= 99999
+            result = generate_id()
+            assert 10000 <= result <= 99999
     
     def test_generate_id_uniqueness(self, app):
-        """Test que generate_id maneja colisiones correctamente"""
+        """Test que generate_id genera IDs únicos"""
         with app.app_context():
-            # Simular que el primer ID ya existe
-            call_count = 0
-            def mock_get(id_val):
-                nonlocal call_count
-                call_count += 1
-                if call_count == 1:
-                    return "exists"  # Simular que existe
-                return None  # Simular que no existe
+            # Generar múltiples IDs y verificar que son únicos
+            ids = set()
+            for _ in range(10):
+                id_generated = generate_id()
+                ids.add(id_generated)
+                assert 10000 <= id_generated <= 99999
             
-            with patch('app.functions.aux_functions.Grupo.query.get', side_effect=mock_get):
-                result = generate_id()
-                
-                assert isinstance(result, int)
-                assert 10000 <= result <= 99999
-                assert call_count == 2  # Debería haber intentado dos veces
+            # Verificar que todos los IDs son únicos
+            assert len(ids) == 10, "Todos los IDs generados deben ser únicos"

@@ -3,12 +3,26 @@ Tests de integración para endpoints de grupos
 """
 import pytest
 import json
+import jwt
 from unittest.mock import patch, MagicMock
 
 
 @pytest.mark.integration
 class TestGroupEndpoints:
     """Tests para endpoints de grupos"""
+    
+    def _create_valid_jwt_token(self):
+        """Crear un token JWT válido para testing"""
+        payload = {
+            'sub': 'test-user-id',
+            'email': 'test@example.com',
+            'cognito:username': 'testuser'
+        }
+        return jwt.encode(payload, 'test-secret', algorithm='HS256')
+    
+    def _create_invalid_jwt_token(self):
+        """Crear un token JWT inválido para testing"""
+        return "invalid-token-format"
     
     def test_create_group_endpoint_no_token(self, client):
         """Test crear grupo sin token"""
@@ -23,7 +37,8 @@ class TestGroupEndpoints:
     
     def test_create_group_endpoint_no_data(self, client):
         """Test crear grupo sin datos"""
-        headers = {'Authorization': 'Bearer valid-token'}
+        token = self._create_valid_jwt_token()
+        headers = {'Authorization': f'Bearer {token}'}
         response = client.post('/groups',
                              data=json.dumps({}),
                              content_type='application/json',
@@ -35,7 +50,8 @@ class TestGroupEndpoints:
     def test_create_group_endpoint_invalid_token(self, client):
         """Test crear grupo con token inválido"""
         data = {"group_name": "Test Group"}
-        headers = {'Authorization': 'Bearer invalid-token'}
+        token = self._create_invalid_jwt_token()
+        headers = {'Authorization': f'Bearer {token}'}
         response = client.post('/groups',
                              data=json.dumps(data),
                              content_type='application/json',
@@ -57,7 +73,8 @@ class TestGroupEndpoints:
     
     def test_join_group_endpoint_no_data(self, client):
         """Test unirse a grupo sin datos"""
-        headers = {'Authorization': 'Bearer valid-token'}
+        token = self._create_valid_jwt_token()
+        headers = {'Authorization': f'Bearer {token}'}
         response = client.post('/groups/join',
                              data=json.dumps({}),
                              content_type='application/json',
@@ -69,7 +86,8 @@ class TestGroupEndpoints:
     def test_join_group_endpoint_invalid_token(self, client):
         """Test unirse a grupo con token inválido"""
         data = {"group_join_id": 12345}
-        headers = {'Authorization': 'Bearer invalid-token'}
+        token = self._create_invalid_jwt_token()
+        headers = {'Authorization': f'Bearer {token}'}
         response = client.post('/groups/join',
                              data=json.dumps(data),
                              content_type='application/json',

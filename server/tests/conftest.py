@@ -8,8 +8,9 @@ from unittest.mock import MagicMock
 @pytest.fixture(scope='function')
 def app():
     """Aplicación Flask para testing"""
-    # Configurar variables de entorno para testing
+    # Configurar variables de entorno para testing ANTES de crear la app
     os.environ['FLASK_ENV'] = 'testing'
+    os.environ['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     
     app = create_app()
     
@@ -17,14 +18,32 @@ def app():
     app.config.update({
         'TESTING': True,
         'WTF_CSRF_ENABLED': False,
-        'SECRET_KEY': 'test-secret-key'
+        'SECRET_KEY': 'test-secret-key',
+        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',  # SQLite en memoria
+        'SQLALCHEMY_TRACK_MODIFICATIONS': False,
+        'COGNITO_USER_POOL_ID': 'test-pool-id',
+        'COGNITO_CLIENT_ID': 'test-client-id',
+        'COGNITO_REGION': 'us-east-1',
+        'COGNITO_CLIENT_SECRET': 'test-client-secret'
     })
     
     # Mock de servicios externos
     with app.app_context():
         # Mock de Cognito
         app.config['COGNITO_CLIENT'] = MagicMock()
+        
+        # Crear tablas en la base de datos de prueba
+        db.create_all()
+        
         yield app
+        
+        # Limpiar después de cada test
+        db.session.remove()
+        try:
+            db.drop_all()
+        except Exception:
+            # Ignorar errores de teardown en SQLite
+            pass
 
 
 @pytest.fixture

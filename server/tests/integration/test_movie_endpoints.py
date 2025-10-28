@@ -3,12 +3,26 @@ Tests de integración para endpoints de películas
 """
 import pytest
 import json
+import jwt
 from unittest.mock import patch, MagicMock
 
 
 @pytest.mark.integration
 class TestMovieEndpoints:
     """Tests para endpoints de películas"""
+    
+    def _create_valid_jwt_token(self):
+        """Crear un token JWT válido para testing"""
+        payload = {
+            'sub': 'test-user-id',
+            'email': 'test@example.com',
+            'cognito:username': 'testuser'
+        }
+        return jwt.encode(payload, 'test-secret', algorithm='HS256')
+    
+    def _create_invalid_jwt_token(self):
+        """Crear un token JWT inválido para testing"""
+        return "invalid-token-format"
     
     def test_home_movies_endpoint_no_token(self, client):
         """Test endpoint de películas sin token"""
@@ -20,7 +34,8 @@ class TestMovieEndpoints:
     
     def test_home_movies_endpoint_invalid_token(self, client):
         """Test endpoint de películas con token inválido"""
-        headers = {'Authorization': 'Bearer invalid-token'}
+        token = self._create_invalid_jwt_token()
+        headers = {'Authorization': f'Bearer {token}'}
         response = client.get('/home/movies', headers=headers)
         
         # Debería fallar por token inválido
@@ -87,7 +102,8 @@ class TestMovieEndpoints:
     
     def test_movie_details_endpoint_invalid_token(self, client):
         """Test detalles de película con token inválido"""
-        headers = {'Authorization': 'Bearer invalid-token'}
+        token = self._create_invalid_jwt_token()
+        headers = {'Authorization': f'Bearer {token}'}
         response = client.get('/movies/detailsScreen?movieId=1', headers=headers)
         
         # Debería fallar por token inválido
