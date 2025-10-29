@@ -28,6 +28,8 @@ export default function CountriesForm({ navigation, route }) {
     items={COUNTRIES}
     buttonText="Next"
     showGoBack={false}
+    showSelectButton={false}
+    unitarySelection={true}
     onSubmit={(selectedCountries)=>{
       const countries = selectedCountries.map(c => c.id);
       navigation.navigate("StreamingServicesForm",{formResults:{formData, countries} });

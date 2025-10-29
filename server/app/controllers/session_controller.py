@@ -21,10 +21,9 @@ def handle_register(info = None):
         contrasenia = info.get("password")
 
         if Usuario.query.filter_by(mail=mail).first():
-            return jsonify({"msg": "Ya existe el usuario"}), 400
+            return jsonify({"msg": "User already exists"}), 400
         
         hash_contr = bcrypt.generate_password_hash(contrasenia).decode("utf-8")
-        print("hash: ",hash_contr)
 
         try:
 
@@ -46,13 +45,13 @@ def handle_register(info = None):
                 Permanent=True
             )
         except Config.COGNITO_CLIENT.exceptions.UsernameExistsException:
-            return jsonify({"error":"Ya existe en Cognito"}), 400 
+            return jsonify({"msg":"User already exists"}), 400 
         
         n_usuario = Usuario(mail=mail, nombre_cuenta = nombre_usuario, contrasenia = hash_contr, formulario_pendiente = True, id_icono = 0) #El 0 es el icono por defecto
         db.session.add(n_usuario)
         db.session.commit()
 
-        return jsonify({"message":"Registro exitoso"}), 200
+        return jsonify({"msg":"Register completed successfully"}), 200
 
 
 
@@ -72,10 +71,10 @@ def handle_login():
 
         usuario = Usuario.query.filter_by(mail=mail).first()
         if not usuario:
-            return jsonify({"error": "Error en las credenciales"}), 401
+            return jsonify({"msg": "Auth credentials error"}), 401
 
         if not bcrypt.check_password_hash(usuario.contrasenia, contrasenia):
-            return jsonify({"error": "Error en las credenciales"}), 401
+            return jsonify({"msg": "Auth credentials error"}), 401
 
         auth_params = {
             "USERNAME": mail,
@@ -103,8 +102,8 @@ def handle_login():
             }), 200
 
         except Config.COGNITO_CLIENT.exceptions.NotAuthorizedException:
-            return jsonify({"error": "Error en las credenciales (Cognito)"}), 401
+            return jsonify({"msg": "Auth credentials error"}), 401
 
         except Exception as e:
-            return jsonify({"error": "Error inesperado en Cognito", "detail": str(e)}), 500
+            return jsonify({"msg": "Cognito error", "detail": str(e)}), 500
         

@@ -63,7 +63,7 @@ export function getMovies(query,page) {
 
 export function getMovieDetails(movieId, token) {
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  return get('/movies/detailsScreen', {params:{movieId}, headers });
+  return get('/movies/detailsScreen', {params:{movie_id:movieId}, headers });
 }
 
 
@@ -136,48 +136,83 @@ export function homeMovies(token) {
  return get('/home/movies', {headers: { Authorization: `Bearer ${token}` }});
 }
 
-export function createMatchingSession(groupId, token) {
-  return post('/matching/create_session', 
-    { group_id: groupId }, 
-    { headers: { Authorization: `Bearer ${token}` }}
-  );
+export function getUserInfo(token) {
+  return get('/user', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 }
 
-export function joinMatchingSession(sessionId, genres, token) {
-  return post('/matching/join_session', 
+export function updateUserInfo(data, token) {
+  return post('/user/update', data, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+
+// Match - Optimized endpoints
+export function create_match_session(group_id, token) {
+  return post('/match/create_session', { group_id }, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function joinMatchSession(sessionId, genres, token) {
+  return post('/match/join_session', 
     { session_id: sessionId, genres }, 
     { headers: { Authorization: `Bearer ${token}` }}
   );
 }
 
-export function getSessionStatus(sessionId, token) {
-  return get(`/matching/session_status/${sessionId}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-}
-
-export function getGroupSession(groupId, token) {
-  return get(`/matching/group_session/${groupId}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-}
-
-export function startMatching(sessionId, token) {
-  return post('/matching/start_matching', 
+export function startMatchSession(sessionId, token) {
+  return post('/match/start_matching', 
     { session_id: sessionId }, 
     { headers: { Authorization: `Bearer ${token}` }}
   );
 }
 
-export function voteMovie(sessionId, movieId, vote, token) {
-  return post('/matching/vote', 
-    { session_id: sessionId, movie_id: movieId, vote }, 
+export function submitAllVotes(sessionId, votes, token) {
+  return post('/match/submit_votes', 
+    { session_id: sessionId, votes }, 
     { headers: { Authorization: `Bearer ${token}` }}
   );
 }
 
-export function getUserNextMovie(sessionId, token) {
-  return get(`/matching/next-movie/${sessionId}`, {
+export function endMatchSession(sessionId, token) {
+  return post('/match/end_session', 
+    { session_id: sessionId }, 
+    { headers: { Authorization: `Bearer ${token}` }}
+  );
+}
+
+export function getMatchSessionStatus(sessionId, token) {
+  return get(`/match/session_status/${sessionId}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
+}
+
+export function getGroupMatchSession(groupId, token) {
+  return get(`/match/group_session/${groupId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+}
+
+// Legacy matching endpoints (now redirected to /match/* endpoints)
+export function createMatchingSession(groupId, token) {
+  return create_match_session(groupId, token);
+}
+
+export function joinMatchingSession(sessionId, genres, token) {
+  return joinMatchSession(sessionId, genres, token);
+}
+
+export function getSessionStatus(sessionId, token) {
+  return getMatchSessionStatus(sessionId, token);
+}
+
+export function getGroupSession(groupId, token) {
+  return getGroupMatchSession(groupId, token);
+}
+
+export function startMatching(sessionId, token) {
+  return startMatchSession(sessionId, token);
 }

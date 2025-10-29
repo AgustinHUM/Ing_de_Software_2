@@ -23,6 +23,7 @@ import ErrorOverlay from "../components/ErrorOverlay";
 import * as Clipboard from 'expo-clipboard';
 import Pusher from 'pusher-js/react-native';
 import { createMatchingSession, joinMatchingSession, startMatching, getGroupSession } from '../src/services/api';
+import { useAuth } from "../AuthContext";
 
 const APPBAR_HEIGHT = 60;
 const APPBAR_BOTTOM_INSET = 10;
@@ -74,7 +75,7 @@ export default function GroupCode({ navigation, route }) {
   const theme = useTheme();
   const { top, bottom } = useSafeAreaInsets();
   const textColor = theme.colors?.text ?? "#fff";
-
+  const {state,updateUser} = useAuth();
   // Params posibles:
   const codeParam = route?.params?.code;            // flujo viejo (join code)
   const groupIdParam = route?.params?.groupId;      // flujo nuevo (desde Groups)
@@ -116,9 +117,10 @@ export default function GroupCode({ navigation, route }) {
   
   // Genre selection state
   const [selectedGenres, setSelectedGenres] = useState([]);
+  const [sessionActivities, setSessionActivities] = useState([]); // [{message, timestamp, email}]
 
   const isGenericBackendError = (err) => {
-    const msg = (err?.message || "").toLowerCase();
+    const msg = (err?.msg || "").toLowerCase();
     return (
       msg.startsWith("http ") ||       // "HTTP 500", etc.
       msg.includes("timeout") ||       // "Request timeout"
@@ -127,58 +129,9 @@ export default function GroupCode({ navigation, route }) {
     );
   };
 
-  // Simple polling for session status - checks every 2 seconds
-  useEffect(() => {
-    if (!groupId) return;
-
-    let pollInterval;
-
-    const pollSessionStatus = async () => {
-      try {
-        const token = await SecureStore.getItemAsync("userToken");
-        if (!token) return;
-
-        const response = await getGroupSession(groupId, token);
-        setSessionData(response);
-      } catch (error) {
-        // Check if it's just "no active session" which is normal
-        const errorMsg = error.message?.toLowerCase() || '';
-        if (errorMsg.includes("no active session") || errorMsg === "http 404") {
-          setSessionData(null); // Clear session data when no active session
-        } else {
-          // Only log actual errors, not normal "no session" state
-          console.log("Session polling error:", error.message);
-        }
-      }
-    };
-
-    // Poll immediately, then every 2 seconds
-    pollSessionStatus();
-    pollInterval = setInterval(pollSessionStatus, 2000);
-
-    return () => {
-      if (pollInterval) {
-        clearInterval(pollInterval);
-      }
-    };
-  }, [groupId]);
-
-  // Get current user email
-  useEffect(() => {
-    async function getCurrentUser() {
-      try {
-        const token = await SecureStore.getItemAsync("userToken");
-        if (token) {
-          // Decode token to get user email (basic decode without verification)
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          setCurrentUserEmail(payload.email);
-        }
-      } catch (e) {
-        console.log("Error getting current user:", e);
-      }
-    }
-    getCurrentUser();
-  }, []);
+  const groupRef = useMemo(() => {
+    return state.user.groups.find(item => item.id === groupId);
+  },[state.user.groups, groupId]);
 
   // --- Fetch initial members once (replaces the old polling) ---
   useEffect(() => {
@@ -189,9 +142,44 @@ export default function GroupCode({ navigation, route }) {
         if (!groupId) return;
         const token = await SecureStore.getItemAsync("userToken");
         if (!token) return;
+        
+        // Get current user email from token
+        try {
+          const tokenData = JSON.parse(atob(token.split('.')[1]));
+          setCurrentUserEmail(tokenData.email);
+        } catch (e) {
+          console.log("Error parsing token for email:", e);
+        }
+        
+        // Check for existing session
+        try {
+          const existingSession = await getGroupSession(groupId, token);
+          if (existingSession && existingSession.session_id) {
+            console.log("Found existing session:", existingSession.session_id);
+            
+            // Check if current user is already in the participants
+            const tokenData = JSON.parse(atob(token.split('.')[1]));
+            const userEmail = tokenData.email;
+            
+            // If the API response shows we're a participant but our local state doesn't, 
+            // it means we need to restore our participation status
+            if (existingSession.participants && existingSession.participants[userEmail]) {
+              console.log("Current user is already a participant in the session");
+            }
+            
+            setSessionData(existingSession);
+          }
+        } catch (e) {
+          // No existing session, which is fine
+          console.log("No existing session found");
+        }
+        
         const list = await getGroupUsersById(groupId, token);
         if (!cancelled && Array.isArray(list)) {
           setMembers(list);
+          if (groupRef.members != list.length) {
+            updateUser({groups:state.user.groups.map(group => group.id != groupId ? group : {...group,members:list.length})});
+          }
           outageShownRef.current = false; // volvió a responder OK
         }
       } catch (e) {
@@ -265,12 +253,220 @@ useEffect(() => {
 
           if (!mounted) return;
           setMembers(prev => {
-            const exists = prev.some(m => (email && m.email === email) || (m.username === name));
-            if (exists) return prev;
+            const exists = prev.some(m => (email && m.email === email));
+            if (exists) {
+              return prev;
+            }
+            updateUser({groups:state.user.groups.map(group => group.id != groupId ? group : {...group,members:group.members + 1})});
             return [...prev, { email, username: name }];
           });
+
         } catch (err) {
           console.log('pusher event handling error', err);
+        }
+      });
+
+      // Handle session creation event
+      channel.bind('session-created', (payload) => {
+        try {
+          const data = typeof payload === 'string' ? (() => {
+            try { return JSON.parse(payload); } catch { return payload; }
+          })() : payload;
+
+          console.log('PUSHER EVENT session-created payload:', JSON.stringify(data));
+
+          if (!mounted) return;
+          
+          // Update session data with the created session
+          setSessionData({
+            session_id: data.session_id,
+            creator_email: data.creator_email,
+            status: 'waiting_for_participants',
+            participants: {},
+            group_id: groupId
+          });
+
+          // Add session activity for the creator
+          setSessionActivities(prev => [...prev, {
+            message: data.message || "created a session",
+            timestamp: new Date(),
+            email: data.creator_email,
+            action: data.action || 'created_session'
+          }]);
+
+        } catch (err) {
+          console.log('session-created event handling error', err);
+        }
+      });
+
+      // Handle participant joining session
+      channel.bind('participant-joined', (payload) => {
+        try {
+          const data = typeof payload === 'string' ? (() => {
+            try { return JSON.parse(payload); } catch { return payload; }
+          })() : payload;
+
+          console.log('PUSHER EVENT participant-joined payload:', JSON.stringify(data));
+
+          if (!mounted) return;
+          
+          // Add session activity
+          setSessionActivities(prev => [...prev, {
+            message: data.message || "joined the session",
+            timestamp: new Date(),
+            email: data.email,
+            action: data.action || 'joined_session'
+          }]);
+          
+          setSessionData(prev => {
+            if (!prev) return prev;
+            const updatedSession = {
+              ...prev,
+              participants: {
+                ...prev.participants,
+                [data.email]: {
+                  username: data.username,
+                  status: 'joined',
+                  joined_at: new Date().toISOString()
+                }
+              }
+            };
+            console.log("Updated session after participant joined:", updatedSession);
+            return updatedSession;
+          });
+
+        } catch (err) {
+          console.log('participant-joined event handling error', err);
+        }
+      });
+
+      // Handle participant ready (after selecting genres)
+      channel.bind('participant-ready', (payload) => {
+        try {
+          const data = typeof payload === 'string' ? (() => {
+            try { return JSON.parse(payload); } catch { return payload; }
+          })() : payload;
+
+          console.log('PUSHER EVENT participant-ready payload:', JSON.stringify(data));
+
+          if (!mounted) return;
+          
+          // Add session activity
+          setSessionActivities(prev => [...prev, {
+            message: data.message || "is ready to match",
+            timestamp: new Date(),
+            email: data.email,
+            action: data.action || 'ready_to_match'
+          }]);
+          
+          setSessionData(prev => {
+            if (!prev || !prev.participants[data.email]) {
+              console.log("No session or participant not found for ready event");
+              return prev;
+            }
+            const updatedSession = {
+              ...prev,
+              participants: {
+                ...prev.participants,
+                [data.email]: {
+                  ...prev.participants[data.email],
+                  status: 'ready'
+                }
+              }
+            };
+            console.log("Updated session after participant ready:", updatedSession);
+            return updatedSession;
+          });
+
+        } catch (err) {
+          console.log('participant-ready event handling error', err);
+        }
+      });
+
+      // Handle matching-started event
+      channel.bind('matching-started', (payload) => {
+        try {
+          const data = typeof payload === 'string' ? (() => {
+            try { return JSON.parse(payload); } catch { return payload; }
+          })() : payload;
+
+          console.log('PUSHER EVENT matching-started payload:', JSON.stringify(data));
+
+          if (!mounted) return;
+          
+          // Add session activity
+          setSessionActivities(prev => [...prev, {
+            message: data.message || "Matching started!",
+            timestamp: new Date(),
+            email: null, // System message
+            action: data.action || 'started_matching'
+          }]);
+          
+          setSessionData(prev => {
+            if (!prev) return prev;
+            const updatedSession = {
+              ...prev,
+              status: 'matching',
+              movies: data.movies || []
+            };
+            console.log("Session updated for matching start, navigating to swiping...");
+            
+            // Navigate using the session ID from the current session data
+            setTimeout(() => {
+              const navParams = { 
+                sessionId: prev.session_id,
+                groupId: groupId,
+                groupName: groupName
+              };
+              console.log("Navigating to GroupSwiping with params:", navParams);
+              navigation.navigate("GroupSwiping", navParams);
+            }, 100);
+            
+            return updatedSession;
+          });
+
+        } catch (err) {
+          console.log('matching-started event handling error', err);
+        }
+      });
+
+      // Handle session end/cleanup
+      channel.bind('session-ended', (payload) => {
+        try {
+          const data = typeof payload === 'string' ? (() => {
+            try { return JSON.parse(payload); } catch { return payload; }
+          })() : payload;
+
+          console.log('PUSHER EVENT session-ended payload:', JSON.stringify(data));
+
+          if (!mounted) return;
+          
+          // Clear session data and activities
+          setSessionData(null);
+          setSessionActivities([]);
+
+        } catch (err) {
+          console.log('session-ended event handling error', err);
+        }
+      });
+
+      // Handle session cleanup
+      channel.bind('session-cleanup', (payload) => {
+        try {
+          const data = typeof payload === 'string' ? (() => {
+            try { return JSON.parse(payload); } catch { return payload; }
+          })() : payload;
+
+          console.log('PUSHER EVENT session-cleanup payload:', JSON.stringify(data));
+
+          if (!mounted) return;
+          
+          // Clear session data and activities
+          setSessionData(null);
+          setSessionActivities([]);
+
+        } catch (err) {
+          console.log('session-cleanup event handling error', err);
         }
       });
 
@@ -317,19 +513,25 @@ useEffect(() => {
       setSessionActionLoading(true);
       const token = await SecureStore.getItemAsync("userToken");
       
-      if (!sessionData) {
+      if (creatingSession) {
         // Creator: Create session first, then join it
+        console.log("Creating new session for group:", groupId);
         const response = await createMatchingSession(groupId, token);
         const sessionId = response.session_id;
+        console.log("Created session:", sessionId, "now joining with genres:", genres);
         await joinMatchingSession(sessionId, genres, token);
+        setCreatedSessionId(sessionId);
       } else {
         // Other users: Join existing session
+        console.log("Joining existing session:", sessionData?.session_id, "with genres:", genres);
         await joinMatchingSession(sessionData.session_id, genres, token);
       }
       
       setShowGenreModal(false);
       setSelectedGenres([]);
+      setCreatingSession(false);
     } catch (error) {
+      console.error("Error in handleGenreSubmit:", error);
       Alert.alert("Error", error.message || "Failed to join session");
     } finally {
       setSessionActionLoading(false);
@@ -434,6 +636,14 @@ useEffect(() => {
   const renderItem = ({ item }) => {
     const participantStyle = getParticipantStyle(item.email);
     
+    // Find the most recent session activity for this user
+    const userActivity = sessionActivities
+      .filter(activity => activity.email === item.email)
+      .sort((a, b) => b.timestamp - a.timestamp)[0]; // Most recent first
+    
+    // Determine the display message
+    const displayMessage = userActivity ? userActivity.message : "Has joined your group";
+    
     return (
       <View
         style={{
@@ -458,11 +668,12 @@ useEffect(() => {
           </Text>
         </View>
         <Text style={{ color: textColor, opacity: 0.85 }}>
-          Has joined your group
+          {displayMessage}
         </Text>
       </View>
     );
   };
+
 
   const codeLabel = (joinCode ?? "------").toString().toUpperCase();
 
@@ -655,36 +866,6 @@ useEffect(() => {
                 )}
               </View>
             )}
-
-            {/* Checkbox (kept for UI consistency) */}
-            <TouchableOpacity
-              onPress={() => setStartWithoutPrefs((v) => !v)}
-              style={{ flexDirection: "row", alignItems: "center", marginTop: 16 }}
-            >
-              <View
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: 6,
-                  marginRight: 10,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: startWithoutPrefs
-                    ? (theme.colors?.secondary ?? "rgba(251,195,76,1)")
-                    : "transparent",
-                  borderWidth: startWithoutPrefs ? 0 : 2,
-                  borderColor: theme.colors.text,
-                }}
-              >
-                {startWithoutPrefs ? (
-                  <MaterialCommunityIcons name="check-bold" size={16} color={theme.colors.primary} />
-                ) : null}
-              </View>
-              <Text style={{ color: textColor, opacity: 0.95 }}>
-                Start without setting preferences
-              </Text>
-            </TouchableOpacity>
-
           </>
         )}
       </View>
@@ -705,30 +886,7 @@ useEffect(() => {
             <View style={{ width: 40 }} />
             <Text style={{ color: theme.colors.text, fontWeight: '700', fontSize: 18, textAlign: 'center', flex: 1 }}>Select Genres</Text>
             <TouchableOpacity
-              onPress={async () => {
-                console.log("Submitting genres:", selectedGenres);
-                try {
-                  setSessionActionLoading(true);
-                  const token = await SecureStore.getItemAsync("userToken");
-                  if (creatingSession) {
-                    // Creator: Create session first, then join it
-                    const response = await createMatchingSession(groupId, token);
-                    const sessionId = response.session_id;
-                    setCreatedSessionId(sessionId); // for completeness, if needed elsewhere
-                    await joinMatchingSession(sessionId, selectedGenres, token);
-                  } else {
-                    // Other users: Join existing session
-                    await joinMatchingSession(sessionData.session_id, selectedGenres, token);
-                  }
-                  setShowGenreModal(false);
-                  setSelectedGenres([]);
-                  setCreatingSession(false);
-                } catch (error) {
-                  Alert.alert("Error", error.message || "Failed to join session");
-                } finally {
-                  setSessionActionLoading(false);
-                }
-              }}
+              onPress={() => handleGenreSubmit(selectedGenres)}
               disabled={sessionActionLoading}
             >
               <Text style={{ color: theme.colors.primary, fontSize: 16, fontWeight: '600', opacity: sessionActionLoading ? 0.5 : 1 }}>

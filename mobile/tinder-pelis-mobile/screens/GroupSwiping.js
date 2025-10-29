@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,59 +8,99 @@ import {
   Dimensions,
   ScrollView,
   Platform,
+  Alert,
 } from "react-native";
 import { useTheme } from "react-native-paper";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
+import * as SecureStore from "expo-secure-store";
+import { 
+  getMatchSessionStatus, 
+  submitAllVotes,
+  endMatchSession 
+} from "../src/services/api";
+import { useMatchingWebSocket } from "../websockets/useMatchingWebSocket";
 
 
 const { width } = Dimensions.get("window");
 
-
-// ---------- Peliculas hardcodeadas ----------
-const movies = [
-  {
-    id: "m1",
-    title: "Jaws",
-    genres: ["Romantic comedy"],
-    poster: require("../assets/jaws.jpg"),
-    rating: 6.9,
-    year: 1996,
-    runtime: "97",
-    description:
-      "A popular Beverly Hills teen, confident in her style and social skills, spends her time matchmaking for friends and improving lives around her. Along the way, she faces unexpected lessons about friendship, romance, and self-awareness.",
-  },
-  {
-    id: "m2",
-    title: "Interstellar",
-    genres: ["Science fiction"],
-    poster: require("../assets/interstellar.jpg"),
-    rating: 8.7,
-    year: 2014,
-    runtime: "169",
-    description:
-      "A group of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",
-  },
-  {
-    id: "m3",
-    title: "The Bad Guys 2",
-    genres: ["Action", "Animation"],
-    poster: require("../assets/the_bad_guys_2.jpg"),
-    rating: 7.3,
-    year: 2023,
-    runtime: "100",
-    description:
-      "The Bad Guys return for another thrilling adventure as they navigate their way through a heist gone wrong.",
-  },
-];
-
-export default function MovieMatch() {
+export default function GroupSwiping({ route, navigation }) {
   const theme = useTheme();
-  const navigation = useNavigation();
+  // const navigation = useNavigation(); // Remove this since we get it from props
+  
+  // Get params from navigation
+  const { groupId, sessionId, groupName } = route.params || {};
+  
+  // Session state
+  const [session, setSession] = useState(null);
+  const [movies, setMovies] = useState([]);
+  const [userVotes, setUserVotes] = useState({}); // {movieId: true/false}
+  const [loading, setLoading] = useState(true);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+
+  // WebSocket connection for real-time updates
+  const { isConnected, disconnect } = useMatchingWebSocket(sessionId, {
+    onVotesSubmitted: (data) => {
+      console.log('Someone submitted votes:', data);
+      fetchSessionData(); // Update voting progress
+    },
+    
+    onMatchingComplete: (data) => {
+      console.log('Matching complete! Results:', data.results);
+      // Navigate directly to MatchedMovie without alert
+      navigation.navigate('MatchedMovie', { 
+        results: data.results,
+        sessionId,
+        groupId,
+        groupName
+      });
+    },
+
+    onSessionEnded: () => {
+      Alert.alert(
+        'Session Ended',
+        'The session has been ended by the creator.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
+    }
+  });
+
+  // Fetch session data and movies
+  const fetchSessionData = async () => {
+    try {
+      const token = await SecureStore.getItemAsync("userToken");
+      const response = await getMatchSessionStatus(sessionId, token);
+      setSession(response);
+      setMovies(response.movies || []);
+      setLoading(false);
+    } catch (error) {
+      console.error('Failed to fetch session data:', error);
+      Alert.alert('Error', 'Failed to load session data');
+      navigation.goBack();
+    }
+  };
+
+  // Load session data on mount
+  useEffect(() => {
+    if (!sessionId) {
+      Alert.alert('Error', 'No session ID provided');
+      navigation.goBack();
+      return;
+    }
+    fetchSessionData();
+  }, [sessionId]);
+
+  // Cleanup WebSocket when leaving screen
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', () => {
+      disconnect();
+    });
+    return unsubscribe;
+  }, [navigation, disconnect]);
 
   // ---------------------------
   // CONFIG: sizes you can tweak
@@ -74,23 +114,32 @@ export default function MovieMatch() {
   // Animated opacity for synopsis text
   const synopsisOpacity = useRef(new Animated.Value(0)).current;
   
-  // Function to calculate synopsis height based on text length
+  // Position for swipe animation
+  const position = useRef(new Animated.ValueXY()).current;
+  
   const calculateSynopsisHeight = (text) => {
     const wordsPerLine = 8; // Approximate words per line
     const lineHeight = 20;
-    const padding = 40; // Extra padding for title and margins
+    const padding = 20;
     const words = text.split(' ').length;
     const lines = Math.ceil(words / wordsPerLine);
     const calculatedHeight = Math.min(lines * lineHeight + padding, 180); // Cap at 180px
     return Math.max(calculatedHeight, 80); // Minimum 80px
   };
 
-  // swipe position for whole card
-  const position = useRef(new Animated.ValueXY()).current;
-
   // No PanResponder needed - only button-based swiping
 
   const swipe = (direction) => {
+    if (!movie) return;
+    
+    // Record the vote
+    const vote = direction === "right"; // true for like, false for dislike
+    const newVotes = {
+      ...userVotes,
+      [movie.id]: vote
+    };
+    setUserVotes(newVotes);
+
     const toValue = direction === "right" ? width * 1.2 : -width * 1.2;
     Animated.timing(position, {
       toValue: { x: toValue, y: 0 },
@@ -102,8 +151,41 @@ export default function MovieMatch() {
       panelHeight.setValue(INFO_HEIGHT);
       synopsisOpacity.setValue(0);
       setIsOpen(false);
-      setCurrentIndex((prev) => prev + 1);
+      const nextIndex = currentIndex + 1;
+      setCurrentIndex(nextIndex);
+      
+      // Auto-submit when all movies are voted on
+      if (nextIndex >= movies.length) {
+        handleAutoSubmitVotes(newVotes);
+      }
     });
+  };
+
+  // Auto-submit votes when all movies are completed
+  const handleAutoSubmitVotes = async (votesToSubmit = userVotes) => {
+    try {
+      setLoading(true);
+      const token = await SecureStore.getItemAsync("userToken");
+      console.log('Auto-submitting votes:', votesToSubmit);
+      console.log('Movies count:', movies.length, 'Votes count:', Object.keys(votesToSubmit).length);
+      console.log('Movie IDs in votes:', Object.keys(votesToSubmit));
+      console.log('Movie IDs from movies array:', movies.map(m => m.id));
+      
+      // Log which movies were liked vs disliked
+      Object.entries(votesToSubmit).forEach(([movieId, liked]) => {
+        const movie = movies.find(m => m.id == movieId);
+        console.log(`Vote: ${movie?.title || movieId} - ${liked ? 'LIKED' : 'DISLIKED'}`);
+      });
+      
+      await submitAllVotes(sessionId, votesToSubmit, token);
+      setHasSubmitted(true);
+      // User will be automatically taken to results via WebSocket
+    } catch (error) {
+      console.error('Failed to submit votes:', error);
+      Alert.alert('Error', 'Failed to submit votes. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Toggle open/close: animate height (grow/shrink) and synopsis opacity
@@ -131,15 +213,42 @@ export default function MovieMatch() {
 
   const movie = movies[currentIndex];
   
-  // Navigate to MatchedMovie screen when all movies are finished
-  React.useEffect(() => {
-    if (!movie) {
-      navigation.navigate("MatchedMovie");
-    }
-  }, [movie, navigation]);
+  // Check if all movies have been voted on
+  const allMoviesVoted = Object.keys(userVotes).length === movies.length;
   
+  // Show loading screen while fetching data
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background }}>
+        <Text style={{ color: theme.colors.text, fontSize: 16 }}>Loading session...</Text>
+      </View>
+    );
+  }
+
+  // Show waiting screen after votes are submitted (removed submit votes screen)
+  if (hasSubmitted || (allMoviesVoted && currentIndex >= movies.length)) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background, padding: 20 }}>
+        <Text style={{ color: theme.colors.text, fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>
+          ✅ Votes Submitted!
+        </Text>
+        <Text style={{ color: theme.colors.text, fontSize: 16, textAlign: 'center', marginBottom: 20 }}>
+          Waiting for results...
+        </Text>
+        <Text style={{ color: theme.colors.text, fontSize: 14, opacity: 0.7, textAlign: 'center' }}>
+          You'll be automatically taken to the winner when ready!
+        </Text>
+      </View>
+    );
+  }
+
+  // No movie to show (shouldn't happen with proper error handling)
   if (!movie) {
-    return null; // Return null while navigating
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background }}>
+        <Text style={{ color: theme.colors.text, fontSize: 16 }}>No movies available</Text>
+      </View>
+    );
   }
 
   return (
@@ -158,10 +267,30 @@ export default function MovieMatch() {
           color: theme.colors.text,
           fontSize: 30,
           fontWeight: "800",
-          marginBottom: 30,
+          marginBottom: 10,
         }}
       >
-         Movie <Text style={{ color: theme.colors.primary }}>Matching</Text>
+         Movie <Text style={{ color: theme.colors.primary }}>Mingle</Text>
+      </Text>
+
+      {/* Progress indicator */}
+      <Text style={{ 
+        color: theme.colors.text, 
+        fontSize: 16, 
+        marginBottom: 20,
+        opacity: 0.8 
+      }}>
+        {groupName}
+      </Text>
+
+      {/* WebSocket status indicator */}
+      <Text style={{ 
+        color: isConnected ? '#4CAF50' : '#FF5722', 
+        fontSize: 12, 
+        marginBottom: 15,
+        opacity: 0.8 
+      }}>
+        {/* Removed live updates text */}
       </Text>
 
        {/* Card (button-swipeable only) */}
@@ -196,11 +325,35 @@ export default function MovieMatch() {
               elevation: 8,
             }}
           >
-            <Image
-              source={movie.poster}
-              style={{ width: "100%", height: 480, resizeMode: "cover" }}
-              
-            />
+            {movie.poster ? (
+              <Image
+                source={{ uri: movie.poster }}
+                style={{ width: "100%", height: 480, resizeMode: "cover" }}
+              />
+            ) : (
+              <View style={{ 
+                width: "100%", 
+                height: 480, 
+                backgroundColor: theme.colors.surface,
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}>
+                <MaterialCommunityIcons 
+                  name="film" 
+                  size={100} 
+                  color={theme.colors.onSurface}
+                  style={{ opacity: 0.3 }}
+                />
+                <Text style={{ 
+                  color: theme.colors.onSurface, 
+                  fontSize: 16, 
+                  marginTop: 10,
+                  opacity: 0.6
+                }}>
+                  No poster available
+                </Text>
+              </View>
+            )}
           </View>
 
           <Animated.View //Bottom panel

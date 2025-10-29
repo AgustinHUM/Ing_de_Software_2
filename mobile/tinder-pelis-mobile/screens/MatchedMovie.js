@@ -34,11 +34,25 @@ const movies = [
   },
 ];
 
-export default function MatchedMovie() {
+export default function MatchedMovie({ route }) {
   const theme = useTheme();
   const navigation = useNavigation();
 
-  const randomMovie = movies[Math.floor(Math.random() * movies.length)];
+  // Get the actual results from navigation params
+  const { results, sessionId, groupId, groupName } = route.params || {};
+  
+  // Use the winning movie from results, or fallback to hardcoded for backwards compatibility
+  const winningMovie = results?.winning_movie;
+  
+  // Fallback to hardcoded movies if no results provided (for backwards compatibility)
+  const fallbackMovie = movies[Math.floor(Math.random() * movies.length)];
+  
+  const displayMovie = winningMovie || fallbackMovie;
+  
+  // Debug logging
+  console.log('MatchedMovie results:', results);
+  console.log('Winning movie:', winningMovie);
+  console.log('Display movie:', displayMovie);
 
   return (
     <View
@@ -88,13 +102,14 @@ export default function MatchedMovie() {
           shadowRadius: 10,
         }}
       >
-        <Image
-          source={randomMovie.poster}
+                <Image
           style={{
-            width: "100%",
-            height: 450,
-            resizeMode: "cover",
+            width: width * 0.7,
+            height: width * 0.9,
+            borderRadius: 20,
+            marginBottom: 20,
           }}
+          source={displayMovie.poster ? { uri: displayMovie.poster } : require("../assets/jaws.jpg")}
         />
 
         {/* Gradient overlay for text */}
@@ -117,7 +132,7 @@ export default function MatchedMovie() {
               marginBottom: 4,
             }}
           >
-            {randomMovie.title}
+            {displayMovie.title}
           </Text>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <MaterialCommunityIcons
@@ -127,10 +142,10 @@ export default function MatchedMovie() {
               style={{ marginRight: 4 }}
             />
             <Text style={{ color: "white", fontWeight: "600", marginRight: 8 }}>
-              {randomMovie.rating}
+              {displayMovie.rating || 'N/A'}
             </Text>
             <Text style={{ color: "white", opacity: 0.9 }}>
-              {randomMovie.year} – {randomMovie.genres.join(", ")}
+              {displayMovie.year} – {displayMovie.genres ? displayMovie.genres.join(", ") : 'Unknown'}
             </Text>
           </View>
         </LinearGradient>
@@ -160,7 +175,7 @@ export default function MatchedMovie() {
         }}
       >
         <TouchableOpacity
-          onPress={() => navigation.navigate("GroupSwiping")}
+          onPress={() => navigation.navigate("GroupCode", { groupId: groupId, groupName: groupName })}
           style={{
             backgroundColor: "#FF4444",
             borderRadius: 30,
@@ -182,7 +197,7 @@ export default function MatchedMovie() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => navigation.navigate("Favourites")}
+          onPress={() => navigation.navigate("GroupCode", { groupId: groupId, groupName: groupName })}
           style={{
             backgroundColor: "#4CAF50",
             borderRadius: 25,
