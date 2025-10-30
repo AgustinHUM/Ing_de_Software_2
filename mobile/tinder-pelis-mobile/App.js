@@ -19,6 +19,8 @@ import Groups from './screens/Groups';
 import CreateGroup from './screens/CreateGroup';
 import JoinGroup from './screens/JoinGroup';
 import GroupCode from './screens/GroupCode';
+import GroupSwiping from './screens/GroupSwiping';
+import MatchedMovie from './screens/MatchedMovie';
 
 import SearchScreen from './screens/Search';
 import FavouritesScreen from './screens/Favourites';

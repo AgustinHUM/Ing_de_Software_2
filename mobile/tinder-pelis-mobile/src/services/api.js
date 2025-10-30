@@ -1,7 +1,7 @@
 import axios from "axios";
 
 
-export const API_URL = "http://10.56.81.178:5050"; // Local server
+export const API_URL = "http://192.168.0.168:5050"; // Local server
 
 const api = axios.create({
   baseURL: API_URL,
@@ -78,6 +78,15 @@ export function createGroup(groupName, token) {
 // Se une a un grupo con el código y devuelve { message }
 export function joinGroup(groupJoinId, token) {
   return post('/groups/join', { group_join_id: groupJoinId }, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+// Sale de un grupo con el groupId y devuelve { id, name, members }
+export function leaveGroup(groupId, token) {
+  // server expects "group_join_id" (join code = internalId * 7 + 13)
+  const joinCode = Number(groupId) * 7 + 13;
+  return post('/groups/leave', { group_join_id: joinCode }, {
     headers: { Authorization: `Bearer ${token}` },
   });
 }

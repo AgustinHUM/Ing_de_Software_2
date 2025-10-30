@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import GradientButton from "../components/GradientButton";
 import * as SecureStore from "expo-secure-store";
-import { getGroupUsersById } from "../src/services/api";
+import { getGroupUsersById, leaveGroup } from "../src/services/api";
 import ErrorOverlay from "../components/ErrorOverlay";
 import * as Clipboard from 'expo-clipboard';
 import Pusher from 'pusher-js/react-native';
@@ -173,6 +173,38 @@ useEffect(() => {
         }
       });
 
+      channel.bind('member-left', (payload) => {
+        try {
+          const data = typeof payload === 'string' ? (() => {
+            try { return JSON.parse(payload); } catch { return payload; }
+          })() : payload;
+
+          console.log('PUSHER EVENT member-left payload:', JSON.stringify(data));
+          const email = data?.email ?? null;
+          if (!email) return; // Need email to know who left
+
+          if (!mounted) return;
+          setMembers(prev => {
+            const newMembers = prev.filter(m => m.email !== email);
+            
+            // If a member was actually removed, update global count
+            if (newMembers.length < prev.length) {
+              updateUser({
+                groups: state.user.groups.map(group => 
+                  group.id !== groupId ? group : {...group, members: Math.max(0, group.members - 1)}
+                )
+              });
+            }
+            
+            return newMembers;
+          });
+
+        } catch (err) {
+          console.log('pusher event (member-left) handling error', err);
+        }
+      });
+
+
     } catch (err) {
       console.log('Pusher setup error', err);
     }
@@ -220,11 +252,42 @@ useEffect(() => {
           {item.username || item.email || "User"}
         </Text>
       </View>
-      <Text style={{ color: textColor, opacity: 0.85 }}>
-        Has joined the group
-      </Text>
-    </View>
-  );
+       <Text
+      style={{
+        color: item.action === "left" ? "red" : textColor,
+        opacity: 0.85,
+      }}
+    >
+      {item.action === "left" ? "Has left the group" : "Has joined the group"}
+    </Text>
+  </View>
+);
+
+  const handleLeaveGroup = () => {
+    Alert.alert(
+      "Leave Group",
+      'Are you sure you want to leave this group?',
+      [
+        { text: "Cancel", style: "cancel" }, 
+        { text: "Leave", style: "destructive", onPress: async () => {
+            try {
+              const token = await SecureStore.getItemAsync("userToken");
+              if (!token || !groupId) {
+                throw new Error("Missing auth token or group ID");
+              }
+              await leaveGroup(groupId, token);
+              updateUser({groups:state.user.groups.filter(group => group.id != groupId)});
+              navigation.navigate("Groups");
+            } catch (e) {
+              console.log("leaveGroup error:", e?.message || e);
+              Alert.alert("Error", "Could not leave the group. Please try again later.");
+            }
+          } 
+        }
+      ]
+    );
+  }
+
 
   const codeLabel = (joinCode ?? "------").toString().toUpperCase();
 
@@ -356,6 +419,24 @@ useEffect(() => {
                 </View>
               </TouchableOpacity>
 
+              {/* Trash (Leave group) small button - red */}
+              <TouchableOpacity
+                onPress={handleLeaveGroup}
+                style={{
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: 12,
+                  backgroundColor: '#FF4444',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <MaterialCommunityIcons name="trash-can-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
+                  <Text style={{ color: '#fff', fontWeight: "700" }}>Leave</Text>
+                </View>
+              </TouchableOpacity>
+
             </View>
 
             {/* Separador */}
@@ -396,9 +477,10 @@ useEffect(() => {
             <View style={{ height: 20 }} />
 
             {/* Botón principal */}
-            <GradientButton onPress={goStart} style={{ paddingVertical: 18, borderRadius: 16 }}>
+            <GradientButton onPress={goSwipe} style={{ paddingVertical: 18, borderRadius: 16 }}>
                 Start swiping
             </GradientButton>
+      
 
             {/* Checkbox */}
             <TouchableOpacity
