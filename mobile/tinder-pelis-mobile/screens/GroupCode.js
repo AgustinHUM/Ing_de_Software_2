@@ -144,7 +144,6 @@ export default function GroupCode({ navigation, route }) {
     let cancelled = false;
     async function fetchMembers() {
       try {
-        setLoading(true);
         if (!groupId) return;
         const token = await SecureStore.getItemAsync("userToken");
         if (!token) return;
@@ -154,14 +153,14 @@ export default function GroupCode({ navigation, route }) {
           const tokenData = JSON.parse(atob(token.split('.')[1]));
           setCurrentUserEmail(tokenData.email);
         } catch (e) {
-          console.log("Error parsing token for email:", e);
+          //console.log("Error parsing token for email:", e);
         }
         
         // Check for existing session
         try {
           const existingSession = await getGroupSession(groupId, token);
           if (existingSession && existingSession.session_id) {
-            console.log("Found existing session:", existingSession.session_id);
+            //console.log("Found existing session:", existingSession.session_id);
             
             // Check if current user is already in the participants
             const tokenData = JSON.parse(atob(token.split('.')[1]));
@@ -170,14 +169,14 @@ export default function GroupCode({ navigation, route }) {
             // If the API response shows we're a participant but our local state doesn't, 
             // it means we need to restore our participation status
             if (existingSession.participants && existingSession.participants[userEmail]) {
-              console.log("Current user is already a participant in the session");
+              //console.log("Current user is already a participant in the session");
             }
             
             setSessionData(existingSession);
           }
         } catch (e) {
           // No existing session, which is fine
-          console.log("No existing session found");
+          //console.log("No existing session found");
         }
         
         const list = await getGroupUsersById(groupId, token);
@@ -189,14 +188,12 @@ export default function GroupCode({ navigation, route }) {
           outageShownRef.current = false; // volvió a responder OK
         }
       } catch (e) {
-        console.log("getGroupUsers error:", e?.message || e);
+        //console.log("getGroupUsers error:", e?.message || e);
         if (isGenericBackendError(e) && !outageShownRef.current) {
           setShowGenericError(true);     // se autocierrra a los 5s
           outageShownRef.current = true;
         }
-      } finally {
-        setLoading(false);
-      }
+      } 
     }
 
     if (groupId) {
@@ -210,70 +207,121 @@ export default function GroupCode({ navigation, route }) {
     };
   }, [groupId]);
 
+const userRef = useRef(state.user);
+useEffect(() => { userRef.current = state.user; }, [state.user]);
+
+const currentUserEmailRef = useRef(currentUserEmail);
+useEffect(() => { currentUserEmailRef.current = currentUserEmail; }, [currentUserEmail]);
+
+// helper to safely parse payloads (keeps code DRY)
+const parsePayload = (payload) => {
+  if (!payload) return null;
+  if (typeof payload === 'string') {
+    try { return JSON.parse(payload); } catch { return payload; }
+  }
+  return payload;
+};
+
 useEffect(() => {
-  if (!groupId) return;          // subscribe by internal id (not joinCode)
+  if (!groupId) return;
   let mounted = true;
-  const goStart = () => navigation.navigate("Home");
-  const goSwipe = () => navigation.navigate("GroupSwiping", { groupId, groupName, startWithoutPrefs });
 
   (async () => {
     try {
-      // enable pusher debug logs (helps a lot when troubleshooting)
       Pusher.logToConsole = true;
+
+      // if there's an existing pusher instance, tear it down first (avoid duplicate connections)
+      try {
+        if (pusherRef.current) {
+          pusherRef.current.disconnect && pusherRef.current.disconnect();
+          channelRef.current = null;
+          pusherRef.current = null;
+        }
+      } catch (_) {}
 
       const pusher = new Pusher('fcb8b1c83278ac43036d', {
         cluster: 'sa1',
-        // forceTLS: true, // uncomment if your app requires TLS
+        // forceTLS: true,
       });
-
-      // store pusher ref so other handlers (like leave) can access it
       pusherRef.current = pusher;
 
-      console.log('Pusher init, connection state:', pusher.connection.state);
-
-      // subscribe to internal-id channel and save to ref
       const channel = pusher.subscribe(`group-${groupId}`);
       channelRef.current = channel;
 
-      // debug connection state changes
-      pusher.connection.bind('state_change', (states) => {
-        console.log('Pusher state change:', states);
-      });
-      pusher.connection.bind('connected', () => {
-        console.log('Pusher connected, socket id:', pusher.connection.socket_id);
-      });
+      // Generic connection logging
       pusher.connection.bind('error', (err) => {
-        console.log('Pusher connection error', err);
+        // keep it quiet in production, but helpful while debugging
+        console.warn('Pusher connection error', err);
       });
 
-      // bind the event
-      channel.bind('new-member', (payload) => {
-        if (!state.user.groups.some(group => group.id === groupId))
+      // --- new-member ---
+      const onNewMember = (payload) => {
+        const data = parsePayload(payload);
+        if (!data) return;
+        const email = data.email ?? null;
+        const username = data.username ?? (email ? email.split('@')[0] : 'User');
+
+        // We require an email (or some unique id) to avoid duplicates
+        if (!email) {
+          console.warn('[pusher] Ignoring new-member without email:', data);
           return;
-        try {
-          const data = typeof payload === 'string' ? (() => {
-            try { return JSON.parse(payload); } catch { return payload; }
-          })() : payload;
-
-          console.log('PUSHER EVENT new-member payload:', JSON.stringify(data));
-
-          const name = data?.username || (data?.email ? data.email.split('@')[0] : 'User');
-          const email = data?.email ?? null;
-
-          if (!mounted) return;
-          setMembers(prev => {
-            const exists = prev.some(m => (email && m.email === email));
-            if (exists) {
-              return prev;
-            }
-            updateUser({groups:state.user.groups.map(group => group.id != groupId ? group : {...group,members:group.members + 1})});
-            return [...prev, { email, username: name }];
-          });
-
-        } catch (err) {
-          console.log('pusher event handling error', err);
         }
-      });
+
+        // check that user still belongs to this group (use latest user state)
+        const user = userRef.current;
+        if (!user || !Array.isArray(user.groups) || !user.groups.some(g => g.id === groupId)) return;
+
+        if (!mounted) return;
+        setMembers(prev => {
+          // dedupe by email
+          if (prev.some(m => m.email === email)) return prev;
+          const next = [...prev, { email, username }];
+          return next;
+        });
+
+        // update global group count atomically (functional update)
+        updateUser(prevUser => {
+          if (!prevUser) return prevUser;
+          return {
+            ...prevUser,
+            groups: (prevUser.groups || []).map(g => g.id === groupId ? { ...g, members: (g.members || 0) + 1 } : g)
+          };
+        });
+      };
+
+      channel.bind('new-member', onNewMember);
+
+      // --- member-left ---
+      const onMemberLeft = (payload) => {
+        const data = parsePayload(payload);
+        if (!data) return;
+        const email = data.email ?? null;
+        if (!email) {
+          console.warn('[pusher] Ignoring member-left without email:', data);
+          return;
+        }
+
+        const user = userRef.current;
+        if (!user || !Array.isArray(user.groups) || !user.groups.some(g => g.id === groupId)) return;
+
+        if (!mounted) return;
+        setMembers(prev => {
+          const next = prev.filter(m => m.email !== email);
+          if (next.length === prev.length) return prev; // nothing removed
+          return next;
+        });
+
+        // decrement global count atomically
+        updateUser(prevUser => {
+          if (!prevUser) return prevUser;
+          return {
+            ...prevUser,
+            groups: (prevUser.groups || []).map(g => g.id === groupId ? { ...g, members: Math.max(0, (g.members || 1) - 1) } : g)
+          };
+        });
+      };
+
+      channel.bind('member-left', onMemberLeft);
 
       // Handle session creation event
       channel.bind('session-created', (payload) => {
@@ -282,7 +330,7 @@ useEffect(() => {
             try { return JSON.parse(payload); } catch { return payload; }
           })() : payload;
 
-          console.log('PUSHER EVENT session-created payload:', JSON.stringify(data));
+          ////console.log('PUSHER EVENT session-created payload:', JSON.stringify(data));
 
           if (!mounted) return;
           
@@ -304,7 +352,7 @@ useEffect(() => {
           }]);
 
         } catch (err) {
-          console.log('session-created event handling error', err);
+          //console.log('session-created event handling error', err);
         }
       });
 
@@ -315,7 +363,7 @@ useEffect(() => {
             try { return JSON.parse(payload); } catch { return payload; }
           })() : payload;
 
-          console.log('PUSHER EVENT participant-joined payload:', JSON.stringify(data));
+          ////console.log('PUSHER EVENT participant-joined payload:', JSON.stringify(data));
 
           if (!mounted) return;
           
@@ -340,12 +388,12 @@ useEffect(() => {
                 }
               }
             };
-            console.log("Updated session after participant joined:", updatedSession);
+            //console.log("Updated session after participant joined:", updatedSession);
             return updatedSession;
           });
 
         } catch (err) {
-          console.log('participant-joined event handling error', err);
+          //console.log('participant-joined event handling error', err);
         }
       });
 
@@ -356,7 +404,7 @@ useEffect(() => {
             try { return JSON.parse(payload); } catch { return payload; }
           })() : payload;
 
-          console.log('PUSHER EVENT participant-ready payload:', JSON.stringify(data));
+          //console.log('PUSHER EVENT participant-ready payload:', JSON.stringify(data));
 
           if (!mounted) return;
           
@@ -370,7 +418,7 @@ useEffect(() => {
           
           setSessionData(prev => {
             if (!prev || !prev.participants[data.email]) {
-              console.log("No session or participant not found for ready event");
+              //console.log("No session or participant not found for ready event");
               return prev;
             }
             const updatedSession = {
@@ -383,12 +431,12 @@ useEffect(() => {
                 }
               }
             };
-            console.log("Updated session after participant ready:", updatedSession);
+            //console.log("Updated session after participant ready:", updatedSession);
             return updatedSession;
           });
 
         } catch (err) {
-          console.log('participant-ready event handling error', err);
+          //console.log('participant-ready event handling error', err);
         }
       });
 
@@ -399,7 +447,7 @@ useEffect(() => {
             try { return JSON.parse(payload); } catch { return payload; }
           })() : payload;
 
-          console.log('PUSHER EVENT matching-started payload:', JSON.stringify(data));
+          //console.log('PUSHER EVENT matching-started payload:', JSON.stringify(data));
 
           if (!mounted) return;
           
@@ -418,7 +466,7 @@ useEffect(() => {
               status: 'matching',
               movies: data.movies || []
             };
-            console.log("Session updated for matching start, navigating to swiping...");
+            //console.log("Session updated for matching start, navigating to swiping...");
             
             // Navigate using the session ID from the current session data
             setTimeout(() => {
@@ -427,7 +475,7 @@ useEffect(() => {
                 groupId: groupId,
                 groupName: groupName
               };
-              console.log("Navigating to GroupSwiping with params:", navParams);
+              //console.log("Navigating to GroupSwiping with params:", navParams);
               navigation.navigate("GroupSwiping", navParams);
             }, 100);
             
@@ -435,7 +483,7 @@ useEffect(() => {
           });
 
         } catch (err) {
-          console.log('matching-started event handling error', err);
+          //console.log('matching-started event handling error', err);
         }
       });
 
@@ -446,7 +494,7 @@ useEffect(() => {
             try { return JSON.parse(payload); } catch { return payload; }
           })() : payload;
 
-          console.log('PUSHER EVENT session-ended payload:', JSON.stringify(data));
+          //console.log('PUSHER EVENT session-ended payload:', JSON.stringify(data));
 
           if (!mounted) return;
           
@@ -455,7 +503,7 @@ useEffect(() => {
           setSessionActivities([]);
 
         } catch (err) {
-          console.log('session-ended event handling error', err);
+          //console.log('session-ended event handling error', err);
         }
       });
 
@@ -466,7 +514,7 @@ useEffect(() => {
             try { return JSON.parse(payload); } catch { return payload; }
           })() : payload;
 
-          console.log('PUSHER EVENT session-cleanup payload:', JSON.stringify(data));
+          //console.log('PUSHER EVENT session-cleanup payload:', JSON.stringify(data));
 
           if (!mounted) return;
           
@@ -475,62 +523,61 @@ useEffect(() => {
           setSessionActivities([]);
 
         } catch (err) {
-          console.log('session-cleanup event handling error', err);
+          //console.log('session-cleanup event handling error', err);
         }
       });
 
-      channel.bind('member-left', (payload) => {
-        if (!state.user.groups.some(group => group.id === groupId))
-          return;
-        try {
-          const data = typeof payload === 'string' ? (() => {
-            try { return JSON.parse(payload); } catch { return payload; }
-          })() : payload;
-
-          console.log('PUSHER EVENT member-left payload:', JSON.stringify(data));
-          const email = data?.email ?? null;
-          if (!email) return; // Need email to know who left
-
+      try {
+        const token = await SecureStore.getItemAsync("userToken");
+        if (token && mounted) {
+          const list = await getGroupUsersById(groupId, token);
           if (!mounted) return;
+
+          // normalize server list and dedupe (email required)
+          const serverList = Array.isArray(list) ? list.filter(u => u && u.email).map(u => ({ email: u.email, username: u.username || u.email.split('@')[0] })) : [];
+
+          // merge existing `members` (from any events that arrived before fetch) with serverList
           setMembers(prev => {
-            const newMembers = prev.filter(m => m.email !== email);
-            
-            // If a member was actually removed, update global count
-            if (newMembers.length < prev.length) {
-              updateUser({
-                groups: state.user.groups.map(group => 
-                  group.id !== groupId ? group : {...group, members: Math.max(0, group.members - 1)}
-                )
-              });
-            }
-            
-            return newMembers;
+            const map = new Map();
+            // prefer server version if exists (server authoritative)
+            serverList.forEach(u => map.set(u.email, u));
+            (prev || []).forEach(u => {
+              if (u && u.email && !map.has(u.email)) {
+                map.set(u.email, u); // keep event-only entries if server didn't include them
+              }
+            });
+            return Array.from(map.values());
           });
 
-        } catch (err) {
-          console.log('pusher event (member-left) handling error', err);
+          outageShownRef.current = false;
         }
-      });
+      } catch (e) {
+        // fetch error handled elsewhere in your code
+        console.warn('error fetching initial members', e);
+      }
 
     } catch (err) {
-      console.log('Pusher setup error', err);
+      console.warn('Pusher setup error', err);
     }
   })();
 
-  return () => {
+    return () => {
     mounted = false;
     try {
       if (channelRef.current) {
-        channelRef.current.unbind_all && channelRef.current.unbind_all();
-        pusherRef.current && pusherRef.current.unsubscribe && pusherRef.current.unsubscribe(`group-${groupId}`);
+        // unbind specific handlers (if available)
+        try { channelRef.current.unbind('new-member'); } catch (e) {}
+        try { channelRef.current.unbind('member-left'); } catch (e) {}
+        // fallback to unbind_all if supported by your pusher client
+        try { channelRef.current.unbind_all && channelRef.current.unbind_all(); } catch (e) {}
       }
       if (pusherRef.current) {
-        pusherRef.current.disconnect && pusherRef.current.disconnect();
+        try { pusherRef.current.unsubscribe && pusherRef.current.unsubscribe(`group-${groupId}`); } catch (e) {}
+        try { pusherRef.current.disconnect && pusherRef.current.disconnect(); } catch (e) {}
       }
     } catch (e) {
-      console.log('Pusher cleanup error', e);
+      console.warn('Pusher cleanup error', e);
     } finally {
-      // clear refs
       channelRef.current = null;
       pusherRef.current = null;
     }
@@ -541,7 +588,7 @@ useEffect(() => {
  
   // Genre selection functions
   const toggleGenre = (genre, selected) => {
-    console.log("Toggling genre:", genre, "selected:", selected);
+    //console.log("Toggling genre:", genre, "selected:", selected);
     if (selected) {
       setSelectedGenres(prev => [...prev, genre]);
     } else {
@@ -560,15 +607,15 @@ useEffect(() => {
       
       if (creatingSession) {
         // Creator: Create session first, then join it
-        console.log("Creating new session for group:", groupId);
+        //console.log("Creating new session for group:", groupId);
         const response = await createMatchingSession(groupId, token);
         const sessionId = response.session_id;
-        console.log("Created session:", sessionId, "now joining with genres:", genres);
+        //console.log("Created session:", sessionId, "now joining with genres:", genres);
         await joinMatchingSession(sessionId, genres, token);
         setCreatedSessionId(sessionId);
       } else {
         // Other users: Join existing session
-        console.log("Joining existing session:", sessionData?.session_id, "with genres:", genres);
+        //console.log("Joining existing session:", sessionData?.session_id, "with genres:", genres);
         await joinMatchingSession(sessionData.session_id, genres, token);
       }
       
@@ -604,7 +651,7 @@ useEffect(() => {
       return {
         text: "Start Session",
         action: () => {
-          console.log("Opening genre modal for session creation");
+          //console.log("Opening genre modal for session creation");
           setCreatingSession(true);
           setShowGenreModal(true);
         },
@@ -629,7 +676,7 @@ useEffect(() => {
           text: "Join Session",
           action: () => {
             // Only ever called when a session exists
-            console.log("Opening genre modal to join session:", sessionData.session_id);
+            //console.log("Opening genre modal to join session:", sessionData.session_id);
             setCreatingSession(false);
             setShowGenreModal(true);
           },
@@ -653,7 +700,7 @@ useEffect(() => {
     return {
       text: "Start Session",
       action: () => {
-        console.log("Opening genre modal for session creation");
+        //console.log("Opening genre modal for session creation");
         setShowGenreModal(true);
       },
       disabled: sessionActionLoading
@@ -695,7 +742,7 @@ useEffect(() => {
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: 12,
+          marginVertical: 6,
         }}
       >
         <View
@@ -716,9 +763,6 @@ useEffect(() => {
           {displayMessage}
         </Text>
       
-        <Text style={{color: item.action === "left" ? "red" : textColor,opacity: 0.85,}}>
-        {item.action === "left" ? "Has left the group" : "Has joined the group"}
-        </Text>
       </View>
       );
     }
@@ -748,7 +792,7 @@ useEffect(() => {
                 pusherRef.current.disconnect && pusherRef.current.disconnect();
               }
             } catch (e) {
-              console.log('pusher unsubscribe error', e);
+              //console.log('pusher unsubscribe error', e);
             } finally {
               channelRef.current = null;
               pusherRef.current = null;
@@ -757,7 +801,7 @@ useEffect(() => {
             updateUser({groups:state.user.groups.filter(group => group.id != groupId)});
             navigation.navigate("Groups");
           } catch (e) {
-            console.log("leaveGroup error:", e?.message || e);
+            //console.log("leaveGroup error:", e?.message || e);
             Alert.alert("Error", "Could not leave the group. Please try again later.");
           } finally {
             setLoading(false); }
@@ -935,12 +979,20 @@ useEffect(() => {
               keyExtractor={(u, i) => (u.email || u.username || `m${i}`)}
               renderItem={renderItem}
               ListEmptyComponent={
+                <>
                 <LoadingBox style={{width:350, height:40,borderRadius:15,
-                   alignSelf:'center', marginTop:8}} />
+                   alignSelf:'center', marginVertical:6}} />
+                <LoadingBox style={{width:350, height:40,borderRadius:15,
+                   alignSelf:'center', marginVertical:6}} />
+                <LoadingBox style={{width:350, height:40,borderRadius:15,
+                   alignSelf:'center', marginVertical:6}} />
+                <LoadingBox style={{width:350, height:40,borderRadius:15,
+                   alignSelf:'center', marginVertical:6}} />
+                </>
               }
               ListFooterComponent={
                 members.length === 1 ? (
-                  <View style={{ marginTop: 16, alignItems: "center" }}>
+                  <View style={{ alignItems: "center" }}>
                     <Text style={{ color: textColor, opacity: 0.8, fontStyle: "italic" }}>
                       Waiting for others to join...
                     </Text>

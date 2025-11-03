@@ -201,22 +201,6 @@ useFocusEffect(
               );
             })}
           </View>
-        ) : filteredGroups.length === 0 ? (
-          <View style={{ flex: 1, alignItems: "center", paddingTop: 64 }}>
-            <Text style={{ fontSize: 28, fontWeight: "800", marginBottom: 8, color: textColor }}>
-              Looks empty...
-            </Text>
-
-            <MaterialCommunityIcons
-              name="sofa"
-              size={Math.min(width * 0.45, 220)}
-              color={theme.colors.primary}
-            />
-
-            <Text style={{ marginTop: 8, opacity: 0.9, color: textColor }}>
-              Add a group to begin!
-            </Text>
-          </View>
         ) : (
           <ScrollView
             contentContainerStyle={{ paddingBottom: 128, flexGrow: 1, minHeight: "100%" }}
@@ -235,6 +219,24 @@ useFocusEffect(
               />
             }
           >
+            {filteredGroups.length === 0 ? (
+          <View style={{ flex: 1, alignItems: "center", paddingTop: 64 }}>
+            <Text style={{ fontSize: 28, fontWeight: "800", marginBottom: 8, color: textColor }}>
+              Looks empty...
+            </Text>
+
+            <MaterialCommunityIcons
+              name="sofa"
+              size={Math.min(width * 0.45, 220)}
+              color={theme.colors.primary}
+            />
+
+            <Text style={{ marginTop: 8, opacity: 0.9, color: textColor }}>
+              Add a group to begin!
+            </Text>
+          </View>
+        ) : (
+            <>
             {filteredGroups.map((item) => {
               const members = item.members ?? 1;
               const label = item.name ?? "Untitled group";
@@ -302,6 +304,8 @@ useFocusEffect(
                 </TouchableOpacity>
               );
             })}
+            </>
+          )}
 
             {/* footer spacer */}
             <View style={{ height: 8 }} />
@@ -391,7 +395,7 @@ useFocusEffect(
                 setShowPopup(false);
                 navigation.navigate("CreateGroup");
               }}
-              style={{ marginTop: 32, marginLeft: 16 }}
+              style={{ marginTop: 32 }}
             >
               Create group
             </GradientButton>
@@ -403,6 +407,7 @@ useFocusEffect(
                 setShowPopup(false);
                 navigation.navigate("JoinGroup");
               }}
+              style={{marginLeft:16}}
             >
               Join group
             </GradientButton>

@@ -27,22 +27,22 @@ export const useMatchingWebSocket = (sessionId, onEvents = {}) => {
         channelRef.current = channel;
 
         pusher.connection.bind('state_change', (states) => {
-          console.log('Matching WebSocket state change:', states);
+          //console.log('Matching WebSocket state change:', states);
           setIsConnected(states.current === 'connected');
         });
 
         pusher.connection.bind('connected', () => {
-          console.log('Matching WebSocket connected, socket id:', pusher.connection.socket_id);
+          //console.log('Matching WebSocket connected, socket id:', pusher.connection.socket_id);
           setIsConnected(true);
         });
 
         pusher.connection.bind('disconnected', () => {
-          console.log('Matching WebSocket disconnected');
+          //console.log('Matching WebSocket disconnected');
           setIsConnected(false);
         });
 
         pusher.connection.bind('error', (err) => {
-          console.log('Matching WebSocket error:', err);
+          //console.log('Matching WebSocket error:', err);
           setIsConnected(false);
         });
 
@@ -61,7 +61,7 @@ export const useMatchingWebSocket = (sessionId, onEvents = {}) => {
             channel.bind(eventName, (payload) => {
               if (!mountedRef.current) return;
               
-              console.log(`Matching WebSocket event ${eventName}:`, payload);
+              //console.log(`Matching WebSocket event ${eventName}:`, payload);
               
               if (eventName === 'session-ended' || eventName === 'session-cleanup') {
                 setTimeout(() => {
@@ -87,7 +87,7 @@ export const useMatchingWebSocket = (sessionId, onEvents = {}) => {
       mountedRef.current = false;
       
       if (channel) {
-        console.log(`Unsubscribing from matching-session-${sessionId}`);
+        //console.log(`Unsubscribing from matching-session-${sessionId}`);
         channel.unbind_all && channel.unbind_all();
       }
       

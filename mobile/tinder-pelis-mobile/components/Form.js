@@ -184,11 +184,11 @@ export default function SelectableListForm({
           }}
         />
         <View style={{ marginBottom: 64, alignItems: "center", paddingVertical: 8 }}>
-          <GradientButton 
-          mode={!!(mandatory && selectedNames.length === 0) ? "outlined" : "contained"} 
-          onPress={handleMainButton} 
-          disabled={!!(mandatory && selectedNames.length === 0)}
-          style={{width:'80%'}}>
+          <GradientButton
+            mode={!!(mandatory && selectedNames.length === 0) ? "outlined" : "contained"}
+            onPress={handleMainButton}
+            disabled={!!(mandatory && selectedNames.length === 0)}
+            style={{ width: 250 }}>
             {buttonText}
           </GradientButton>
         </View>
