@@ -7,21 +7,66 @@ import {
   Share,
   Alert,
   FlatList,
+  Modal,
+  StyleSheet,
+  ScrollView,
 } from "react-native";
-import { ActivityIndicator, Text } from "react-native-paper";
+import { ActivityIndicator, Text, Divider } from "react-native-paper";
 import { useTheme } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import GradientButton from "../components/GradientButton";
+import Seleccionable from "../components/Seleccionable";
 import * as SecureStore from "expo-secure-store";
 import { getGroupUsersById } from "../src/services/api";
 import ErrorOverlay from "../components/ErrorOverlay";
 import * as Clipboard from 'expo-clipboard';
 import Pusher from 'pusher-js/react-native';
+import { createMatchingSession, joinMatchingSession, startMatching, getGroupSession } from '../src/services/api';
 import { useAuth } from "../AuthContext";
 
 const APPBAR_HEIGHT = 60;
 const APPBAR_BOTTOM_INSET = 10;
+
+// Genres available for selection
+const allGenres = [
+  "Action",
+  "Action & Adventure", 
+  "Adventure",
+  "Animation",
+  "Anime",
+  "Biography",
+  "Comedy",
+  "Crime",
+  "Documentary",
+  "Drama",
+  "Family",
+  "Fantasy",
+  "Food",
+  "Game Show",
+  "History",
+  "Horror",
+  "Kids",
+  "Music",
+  "Musical",
+  "Mystery",
+  "Nature",
+  "News",
+  "Reality",
+  "Romance",
+  "Sci-Fi & Fantasy",
+  "Science Fiction",
+  "Soap",
+  "Sports",
+  "Supernatural",
+  "Talk",
+  "Thriller",
+  "Travel",
+  "TV Movie",
+  "War",
+  "War & Politics",
+  "Western"
+];
 
 // helper: id interno -> código lindo
 const toJoinCode = (groupId) => groupId * 7 + 13;
@@ -60,6 +105,20 @@ export default function GroupCode({ navigation, route }) {
   const outageShownRef = useRef(false); // evita overlay repetido durante la misma caída
   const [loading, setLoading] = useState(false);
 
+  // Matching session state
+  const [sessionData, setSessionData] = useState(null);
+  const [showGenreModal, setShowGenreModal] = useState(false);
+  // Track if modal is for creating a session (creator flow)
+  const [creatingSession, setCreatingSession] = useState(false);
+  // Store the sessionId just created (for immediate join)
+  const [createdSessionId, setCreatedSessionId] = useState(null);
+  const [sessionActionLoading, setSessionActionLoading] = useState(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState(null);
+  
+  // Genre selection state
+  const [selectedGenres, setSelectedGenres] = useState([]);
+  const [sessionActivities, setSessionActivities] = useState([]); // [{message, timestamp, email}]
+
   const isGenericBackendError = (err) => {
     const msg = (err?.msg || "").toLowerCase();
     return (
@@ -83,6 +142,38 @@ export default function GroupCode({ navigation, route }) {
         if (!groupId) return;
         const token = await SecureStore.getItemAsync("userToken");
         if (!token) return;
+        
+        // Get current user email from token
+        try {
+          const tokenData = JSON.parse(atob(token.split('.')[1]));
+          setCurrentUserEmail(tokenData.email);
+        } catch (e) {
+          console.log("Error parsing token for email:", e);
+        }
+        
+        // Check for existing session
+        try {
+          const existingSession = await getGroupSession(groupId, token);
+          if (existingSession && existingSession.session_id) {
+            console.log("Found existing session:", existingSession.session_id);
+            
+            // Check if current user is already in the participants
+            const tokenData = JSON.parse(atob(token.split('.')[1]));
+            const userEmail = tokenData.email;
+            
+            // If the API response shows we're a participant but our local state doesn't, 
+            // it means we need to restore our participation status
+            if (existingSession.participants && existingSession.participants[userEmail]) {
+              console.log("Current user is already a participant in the session");
+            }
+            
+            setSessionData(existingSession);
+          }
+        } catch (e) {
+          // No existing session, which is fine
+          console.log("No existing session found");
+        }
+        
         const list = await getGroupUsersById(groupId, token);
         if (!cancelled && Array.isArray(list)) {
           setMembers(list);
@@ -118,6 +209,8 @@ useEffect(() => {
   let pusher = null;
   let channel = null;
   let mounted = true;
+  const goStart = () => navigation.navigate("Home");
+  const goSwipe = () => navigation.navigate("GroupSwiping", { groupId, groupName, startWithoutPrefs });
 
   (async () => {
     try {
@@ -173,6 +266,210 @@ useEffect(() => {
         }
       });
 
+      // Handle session creation event
+      channel.bind('session-created', (payload) => {
+        try {
+          const data = typeof payload === 'string' ? (() => {
+            try { return JSON.parse(payload); } catch { return payload; }
+          })() : payload;
+
+          console.log('PUSHER EVENT session-created payload:', JSON.stringify(data));
+
+          if (!mounted) return;
+          
+          // Update session data with the created session
+          setSessionData({
+            session_id: data.session_id,
+            creator_email: data.creator_email,
+            status: 'waiting_for_participants',
+            participants: {},
+            group_id: groupId
+          });
+
+          // Add session activity for the creator
+          setSessionActivities(prev => [...prev, {
+            message: data.message || "created a session",
+            timestamp: new Date(),
+            email: data.creator_email,
+            action: data.action || 'created_session'
+          }]);
+
+        } catch (err) {
+          console.log('session-created event handling error', err);
+        }
+      });
+
+      // Handle participant joining session
+      channel.bind('participant-joined', (payload) => {
+        try {
+          const data = typeof payload === 'string' ? (() => {
+            try { return JSON.parse(payload); } catch { return payload; }
+          })() : payload;
+
+          console.log('PUSHER EVENT participant-joined payload:', JSON.stringify(data));
+
+          if (!mounted) return;
+          
+          // Add session activity
+          setSessionActivities(prev => [...prev, {
+            message: data.message || "joined the session",
+            timestamp: new Date(),
+            email: data.email,
+            action: data.action || 'joined_session'
+          }]);
+          
+          setSessionData(prev => {
+            if (!prev) return prev;
+            const updatedSession = {
+              ...prev,
+              participants: {
+                ...prev.participants,
+                [data.email]: {
+                  username: data.username,
+                  status: 'joined',
+                  joined_at: new Date().toISOString()
+                }
+              }
+            };
+            console.log("Updated session after participant joined:", updatedSession);
+            return updatedSession;
+          });
+
+        } catch (err) {
+          console.log('participant-joined event handling error', err);
+        }
+      });
+
+      // Handle participant ready (after selecting genres)
+      channel.bind('participant-ready', (payload) => {
+        try {
+          const data = typeof payload === 'string' ? (() => {
+            try { return JSON.parse(payload); } catch { return payload; }
+          })() : payload;
+
+          console.log('PUSHER EVENT participant-ready payload:', JSON.stringify(data));
+
+          if (!mounted) return;
+          
+          // Add session activity
+          setSessionActivities(prev => [...prev, {
+            message: data.message || "is ready to match",
+            timestamp: new Date(),
+            email: data.email,
+            action: data.action || 'ready_to_match'
+          }]);
+          
+          setSessionData(prev => {
+            if (!prev || !prev.participants[data.email]) {
+              console.log("No session or participant not found for ready event");
+              return prev;
+            }
+            const updatedSession = {
+              ...prev,
+              participants: {
+                ...prev.participants,
+                [data.email]: {
+                  ...prev.participants[data.email],
+                  status: 'ready'
+                }
+              }
+            };
+            console.log("Updated session after participant ready:", updatedSession);
+            return updatedSession;
+          });
+
+        } catch (err) {
+          console.log('participant-ready event handling error', err);
+        }
+      });
+
+      // Handle matching-started event
+      channel.bind('matching-started', (payload) => {
+        try {
+          const data = typeof payload === 'string' ? (() => {
+            try { return JSON.parse(payload); } catch { return payload; }
+          })() : payload;
+
+          console.log('PUSHER EVENT matching-started payload:', JSON.stringify(data));
+
+          if (!mounted) return;
+          
+          // Add session activity
+          setSessionActivities(prev => [...prev, {
+            message: data.message || "Matching started!",
+            timestamp: new Date(),
+            email: null, // System message
+            action: data.action || 'started_matching'
+          }]);
+          
+          setSessionData(prev => {
+            if (!prev) return prev;
+            const updatedSession = {
+              ...prev,
+              status: 'matching',
+              movies: data.movies || []
+            };
+            console.log("Session updated for matching start, navigating to swiping...");
+            
+            // Navigate using the session ID from the current session data
+            setTimeout(() => {
+              const navParams = { 
+                sessionId: prev.session_id,
+                groupId: groupId,
+                groupName: groupName
+              };
+              console.log("Navigating to GroupSwiping with params:", navParams);
+              navigation.navigate("GroupSwiping", navParams);
+            }, 100);
+            
+            return updatedSession;
+          });
+
+        } catch (err) {
+          console.log('matching-started event handling error', err);
+        }
+      });
+
+      // Handle session end/cleanup
+      channel.bind('session-ended', (payload) => {
+        try {
+          const data = typeof payload === 'string' ? (() => {
+            try { return JSON.parse(payload); } catch { return payload; }
+          })() : payload;
+
+          console.log('PUSHER EVENT session-ended payload:', JSON.stringify(data));
+
+          if (!mounted) return;
+          
+          // Clear session data and activities
+          setSessionData(null);
+          setSessionActivities([]);
+
+        } catch (err) {
+          console.log('session-ended event handling error', err);
+        }
+      });
+
+      // Handle session cleanup
+      channel.bind('session-cleanup', (payload) => {
+        try {
+          const data = typeof payload === 'string' ? (() => {
+            try { return JSON.parse(payload); } catch { return payload; }
+          })() : payload;
+
+          console.log('PUSHER EVENT session-cleanup payload:', JSON.stringify(data));
+
+          if (!mounted) return;
+          
+          // Clear session data and activities
+          setSessionData(null);
+          setSessionActivities([]);
+
+        } catch (err) {
+          console.log('session-cleanup event handling error', err);
+        }
+      });
+
     } catch (err) {
       console.log('Pusher setup error', err);
     }
@@ -195,8 +492,9 @@ useEffect(() => {
 }, [groupId]);
 
 
-  const goStart = () => navigation.navigate("Home");
+  // Matching session functions: inlined join logic where used
 
+<<<<<<< HEAD
   const renderItem = ({ item }) => (
     <View
       style={{
@@ -206,24 +504,188 @@ useEffect(() => {
         marginVertical: 6,
       }}
     >
+=======
+  // Genre selection functions
+  const toggleGenre = (genre, selected) => {
+    console.log("Toggling genre:", genre, "selected:", selected);
+    if (selected) {
+      setSelectedGenres(prev => [...prev, genre]);
+    } else {
+      setSelectedGenres(prev => prev.filter(g => g !== genre));
+    }
+  };
+
+  // handleGenreModalSubmit logic will be inlined where used
+
+  // handleGenreModalClose logic will be inlined where used
+
+  const handleGenreSubmit = async (genres) => {
+    try {
+      setSessionActionLoading(true);
+      const token = await SecureStore.getItemAsync("userToken");
+      
+      if (creatingSession) {
+        // Creator: Create session first, then join it
+        console.log("Creating new session for group:", groupId);
+        const response = await createMatchingSession(groupId, token);
+        const sessionId = response.session_id;
+        console.log("Created session:", sessionId, "now joining with genres:", genres);
+        await joinMatchingSession(sessionId, genres, token);
+        setCreatedSessionId(sessionId);
+      } else {
+        // Other users: Join existing session
+        console.log("Joining existing session:", sessionData?.session_id, "with genres:", genres);
+        await joinMatchingSession(sessionData.session_id, genres, token);
+      }
+      
+      setShowGenreModal(false);
+      setSelectedGenres([]);
+      setCreatingSession(false);
+    } catch (error) {
+      console.error("Error in handleGenreSubmit:", error);
+      Alert.alert("Error", error.message || "Failed to join session");
+    } finally {
+      setSessionActionLoading(false);
+    }
+  };
+
+  const handleStartMatching = async () => {
+    try {
+      setSessionActionLoading(true);
+      const token = await SecureStore.getItemAsync("userToken");
+      await startMatching(sessionData.session_id, token);
+      // Navigate to GroupSwiping screen
+      navigation.navigate("GroupSwiping", { sessionId: sessionData.session_id });
+    } catch (error) {
+      Alert.alert("Error", error.message || "Failed to start matching");
+    } finally {
+      setSessionActionLoading(false);
+    }
+  };
+
+  // Determine what button to show
+  const getSessionButton = () => {
+    if (!sessionData) {
+      // No session exists - show "Start Session" for everyone
+      return {
+        text: "Start Session",
+        action: () => {
+          console.log("Opening genre modal for session creation");
+          setCreatingSession(true);
+          setShowGenreModal(true);
+        },
+        disabled: sessionActionLoading
+      };
+    }
+
+    const isCreator = sessionData.creator_email === currentUserEmail;
+    const isParticipant = currentUserEmail && sessionData.participants?.[currentUserEmail];
+    
+    if (sessionData.status === "waiting_for_participants") {
+      if (isCreator) {
+        const readyCount = Object.values(sessionData.participants || {})
+          .filter(p => p.status === "ready").length;
+        return {
+          text: readyCount > 0 ? "Start Match" : "Waiting for participants...",
+          action: handleStartMatching,
+          disabled: sessionActionLoading || readyCount === 0
+        };
+      } else if (!isParticipant) {
+        return {
+          text: "Join Session",
+          action: () => {
+            // Only ever called when a session exists
+            console.log("Opening genre modal to join session:", sessionData.session_id);
+            setCreatingSession(false);
+            setShowGenreModal(true);
+          },
+          disabled: sessionActionLoading
+        };
+      } else {
+        return {
+          text: "Waiting for match to start...",
+          action: null,
+          disabled: true
+        };
+      }
+    } else if (sessionData.status === "matching") {
+      return {
+        text: "Go to Matching",
+        action: () => Alert.alert("Info", "Matching screen will be implemented next"),
+        disabled: false
+      };
+    }
+
+    return {
+      text: "Start Session",
+      action: () => {
+        console.log("Opening genre modal for session creation");
+        setShowGenreModal(true);
+      },
+      disabled: sessionActionLoading
+    };
+  };
+
+  // Get participant status styling
+  const getParticipantStyle = (memberEmail) => {
+    if (!sessionData) return {};
+    
+    const participant = sessionData.participants?.[memberEmail];
+    const isCreator = sessionData.creator_email === memberEmail;
+    
+    if (isCreator) {
+      return { borderWidth: 2, borderColor: theme.colors?.primary ?? "#FF8A00" };
+    } else if (participant?.status === "ready") {
+      return { borderWidth: 2, borderColor: theme.colors?.secondary ?? "#FFC300" };
+    } else if (participant?.status === "joined") {
+      return { borderWidth: 1, borderColor: theme.colors?.primary ?? "#FF8A00", opacity: 0.7 };
+    }
+    
+    return {};
+  };
+
+  const renderItem = ({ item }) => {
+    const participantStyle = getParticipantStyle(item.email);
+    
+    // Find the most recent session activity for this user
+    const userActivity = sessionActivities
+      .filter(activity => activity.email === item.email)
+      .sort((a, b) => b.timestamp - a.timestamp)[0]; // Most recent first
+    
+    // Determine the display message
+    const displayMessage = userActivity ? userActivity.message : "Has joined your group";
+    
+    return (
+>>>>>>> rama_agustin
       <View
         style={{
-          backgroundColor: "rgba(255,255,255,0.12)",
-          paddingVertical: 8,
-          paddingHorizontal: 16,
-          borderRadius: 14,
-          maxWidth: "60%",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 12,
         }}
       >
-        <Text style={{ color: textColor, fontWeight: "800" }} numberOfLines={1}>
-          {item.username || item.email || "User"}
+        <View
+          style={{
+            backgroundColor: "rgba(255,255,255,0.12)",
+            paddingVertical: 8,
+            paddingHorizontal: 16,
+            borderRadius: 14,
+            maxWidth: "60%",
+            ...participantStyle,
+          }}
+        >
+          <Text style={{ color: textColor, fontWeight: "800" }} numberOfLines={1}>
+            {item.username || item.email || "User"}
+          </Text>
+        </View>
+        <Text style={{ color: textColor, opacity: 0.85 }}>
+          {displayMessage}
         </Text>
       </View>
-      <Text style={{ color: textColor, opacity: 0.85 }}>
-        Has joined the group
-      </Text>
-    </View>
-  );
+    );
+  };
+
 
   const codeLabel = (joinCode ?? "------").toString().toUpperCase();
 
@@ -394,42 +856,97 @@ useEffect(() => {
 
             <View style={{ height: 20 }} />
 
-            {/* Botón principal */}
-            <GradientButton onPress={goStart} style={{ paddingVertical: 18, borderRadius: 16 }}>
-                Start swiping
-            </GradientButton>
+            {/* Session Management Button */}
+            {(() => {
+              const sessionButton = getSessionButton();
+              return (
+                <GradientButton 
+                  onPress={sessionButton.action} 
+                  style={{ paddingVertical: 18, borderRadius: 16 }}
+                  disabled={sessionButton.disabled}
+                  loading={sessionActionLoading}
+                >
+                  {sessionButton.text}
+                </GradientButton>
+              );
+            })()}
 
-            {/* Checkbox */}
-            <TouchableOpacity
-              onPress={() => setStartWithoutPrefs((v) => !v)}
-              style={{ flexDirection: "row", alignItems: "center", marginTop: 16 }}
-            >
-              <View
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: 6,
-                  marginRight: 10,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: startWithoutPrefs
-                    ? (theme.colors.surface)
-                    : "transparent",
-                  borderWidth: 2,
-                  borderColor: theme.colors.text,
-                }}
-              >
-                {startWithoutPrefs ? (
-                  <MaterialCommunityIcons name="check-bold" size={16} color={theme.colors.primary} />
-                ) : null}
+            {/* Session Status Info */}
+            {sessionData && (
+              <View style={{ marginTop: 16 }}>
+                <Text style={{ color: textColor, opacity: 0.8, textAlign: 'center' }}>
+                  Session Status: {sessionData.status.replace('_', ' ')}
+                </Text>
+                {sessionData.status === 'waiting_for_participants' && (
+                  <Text style={{ color: textColor, opacity: 0.6, textAlign: 'center', fontSize: 12, marginTop: 4 }}>
+                    {Object.values(sessionData.participants || {}).filter(p => p.status === 'ready').length} participants ready
+                  </Text>
+                )}
               </View>
-              <Text style={{ color: textColor, opacity: 0.95 }}>
-                Start without setting preferences
-              </Text>
-            </TouchableOpacity>
+            )}
           </>
         )}
       </View>
+
+      {/* Genre Selection Modal */}
+      <Modal
+        visible={showGenreModal}
+        animationType="slide"
+        onRequestClose={() => {
+          setSelectedGenres([]);
+          setShowGenreModal(false);
+          setCreatingSession(false);
+        }}
+        transparent={false}
+      >
+        <View style={{ flex: 1, flexDirection:'column', padding: 25, paddingVertical: Platform.OS === 'ios' ? 70 : 35, backgroundColor: theme.colors.background }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <View style={{ width: 40 }} />
+            <Text style={{ color: theme.colors.text, fontWeight: '700', fontSize: 18, textAlign: 'center', flex: 1 }}>Select Genres</Text>
+            <TouchableOpacity
+              onPress={() => handleGenreSubmit(selectedGenres)}
+              disabled={sessionActionLoading}
+            >
+              <Text style={{ color: theme.colors.primary, fontSize: 16, fontWeight: '600', opacity: sessionActionLoading ? 0.5 : 1 }}>
+                {selectedGenres.length > 0 ? (sessionActionLoading ? 'Joining...' : 'Join') : 'Skip'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          
+          <Divider
+            style={{
+              backgroundColor: theme.colors.primary,
+              width: "100%",
+              height: 5,
+              borderRadius: 5,
+            }}
+          />
+          
+          <ScrollView contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+            {allGenres.map(genre => (
+              <View key={genre} style={{ marginTop: 12 }}>
+                <Seleccionable
+                  label={genre}
+                  initialSelected={selectedGenres.includes(genre)}
+                  onSelect={(selected) => toggleGenre(genre, selected)}
+                  width='100%'
+                  fontSize={18}
+                />
+              </View>
+            ))}
+          </ScrollView>
+          
+          <Divider
+            style={{
+              backgroundColor: theme.colors.primary,
+              width: "100%",
+              height: 5,
+              borderRadius: 5,
+              marginBottom: 16
+            }}
+          />
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
