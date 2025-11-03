@@ -116,11 +116,7 @@ export default function GroupsHome({ navigation }) {
     [updateUser]
   );
 
-<<<<<<< HEAD
 useFocusEffect(
-=======
-  useFocusEffect(
->>>>>>> rama_agustin
   React.useCallback(() => {
     mountedRef.current = true;
 

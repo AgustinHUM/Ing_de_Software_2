@@ -492,19 +492,7 @@ useEffect(() => {
 }, [groupId]);
 
 
-  // Matching session functions: inlined join logic where used
-
-<<<<<<< HEAD
-  const renderItem = ({ item }) => (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        marginVertical: 6,
-      }}
-    >
-=======
+ 
   // Genre selection functions
   const toggleGenre = (genre, selected) => {
     console.log("Toggling genre:", genre, "selected:", selected);
@@ -656,7 +644,6 @@ useEffect(() => {
     const displayMessage = userActivity ? userActivity.message : "Has joined your group";
     
     return (
->>>>>>> rama_agustin
       <View
         style={{
           flexDirection: "row",
@@ -861,8 +848,7 @@ useEffect(() => {
               const sessionButton = getSessionButton();
               return (
                 <GradientButton 
-                  onPress={sessionButton.action} 
-                  style={{ paddingVertical: 18, borderRadius: 16 }}
+                  onPress={sessionButton.action}
                   disabled={sessionButton.disabled}
                   loading={sessionActionLoading}
                 >
