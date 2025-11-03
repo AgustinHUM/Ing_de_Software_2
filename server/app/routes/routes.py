@@ -108,6 +108,9 @@ def join_group_route():
 def group_users_route():
     return get_group_users()
 
+@grupo_bp.route("/groups/leave", methods=["POST"])
+def leave_group_route():
+    return leave_group()
 
 
 

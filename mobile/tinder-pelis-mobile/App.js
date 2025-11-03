@@ -19,6 +19,8 @@ import Groups from './screens/Groups';
 import CreateGroup from './screens/CreateGroup';
 import JoinGroup from './screens/JoinGroup';
 import GroupCode from './screens/GroupCode';
+import GroupSwiping from './screens/GroupSwiping';
+import MatchedMovie from './screens/MatchedMovie';
 
 import SearchScreen from './screens/Search';
 import FavouritesScreen from './screens/Favourites';
@@ -31,8 +33,6 @@ import CountriesForm from './screens/CountriesForm';
 import DirectorsFormScreen from './screens/DirectorsForm';
 import MoviesFormScreen from './screens/MoviesFormScreen';
 import RateFilm from './screens/RateFilm';
-import GroupSwiping from './screens/GroupSwiping';
-import MatchedMovie from './screens/MatchedMovie';
 
 import { API_URL } from './src/services/api';
 import EditProfileScreen from './screens/EditProfile';

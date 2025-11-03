@@ -81,6 +81,15 @@ export function joinGroup(groupJoinId, token) {
   });
 }
 
+// Sale de un grupo con el groupId y devuelve { id, name, members }
+export function leaveGroup(groupId, token) {
+  // server expects "group_join_id" (join code = internalId * 7 + 13)
+  const joinCode = Number(groupId) * 7 + 13;
+  return post('/groups/leave', { group_join_id: joinCode }, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
 export function getUserGroups(token) {
   return request('/groups', {
     method: 'GET',
