@@ -33,7 +33,7 @@ class MatchingSession:
             mock_request.headers = mock_headers
             
             user = get_token_user(mock_request, "Cannot find user for session")
-            if isinstance(user, tuple):  # Error response
+            if isinstance(user, tuple):
                 return False, user
             
             email = user.mail
