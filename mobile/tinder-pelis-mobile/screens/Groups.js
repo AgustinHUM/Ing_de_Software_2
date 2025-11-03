@@ -219,17 +219,19 @@ useFocusEffect(
           </View>
         ) : (
           <ScrollView
-            contentContainerStyle={{ paddingBottom: 128 }}
+            contentContainerStyle={{ paddingBottom: 128, flexGrow: 1, minHeight: "100%" }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
-            // <-- RefreshControl enables the 'pull down to refresh' spinner and triggers onRefresh
+            alwaysBounceVertical={true}
+            bounces={true}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                tintColor={theme.colors.primary}
-                colors={[theme.colors.primary]}
+                tintColor={theme.colors.secondary}
+                colors={[theme.colors.primary]} 
                 progressBackgroundColor={theme.colors.background}
+                
               />
             }
           >

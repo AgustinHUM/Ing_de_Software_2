@@ -19,6 +19,8 @@ import ErrorOverlay from "../components/ErrorOverlay";
 import * as Clipboard from 'expo-clipboard';
 import Pusher from 'pusher-js/react-native';
 import { useAuth } from "../AuthContext";
+import LoadingOverlay from "../components/LoadingOverlay";
+import LoadingBox from "../components/LoadingBox";
 
 const APPBAR_HEIGHT = 60;
 const APPBAR_BOTTOM_INSET = 10;
@@ -58,6 +60,10 @@ export default function GroupCode({ navigation, route }) {
   // Error overlay (solo para errores genéricos del back)
   const [showGenericError, setShowGenericError] = useState(false);
   const outageShownRef = useRef(false); // evita overlay repetido durante la misma caída
+
+  const pusherRef = useRef(null);
+  const channelRef = useRef(null);
+
   const [loading, setLoading] = useState(false);
 
   const isGenericBackendError = (err) => {
@@ -115,8 +121,6 @@ export default function GroupCode({ navigation, route }) {
 
 useEffect(() => {
   if (!groupId) return;          // subscribe by internal id (not joinCode)
-  let pusher = null;
-  let channel = null;
   let mounted = true;
 
   (async () => {
@@ -124,15 +128,19 @@ useEffect(() => {
       // enable pusher debug logs (helps a lot when troubleshooting)
       Pusher.logToConsole = true;
 
-      pusher = new Pusher('fcb8b1c83278ac43036d', {
+      const pusher = new Pusher('fcb8b1c83278ac43036d', {
         cluster: 'sa1',
         // forceTLS: true, // uncomment if your app requires TLS
       });
 
+      // store pusher ref so other handlers (like leave) can access it
+      pusherRef.current = pusher;
+
       console.log('Pusher init, connection state:', pusher.connection.state);
 
-      // subscribe to internal-id channel
-      channel = pusher.subscribe(`group-${groupId}`);
+      // subscribe to internal-id channel and save to ref
+      const channel = pusher.subscribe(`group-${groupId}`);
+      channelRef.current = channel;
 
       // debug connection state changes
       pusher.connection.bind('state_change', (states) => {
@@ -147,8 +155,9 @@ useEffect(() => {
 
       // bind the event
       channel.bind('new-member', (payload) => {
+        if (!state.user.groups.some(group => group.id === groupId))
+          return;
         try {
-          // defensive parsing and logging
           const data = typeof payload === 'string' ? (() => {
             try { return JSON.parse(payload); } catch { return payload; }
           })() : payload;
@@ -174,6 +183,8 @@ useEffect(() => {
       });
 
       channel.bind('member-left', (payload) => {
+        if (!state.user.groups.some(group => group.id === groupId))
+          return;
         try {
           const data = typeof payload === 'string' ? (() => {
             try { return JSON.parse(payload); } catch { return payload; }
@@ -204,7 +215,6 @@ useEffect(() => {
         }
       });
 
-
     } catch (err) {
       console.log('Pusher setup error', err);
     }
@@ -213,15 +223,19 @@ useEffect(() => {
   return () => {
     mounted = false;
     try {
-      if (channel) {
-        channel.unbind_all && channel.unbind_all();
-        pusher && pusher.unsubscribe && pusher.unsubscribe(`group-${groupId}`);
+      if (channelRef.current) {
+        channelRef.current.unbind_all && channelRef.current.unbind_all();
+        pusherRef.current && pusherRef.current.unsubscribe && pusherRef.current.unsubscribe(`group-${groupId}`);
       }
-      if (pusher) {
-        pusher.disconnect && pusher.disconnect();
+      if (pusherRef.current) {
+        pusherRef.current.disconnect && pusherRef.current.disconnect();
       }
     } catch (e) {
       console.log('Pusher cleanup error', e);
+    } finally {
+      // clear refs
+      channelRef.current = null;
+      pusherRef.current = null;
     }
   };
 }, [groupId]);
@@ -263,30 +277,50 @@ useEffect(() => {
   </View>
 );
 
-  const handleLeaveGroup = () => {
-    Alert.alert(
-      "Leave Group",
-      'Are you sure you want to leave this group?',
-      [
-        { text: "Cancel", style: "cancel" }, 
-        { text: "Leave", style: "destructive", onPress: async () => {
-            try {
-              const token = await SecureStore.getItemAsync("userToken");
-              if (!token || !groupId) {
-                throw new Error("Missing auth token or group ID");
-              }
-              await leaveGroup(groupId, token);
-              updateUser({groups:state.user.groups.filter(group => group.id != groupId)});
-              navigation.navigate("Groups");
-            } catch (e) {
-              console.log("leaveGroup error:", e?.message || e);
-              Alert.alert("Error", "Could not leave the group. Please try again later.");
+ const handleLeaveGroup = () => {
+  Alert.alert(
+    "Leave Group",
+    'Are you sure you want to leave this group?',
+    [
+      { text: "Cancel", style: "cancel" }, 
+      { text: "Leave", style: "destructive", onPress: async () => {
+          try {
+            setLoading(true);
+            const token = await SecureStore.getItemAsync("userToken");
+            if (!token || !groupId) {
+              throw new Error("Missing auth token or group ID");
             }
-          } 
-        }
-      ]
-    );
-  }
+            await leaveGroup(groupId, token);
+
+            // Unsubscribe from pusher/channel immediately — we don't care about updates anymore
+            try {
+              if (channelRef.current) {
+                channelRef.current.unbind_all && channelRef.current.unbind_all();
+              }
+              if (pusherRef.current) {
+                pusherRef.current.unsubscribe && pusherRef.current.unsubscribe(`group-${groupId}`);
+                pusherRef.current.disconnect && pusherRef.current.disconnect();
+              }
+            } catch (e) {
+              console.log('pusher unsubscribe error', e);
+            } finally {
+              channelRef.current = null;
+              pusherRef.current = null;
+            }
+
+            updateUser({groups:state.user.groups.filter(group => group.id != groupId)});
+            navigation.navigate("Groups");
+          } catch (e) {
+            console.log("leaveGroup error:", e?.message || e);
+            Alert.alert("Error", "Could not leave the group. Please try again later.");
+          } finally {
+            setLoading(false); }
+        } 
+      }
+    ]
+  );
+}
+
 
 
   const codeLabel = (joinCode ?? "------").toString().toUpperCase();
@@ -301,7 +335,7 @@ useEffect(() => {
         visible={showGenericError}
         onHide={() => setShowGenericError(false)}
       />
-
+      <LoadingOverlay visible={loading} />
       <View
         style={{
           flex: 1,
@@ -310,6 +344,7 @@ useEffect(() => {
           paddingBottom: bottom + APPBAR_BOTTOM_INSET + APPBAR_HEIGHT + 16,
         }}
       >
+        
         {/* Header simple */}
         <View style={{ flexDirection: "row", alignItems: "center", height: 48 }}>
           <TouchableOpacity onPress={() => navigation.navigate("Groups")} style={{ padding: 8 }}>
@@ -454,7 +489,8 @@ useEffect(() => {
               keyExtractor={(u, i) => (u.email || u.username || `m${i}`)}
               renderItem={renderItem}
               ListEmptyComponent={
-                <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginTop: 20 }} />
+                <LoadingBox style={{width:350, height:40,borderRadius:15,
+                   alignSelf:'center', marginTop:8}} />
               }
               ListFooterComponent={
                 members.length === 1 ? (
