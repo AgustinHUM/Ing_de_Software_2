@@ -33,7 +33,7 @@ class MatchingSession:
             mock_request.headers = mock_headers
             
             user = get_token_user(mock_request, "Cannot find user for session")
-            if isinstance(user, tuple):
+            if isinstance(user, tuple):  # Error response
                 return False, user
             
             email = user.mail
@@ -342,19 +342,17 @@ def create_session():
             return jsonify({"msg": "No JSON data provided"}), 400
 
         group_id = data.get("group_id")
-        if not group_id:
-            return jsonify({"msg": "group_id is required"}), 400
+        if group_id is not None:
+            grupo = Grupo.query.get(group_id)
+            if not grupo:
+                return jsonify({"msg": "Group not found"}), 404
 
-        grupo = Grupo.query.get(group_id)
-        if not grupo:
-            return jsonify({"msg": "Group not found"}), 404
+            if user not in grupo.usuarios:
+                return jsonify({"msg": "User is not a member of this group"}), 403
 
-        if user not in grupo.usuarios:
-            return jsonify({"msg": "User is not a member of this group"}), 403
-
-        for session in matching_sessions.values():
-            if session.group_id == group_id and session.status in ["waiting_for_participants", "matching"]:
-                return jsonify({"msg": "Active session already exists for this group", "session_id": session.session_id}), 409
+            for session in matching_sessions.values():
+                if session.group_id == group_id and session.status in ["waiting_for_participants", "matching"]:
+                    return jsonify({"msg": "Active session already exists for this group", "session_id": session.session_id}), 409
 
         session_id = str(uuid.uuid4())
         session = MatchingSession(session_id, group_id, user.mail)
@@ -363,17 +361,19 @@ def create_session():
             return jsonify({"msg": "Failed to add creator to session"}), 500
 
         matching_sessions[session_id] = session
-        pusher_client.trigger(
-            f"group-{group_id}",
-            "session-created",
-            {
-                "session_id": session_id,
-                "creator_email": user.mail,
-                "creator_username": user.nombre_cuenta,
-                "message": "created a session",
-                "action": "created_session"
-            }
-        )
+        
+        if group_id is not None:
+            pusher_client.trigger(
+                f"group-{group_id}",
+                "session-created",
+                {
+                    "session_id": session_id,
+                    "creator_email": user.mail,
+                    "creator_username": user.nombre_cuenta,
+                    "message": "created a session",
+                    "action": "created_session"
+                }
+            )
         return jsonify({
             "msg": "Session created successfully",
             "session_id": session_id,
@@ -409,9 +409,13 @@ def join_session():
         if session.status not in ["waiting_for_participants"]:
             return jsonify({"msg": "Session is not accepting new participants"}), 400
 
-        grupo = Grupo.query.get(session.group_id)
-        if user not in grupo.usuarios:
-            return jsonify({"msg": "User is not a member of this group"}), 403
+        # Only validate group membership for non-solo sessions (positive group_id)
+        if session.group_id is not None and session.group_id > 0:
+            grupo = Grupo.query.get(session.group_id)
+            if not grupo:
+                return jsonify({"msg": "Group not found"}), 404
+            if user not in grupo.usuarios:
+                return jsonify({"msg": "User is not a member of this group"}), 403
 
         success, result = session.add_participant(request.headers.get("Authorization", "").replace("Bearer ", ""))
         if not success:
@@ -521,9 +525,13 @@ def get_session_status():
         if not session:
             return jsonify({"msg": "Session not found"}), 404
 
-        grupo = Grupo.query.get(session.group_id)
-        if user not in grupo.usuarios:
-            return jsonify({"msg": "User is not a member of this group"}), 403
+        # Only validate group membership for non-solo sessions (positive group_id)
+        if session.group_id is not None and session.group_id > 0:
+            grupo = Grupo.query.get(session.group_id)
+            if not grupo:
+                return jsonify({"msg": "Group not found"}), 404
+            if user not in grupo.usuarios:
+                return jsonify({"msg": "User is not a member of this group"}), 403
 
         return jsonify(session.to_dict()), 200
     except Exception as e:

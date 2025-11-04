@@ -8,7 +8,8 @@ import FilmDisplay from '../components/FilmDisplay';
 import LoadingBox from '../components/LoadingBox';
 import GradientButton from '../components/GradientButton';
 import * as SecureStore from 'expo-secure-store';
-import { homeMovies } from '../src/services/api';
+import { homeMovies, createSoloMatch } from '../src/services/api';
+import GenreSelector from '../components/GenreSelector';
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -78,6 +79,9 @@ export default function HomeScreen() {
 
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showGenreSelector, setShowGenreSelector] = useState(false);
+  const [matchLoading, setMatchLoading] = useState(false);
+
    useEffect(() => {
    const fetchMovies = async () => {
      setLoading(true);
@@ -233,9 +237,31 @@ export default function HomeScreen() {
             </View>
 
           </View>
-          <GradientButton style={[matchButtonStyle]} inverted={true}> 
+          <GradientButton 
+            style={[matchButtonStyle]} 
+            inverted={true}
+            loading={matchLoading}
+            onPress={() => setShowGenreSelector(true)}
+          > 
             <Text style={{color: theme?.colors?.onGradient ?? theme.colors.text,fontSize:16,fontWeight:700}}>MATCH</Text>
-          </GradientButton> 
+          </GradientButton>
+
+          <GenreSelector 
+            visible={showGenreSelector}
+            onClose={() => setShowGenreSelector(false)}
+            onSubmit={async (genres) => {
+              setMatchLoading(true);
+              const token = await SecureStore.getItemAsync("userToken");
+              const session = await createSoloMatch(token, genres);
+              navigation.navigate("GroupSwiping", { 
+                sessionId: session.session_id,
+                isSoloSession: true
+              });
+              setMatchLoading(false);
+              setShowGenreSelector(false);
+            }}
+            loading={matchLoading}
+          />
         </View>
       
       </View>

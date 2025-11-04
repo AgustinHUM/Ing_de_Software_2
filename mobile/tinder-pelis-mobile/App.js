@@ -96,6 +96,7 @@ const TEMAS = {
     primary:'rgba(226, 226, 3, 1)',secondary:'rgba(56, 44, 3, 1)',
     accent:'rgba(4, 4, 4, 1)',text:'rgba(227, 224, 3, 1)',placeholder:'rgba(255,255,255,1)', onGradient:'rgba(0, 0, 0, 1)'
   }
+  
 };
 // -------------------------------------------------------------------
 

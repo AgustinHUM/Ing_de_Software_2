@@ -1,6 +1,7 @@
 import axios from "axios";
 
-export const API_URL = "http://10.56.81.178:5050"; // Local server
+export const API_URL = "http://192.168.68.51:5050"; // Local server
+
 
 const api = axios.create({
   baseURL: API_URL,
@@ -159,7 +160,7 @@ export function updateUserInfo(data, token) {
 
 
 // Match - Optimized endpoints
-export function create_match_session(group_id, token) {
+export function createMatchSession(group_id, token) {
   return post('/match/create_session', { group_id }, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -205,23 +206,20 @@ export function getGroupMatchSession(groupId, token) {
   });
 }
 
-// Legacy matching endpoints (now redirected to /match/* endpoints)
-export function createMatchingSession(groupId, token) {
-  return create_match_session(groupId, token);
-}
-
-export function joinMatchingSession(sessionId, genres, token) {
-  return joinMatchSession(sessionId, genres, token);
-}
-
-export function getSessionStatus(sessionId, token) {
-  return getMatchSessionStatus(sessionId, token);
-}
-
-export function getGroupSession(groupId, token) {
-  return getGroupMatchSession(groupId, token);
-}
-
-export function startMatching(sessionId, token) {
-  return startMatchSession(sessionId, token);
+export async function createSoloMatch(token, genres) {
+  try {
+    // For solo sessions, pass null as group_id
+    const session = await createMatchSession(null, token);
+    
+    if (!session || !session.session_id) {
+      throw new Error('Failed to create solo session');
+    }
+    
+    await joinMatchSession(session.session_id, genres, token);
+    await startMatchSession(session.session_id, token);
+    return session;
+  } catch (error) {
+    console.error('Error in createSoloMatch:', error);
+    throw error;
+  }
 }

@@ -30,7 +30,7 @@ export default function GroupSwiping({ route, navigation }) {
   // const navigation = useNavigation(); // Remove this since we get it from props
   
   // Get params from navigation
-  const { groupId, sessionId, groupName } = route.params || {};
+  const { groupId, sessionId, groupName, isSoloSession } = route.params || {};
   
   // Session state
   const [session, setSession] = useState(null);
@@ -56,7 +56,8 @@ export default function GroupSwiping({ route, navigation }) {
         results: data.results,
         sessionId,
         groupId,
-        groupName
+        groupName,
+        isSoloSession
       });
     },
 

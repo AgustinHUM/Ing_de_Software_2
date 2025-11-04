@@ -18,14 +18,14 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import GradientButton from "../components/GradientButton";
 import Seleccionable from "../components/Seleccionable";
 import * as SecureStore from "expo-secure-store";
-import { getGroupUsersById, leaveGroup } from "../src/services/api";
 import ErrorOverlay from "../components/ErrorOverlay";
 import * as Clipboard from 'expo-clipboard';
 import Pusher from 'pusher-js/react-native';
-import { createMatchingSession, joinMatchingSession, startMatching, getGroupSession } from '../src/services/api';
-import { useAuth } from "../AuthContext";
+import { createMatchSession, joinMatchSession, startMatchSession, getGroupSession, getGroupUsersById, leaveGroup } from '../src/services/api';
+import { useAuth } from "../AuthContext"; 
 import LoadingOverlay from "../components/LoadingOverlay";
 import LoadingBox from "../components/LoadingBox";
+import GenreSelector from "../components/GenreSelector";
 
 const APPBAR_HEIGHT = 60;
 const APPBAR_BOTTOM_INSET = 10;
@@ -105,10 +105,6 @@ export default function GroupCode({ navigation, route }) {
   // Error overlay (solo para errores genéricos del back)
   const [showGenericError, setShowGenericError] = useState(false);
   const outageShownRef = useRef(false); // evita overlay repetido durante la misma caída
-
-  const pusherRef = useRef(null);
-  const channelRef = useRef(null);
-
   const [loading, setLoading] = useState(false);
 
   // Matching session state
@@ -182,9 +178,8 @@ export default function GroupCode({ navigation, route }) {
         const list = await getGroupUsersById(groupId, token);
         if (!cancelled && Array.isArray(list)) {
           setMembers(list);
-          if (groupRef.members != list.length) {
-            updateUser({groups:state.user.groups.map(group => group.id != groupId ? group : {...group,members:list.length})});
-          }
+          // Update member count in state when we get authoritative member list
+          updateUser({groups:state.user.groups.map(group => group.id != groupId ? group : {...group,members:list.length})});
           outageShownRef.current = false; // volvió a responder OK
         }
       } catch (e) {
@@ -209,6 +204,10 @@ export default function GroupCode({ navigation, route }) {
 
 const userRef = useRef(state.user);
 useEffect(() => { userRef.current = state.user; }, [state.user]);
+
+// Pusher references
+const channelRef = useRef(null);
+const pusherRef = useRef(null);
 
 const currentUserEmailRef = useRef(currentUserEmail);
 useEffect(() => { currentUserEmailRef.current = currentUserEmail; }, [currentUserEmail]);
@@ -273,19 +272,19 @@ useEffect(() => {
 
         if (!mounted) return;
         setMembers(prev => {
-          // dedupe by email
+          // dedupe by email 
           if (prev.some(m => m.email === email)) return prev;
           const next = [...prev, { email, username }];
-          return next;
-        });
-
-        // update global group count atomically (functional update)
-        updateUser(prevUser => {
-          if (!prevUser) return prevUser;
-          return {
+          
+          // Update the member count based on the actual member list size
+          updateUser(prevUser => ({
             ...prevUser,
-            groups: (prevUser.groups || []).map(g => g.id === groupId ? { ...g, members: (g.members || 0) + 1 } : g)
-          };
+            groups: prevUser.groups.map(g => 
+              g.id === groupId ? { ...g, members: next.length } : g
+            )
+          }));
+          
+          return next;
         });
       };
 
@@ -305,19 +304,24 @@ useEffect(() => {
         if (!user || !Array.isArray(user.groups) || !user.groups.some(g => g.id === groupId)) return;
 
         if (!mounted) return;
+        
+        // Update members list first to get accurate count
         setMembers(prev => {
           const next = prev.filter(m => m.email !== email);
           if (next.length === prev.length) return prev; // nothing removed
-          return next;
-        });
-
-        // decrement global count atomically
-        updateUser(prevUser => {
-          if (!prevUser) return prevUser;
-          return {
+          
+          // Then update the member count based on the filtered list
+          updateUser(prevUser => ({
             ...prevUser,
-            groups: (prevUser.groups || []).map(g => g.id === groupId ? { ...g, members: Math.max(0, (g.members || 1) - 1) } : g)
-          };
+            groups: prevUser.groups.map(g => {
+              if (g.id === groupId) {
+                return { ...g, members: next.length };
+              }
+              return g;
+            })
+          }));
+          
+          return next;
         });
       };
 
@@ -607,34 +611,24 @@ useEffect(() => {
       
       if (creatingSession) {
         // Creator: Create session first, then join it
-        //console.log("Creating new session for group:", groupId);
-        const response = await createMatchingSession(groupId, token);
+        const response = await createMatchSession(groupId, token);
         const sessionId = response.session_id;
-        //console.log("Created session:", sessionId, "now joining with genres:", genres);
-        await joinMatchingSession(sessionId, genres, token);
+        await joinMatchSession(sessionId, genres, token);
         setCreatedSessionId(sessionId);
       } else {
         // Other users: Join existing session
-        //console.log("Joining existing session:", sessionData?.session_id, "with genres:", genres);
-        await joinMatchingSession(sessionData.session_id, genres, token);
+        await joinMatchSession(sessionData.session_id, genres, token);
       }
-      
-      setShowGenreModal(false);
-      setSelectedGenres([]);
-      setCreatingSession(false);
     } catch (error) {
-      console.error("Error in handleGenreSubmit:", error);
-      Alert.alert("Error", error.message || "Failed to join session");
-    } finally {
-      setSessionActionLoading(false);
+      Alert.alert("Error", error.message || "Failed to submit genres");
     }
-  };
+  }
 
   const handleStartMatching = async () => {
     try {
       setSessionActionLoading(true);
       const token = await SecureStore.getItemAsync("userToken");
-      await startMatching(sessionData.session_id, token);
+      await startMatchSession(sessionData.session_id, token);
       // Navigate to GroupSwiping screen
       navigation.navigate("GroupSwiping", { sessionId: sessionData.session_id });
     } catch (error) {
@@ -1041,65 +1035,21 @@ useEffect(() => {
         )}
       </View>
 
-      {/* Genre Selection Modal */}
-      <Modal
+      <GenreSelector 
         visible={showGenreModal}
-        animationType="slide"
-        onRequestClose={() => {
-          setSelectedGenres([]);
+        onClose={() => setShowGenreModal(false)}
+        onSubmit={async (genres) => {
+          const token = await SecureStore.getItemAsync("userToken");
+          if (creatingSession) {
+            const response = await createMatchSession(groupId, token);
+            await joinMatchSession(response.session_id, genres, token);
+          } else if (sessionData) {
+            await joinMatchSession(sessionData.session_id, genres, token);
+          }
           setShowGenreModal(false);
-          setCreatingSession(false);
         }}
-        transparent={false}
-      >
-        <View style={{ flex: 1, flexDirection:'column', padding: 25, paddingVertical: Platform.OS === 'ios' ? 70 : 35, backgroundColor: theme.colors.background }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <View style={{ width: 40 }} />
-            <Text style={{ color: theme.colors.text, fontWeight: '700', fontSize: 18, textAlign: 'center', flex: 1 }}>Select Genres</Text>
-            <TouchableOpacity
-              onPress={() => handleGenreSubmit(selectedGenres)}
-              disabled={sessionActionLoading}
-            >
-              <Text style={{ color: theme.colors.primary, fontSize: 16, fontWeight: '600', opacity: sessionActionLoading ? 0.5 : 1 }}>
-                {selectedGenres.length > 0 ? (sessionActionLoading ? 'Joining...' : 'Join') : 'Skip'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          
-          <Divider
-            style={{
-              backgroundColor: theme.colors.primary,
-              width: "100%",
-              height: 5,
-              borderRadius: 5,
-            }}
-          />
-          
-          <ScrollView contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
-            {allGenres.map(genre => (
-              <View key={genre} style={{ marginTop: 12 }}>
-                <Seleccionable
-                  label={genre}
-                  initialSelected={selectedGenres.includes(genre)}
-                  onSelect={(selected) => toggleGenre(genre, selected)}
-                  width='100%'
-                  fontSize={18}
-                />
-              </View>
-            ))}
-          </ScrollView>
-          
-          <Divider
-            style={{
-              backgroundColor: theme.colors.primary,
-              width: "100%",
-              height: 5,
-              borderRadius: 5,
-              marginBottom: 16
-            }}
-          />
-        </View>
-      </Modal>
+        loading={sessionActionLoading}
+      />
     </KeyboardAvoidingView>
   );
 }
