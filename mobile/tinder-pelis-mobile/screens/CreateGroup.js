@@ -12,6 +12,7 @@ import { createGroup } from '../src/services/api';
 import * as SecureStore from 'expo-secure-store';
 
 import ErrorOverlay from "../components/ErrorOverlay"; // ← agregado
+import { useAuth } from "../AuthContext";
 
 const APPBAR_HEIGHT = 60;
 const APPBAR_BOTTOM_INSET = 10;
@@ -21,7 +22,7 @@ export default function CreateGroup({ navigation }) {
   const { top, bottom } = useSafeAreaInsets();
   const textColor = theme.colors?.text ?? "#fff";
   const [groupName, setGroupName] = useState("");
-
+  const {updateUser,state} = useAuth();
   // loading state
   const [loading, setLoading] = useState(false);
 
@@ -53,8 +54,10 @@ export default function CreateGroup({ navigation }) {
     setLoading(true);
     try {
       const data = await createGroup(name, token); // { group_join_id: N }
+      const id = (data?.group_join_id && Number.isFinite(data.group_join_id)) ? Math.floor((data.group_join_id - 13) / 7) : null;
+      updateUser({groups:[...state.user.groups,{id:id,name:name,members:1}]})
       setLoading(false); // clear loading before navigation to avoid setState on unmounted component
-      navigation.navigate('GroupCode', { code: data.group_join_id, groupName: name});
+      navigation.navigate('GroupCode', { groupId: id, groupName: name});
     } catch (e) {
       setLoading(false);
       // Mostrar overlay SOLO si el back no especifica el error

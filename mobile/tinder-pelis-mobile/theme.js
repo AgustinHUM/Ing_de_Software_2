@@ -69,7 +69,8 @@ const defaultColors = {
   text: 'rgba(255, 255, 255, 1)',
   placeholderText: 'rgba(255,255,255,0.4)',
   disabled: 'rgba(189, 189, 189, 1)',
-
+  errorContainer: 'rgba(180,120,120,1)',
+  onErrorContainer: 'rgba(80,0,0,1)',
   // info
   success: '#2e7d32',
   warning: '#ebd300ff',

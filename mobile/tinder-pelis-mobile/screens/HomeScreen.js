@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Modal, TouchableOpacity, FlatList, ScrollView, Image, Platform } from 'react-native';
+import { View, Modal, StyleSheet, TouchableOpacity, FlatList, ScrollView, Image, Platform } from 'react-native';
 import { Divider, Text, useTheme } from 'react-native-paper';
 import SearchBar from '../components/Searchbar';
 import Seleccionable from '../components/Seleccionable';
@@ -8,7 +8,8 @@ import FilmDisplay from '../components/FilmDisplay';
 import LoadingBox from '../components/LoadingBox';
 import GradientButton from '../components/GradientButton';
 import * as SecureStore from 'expo-secure-store';
-import { homeMovies } from '../src/services/api';
+import { homeMovies, createSoloMatch } from '../src/services/api';
+import GenreSelector from '../components/GenreSelector';
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -78,6 +79,9 @@ export default function HomeScreen() {
 
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showGenreSelector, setShowGenreSelector] = useState(false);
+  const [matchLoading, setMatchLoading] = useState(false);
+
    useEffect(() => {
    const fetchMovies = async () => {
      setLoading(true);
@@ -105,12 +109,29 @@ export default function HomeScreen() {
     : movies.filter(movie => activeFilters.every(f => movie.genres.includes(f)));
   // --------------------------------------------------------------------------------------------
 
+  const matchButtonStyle = {
+      borderBottomLeftRadius: 8,
+      borderBottomRightRadius: 8,
+      borderTopLeftRadius: 32,
+      borderTopRightRadius: 32,
+      overflow: 'hidden',
+      height: 40,
+      alignSelf:'center',
+      justifyContent: 'center',
+      width:150,
+      boxShadow: [{
+                      offsetX: 0,
+                      offsetY: 0,
+                      blurRadius: 14,
+                      spread: 0,
+                      color: theme.colors.primary,
+                      }]
+    };
+
   return (
     <View style={{ flex: 1, padding: '1%', flexDirection:'column' }}>
-      <ScrollView
-        style={{paddingTop:'20%', flex:0.75, backgroundColor: 'transparent'}}
-        contentContainerStyle={{ flexGrow: 1, }}
-        showsVerticalScrollIndicator={false}
+      <View
+        style={{paddingTop:'17%', flex:0.75,flexGrow:1, backgroundColor: 'transparent'}}
       >
 
         <View style={{ alignItems: 'center' }}>
@@ -121,7 +142,7 @@ export default function HomeScreen() {
          <Text variant='bodyMedium' style={{ color: theme.colors.text }}>What are we watching today?</Text>
        </View>
 
-        <View style={{padding:'5%', flex:1, gap:15}}>
+        <View style={{padding:'5%', flex:1, gap:15, backgroundColor:'transparent'}}>
 
           <View >
             <SearchBar />
@@ -178,7 +199,7 @@ export default function HomeScreen() {
               </Text>
             </View>
 
-            <View style={{paddingTop:16, flexDirection: 'row', flexWrap: 'wrap', justifyContent:'space-between' }}>
+            <View style={{paddingTop:16, flexDirection: 'row', flexWrap: 'wrap', justifyContent:'space-between',height: 350 }}>
              {loading ? (
                placeholders.map((_, idx) => (
                  <View key={`ph-${idx}`} style={{ width: '30%' }}>
@@ -216,11 +237,35 @@ export default function HomeScreen() {
             </View>
 
           </View>
+          <GradientButton 
+            style={[matchButtonStyle]} 
+            inverted={true}
+            loading={matchLoading}
+            onPress={() => setShowGenreSelector(true)}
+          > 
+            <Text style={{color: theme?.colors?.onGradient ?? theme.colors.text,fontSize:16,fontWeight:700}}>MATCH</Text>
+          </GradientButton>
 
-          <View style={{height:180}} />
+          <GenreSelector 
+            visible={showGenreSelector}
+            onClose={() => setShowGenreSelector(false)}
+            onSubmit={async (genres) => {
+              setMatchLoading(true);
+              const token = await SecureStore.getItemAsync("userToken");
+              const session = await createSoloMatch(token, genres);
+              navigation.navigate("GroupSwiping", { 
+                sessionId: session.session_id,
+                isSoloSession: true
+              });
+              setMatchLoading(false);
+              setShowGenreSelector(false);
+            }}
+            loading={matchLoading}
+          />
         </View>
-
-      </ScrollView>
+      
+      </View>
+      
 
  <Modal
        visible={showMore}

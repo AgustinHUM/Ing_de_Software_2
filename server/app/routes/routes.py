@@ -4,6 +4,7 @@ from ..controllers.user_actions_controller import *
 from ..controllers.movie_controller import *
 from ..controllers.group_controller import *
 from ..controllers.user_config_controller import *
+from ..controllers.match_session_controller import *
 
 
 """
@@ -107,6 +108,9 @@ def join_group_route():
 def group_users_route():
     return get_group_users()
 
+@grupo_bp.route("/groups/leave", methods=["POST"])
+def leave_group_route():
+    return leave_group()
 
 
 
@@ -150,3 +154,39 @@ def show_favorites_route():
 @usuario_bp.route("/user/to_favorite", methods=["POST"])
 def add_favourite_route():
     return add_remove_favorite_movie()
+
+
+"""
++--------------------------------- MATCHING SESSIONS ---------------------------------+
+Blueprints: Gestionar match 
+"""
+
+match_bp = Blueprint("match", __name__)
+
+@match_bp.route("/match/create_session", methods=["POST"])
+def create_session_route():
+    return create_session()
+
+@match_bp.route("/match/join_session", methods=["POST"])
+def join_session_route():
+    return join_session()
+
+@match_bp.route("/match/start_matching", methods=["POST"])
+def start_matching_route():
+    return start_matching()
+
+@match_bp.route("/match/submit_votes", methods=["POST"])
+def submit_votes_route():
+    return submit_votes()
+
+@match_bp.route("/match/end_session", methods=["POST"])
+def end_session_route():
+    return end_session()
+
+@match_bp.route("/match/session_status/<session_id>", methods=["GET"])
+def get_session_status_route(session_id):
+    return get_session_status()
+
+@match_bp.route("/match/group_session/<group_id>", methods=["GET"])
+def get_group_session_route(group_id):
+    return get_group_session()

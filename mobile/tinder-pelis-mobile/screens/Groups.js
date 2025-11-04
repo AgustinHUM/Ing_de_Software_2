@@ -1,13 +1,13 @@
 // Groups.js
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Pressable,
   TouchableOpacity,
   Dimensions,
-  FlatList,
   Alert,
   ScrollView,
+  RefreshControl,
 } from "react-native";
 import {
   ActivityIndicator,
@@ -29,6 +29,7 @@ import SearchBar from "../components/Searchbar";
 import Seleccionable from "../components/Seleccionable";
 import LoadingBox from "../components/LoadingBox";
 import { tweakColor } from "../theme";
+import { useAuth } from "../AuthContext";
 
 const { width } = Dimensions.get("window");
 
@@ -48,7 +49,7 @@ export default function GroupsHome({ navigation }) {
   const paperTheme = usePaperTheme(); // react-native-paper theme (Seleccionable uses paper theme)
   const { bottom } = useSafeAreaInsets();
   const textColor = theme.colors?.text ?? "#fff";
-
+  const { state, updateUser } = useAuth();
   const gradStart = theme?.colors?.primary ?? "#FF8A00";
   const gradEnd =
     theme?.colors?.secondary ??
@@ -62,7 +63,11 @@ export default function GroupsHome({ navigation }) {
   const [search, setSearch] = useState("");
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false); // <-- new: pull-to-refresh state
   const [showGenericError, setShowGenericError] = useState(false);
+
+  // mounted ref so async calls don't update after unmount
+  const mountedRef = useRef(true);
 
   const isGenericBackendError = (err) => {
     const msg = (err?.message || "").toLowerCase();
@@ -74,42 +79,74 @@ export default function GroupsHome({ navigation }) {
     );
   };
 
-  useFocusEffect(
-    React.useCallback(() => {
-      let mounted = true;
-      const fetchGroups = async () => {
-        setLoading(true);
-        try {
-          const token = await SecureStore.getItemAsync("userToken");
-          if (token) {
-            const userGroups = await getUserGroups(token);
-            if (mounted) setGroups(userGroups || []);
-          } else {
-            if (mounted) setGroups([]);
+  // fetchGroups extracted so it can be reused for initial load and refresh
+  const fetchGroups = React.useCallback(
+    async ({ showLoading = true } = {}) => {
+      if (!mountedRef.current) return;
+      if (showLoading) setLoading(true);
+      try {
+        const token = await SecureStore.getItemAsync("userToken");
+        if (token) {
+          const userGroups = await getUserGroups(token);
+          if (mountedRef.current) {
+            setGroups(userGroups || []);
+            updateUser({ groups: userGroups || [] });
           }
-        } catch (error) {
-          console.error(error);
-          if (isGenericBackendError(error)) {
-            setShowGenericError(true);
-          } else {
-            Alert.alert(
-              "Error",
-              error.message || "An error occurred while looking for your groups."
-            );
-          }
-          if (mounted) setGroups([]);
-        } finally {
-          if (mounted) setLoading(false);
+        } else {
+          if (mountedRef.current) setGroups([]);
         }
-      };
-
-      fetchGroups();
-
-      return () => {
-        mounted = false;
-      };
-    }, [])
+      } catch (error) {
+        console.error(error);
+        if (isGenericBackendError(error)) {
+          setShowGenericError(true);
+        } else {
+          Alert.alert(
+            "Error",
+            error?.message ||
+              error?.msg ||
+              error?.error ||
+              "An error occurred while looking for your groups."
+          );
+        }
+        if (mountedRef.current) setGroups([]);
+      } finally {
+        if (mountedRef.current && showLoading) setLoading(false);
+      }
+    },
+    [updateUser]
   );
+
+useFocusEffect(
+  React.useCallback(() => {
+    mountedRef.current = true;
+
+    const user = state?.user;
+    const userHasGroupsProp =
+      user != null && Object.prototype.hasOwnProperty.call(user, "groups");
+
+    if (userHasGroupsProp) {
+      // user.groups exists (could be [], null, or an array) — use it
+      setGroups(user.groups ?? []);
+    } else {
+      // we haven't fetched groups yet
+      fetchGroups({ showLoading: true });
+    }
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [fetchGroups, state?.user])
+);
+
+  // onRefresh triggered by pull-to-refresh
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchGroups({ showLoading: false });
+    } finally {
+      if (mountedRef.current) setRefreshing(false);
+    }
+  }, [fetchGroups]);
 
   const availableWidth = width - 2 * OUTER_PAD - 2 * CONTENT_PAD;
 
@@ -117,7 +154,6 @@ export default function GroupsHome({ navigation }) {
   const fabBottom = FAB_MARGIN + APPBAR_BOTTOM_INSET + APPBAR_HEIGHT + bottom;
   const popupRight = FAB_MARGIN + FAB_SIZE + POPUP_GAP;
 
-  // filter groups using the current search string (simple substring match)
   const filteredGroups =
     (search || "").trim().length > 0
       ? groups.filter((g) => (g.name || "").toLowerCase().includes(search.toLowerCase()))
@@ -165,7 +201,25 @@ export default function GroupsHome({ navigation }) {
               );
             })}
           </View>
-        ) : filteredGroups.length === 0 ? (
+        ) : (
+          <ScrollView
+            contentContainerStyle={{ paddingBottom: 128, flexGrow: 1, minHeight: "100%" }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            alwaysBounceVertical={true}
+            bounces={true}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={theme.colors.secondary}
+                colors={[theme.colors.primary]} 
+                progressBackgroundColor={theme.colors.background}
+                
+              />
+            }
+          >
+            {filteredGroups.length === 0 ? (
           <View style={{ flex: 1, alignItems: "center", paddingTop: 64 }}>
             <Text style={{ fontSize: 28, fontWeight: "800", marginBottom: 8, color: textColor }}>
               Looks empty...
@@ -182,17 +236,13 @@ export default function GroupsHome({ navigation }) {
             </Text>
           </View>
         ) : (
-          <ScrollView
-            contentContainerStyle={{ paddingBottom: 128 }}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
+            <>
             {filteredGroups.map((item) => {
               const members = item.members ?? 1;
               const label = item.name ?? "Untitled group";
-              const red_variation = (item.id % 81 - 40) * Math.sqrt(item.members);
-              const green_variation = (item.id % 81 - 40) * Math.sqrt(item.members);
-              const blue_variation = (item.id % 81 - 40) * Math.sqrt(item.members);
+              const red_variation = ((item.id * 732) % 81 - 40) * Math.sqrt(item.members);
+              const green_variation = ((item.id * 127) % 81 - 40) * Math.sqrt(item.members);
+              const blue_variation = ((item.id * 247) % 81 - 40) * Math.sqrt(item.members);
               return (
                 <TouchableOpacity
                   key={String(item.id)}
@@ -254,6 +304,8 @@ export default function GroupsHome({ navigation }) {
                 </TouchableOpacity>
               );
             })}
+            </>
+          )}
 
             {/* footer spacer */}
             <View style={{ height: 8 }} />
@@ -343,7 +395,7 @@ export default function GroupsHome({ navigation }) {
                 setShowPopup(false);
                 navigation.navigate("CreateGroup");
               }}
-              style={{ marginTop: 32, marginLeft: 16 }}
+              style={{ marginTop: 32 }}
             >
               Create group
             </GradientButton>
@@ -355,6 +407,7 @@ export default function GroupsHome({ navigation }) {
                 setShowPopup(false);
                 navigation.navigate("JoinGroup");
               }}
+              style={{marginLeft:16}}
             >
               Join group
             </GradientButton>
