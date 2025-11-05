@@ -1,4 +1,3 @@
-// src/components/Sidebar.jsx
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -52,6 +51,8 @@ export default function Sidebar() {
           Dashboard
         </NavLink>
 
+        {/* Oculto por ahora (no hay backend aún) */}
+        {/*
         <NavLink
           to="/logs"
           style={({ isActive }) => ({
@@ -61,7 +62,10 @@ export default function Sidebar() {
         >
           Logs
         </NavLink>
+        */}
 
+        {/* Oculto por ahora (no hay backend aún) */}
+        {/*
         <NavLink
           to="/movies"
           style={({ isActive }) => ({
@@ -70,6 +74,18 @@ export default function Sidebar() {
           })}
         >
           Películas
+        </NavLink>
+        */}
+
+        {/* Nuevo: Administradores */}
+        <NavLink
+          to="/admins"
+          style={({ isActive }) => ({
+            ...baseStyle,
+            ...(isActive ? activeStyle : {}),
+          })}
+        >
+          Administradores
         </NavLink>
       </nav>
 

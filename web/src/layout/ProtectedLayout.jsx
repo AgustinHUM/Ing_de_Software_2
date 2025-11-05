@@ -1,11 +1,16 @@
-import { Outlet, Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import { useAuth } from "../context/AuthContext";
 
-export default function ProtectedLayout() {
-  const { auth } = useAuth();
+// Si está en producción, bypassa la autenticación
+const BYPASS = import.meta.env.VITE_BYPASS_AUTH === "1";
 
-  if (!auth) return <Navigate to="/login" replace />;
+export default function ProtectedLayout() {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated && !BYPASS) {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <>

@@ -1,27 +1,38 @@
-// src/services/auth.js
-const FAKE_USER = { email: "admin@movies.app", password: "admin123", name: "Admin" };
-const STORAGE_KEY = "auth:v1";
-const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+import { api, setStoredAuth, clearStoredAuth, getStoredAuth } from "./api";
 
-export async function login(email, password) {
-  await delay(500); // simula latencia
-  if (email === FAKE_USER.email && password === FAKE_USER.password) {
-    const auth = { token: "mock-token", user: { name: FAKE_USER.name, email } };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(auth));
-    return auth;
-  }
-  throw new Error("Credenciales inválidas");
-}
+const ADMIN_LOGIN_PATH = "/admin/login";
+const BYPASS = import.meta.env.VITE_BYPASS_AUTH === "1";
 
-export function logout() {
-  localStorage.removeItem(STORAGE_KEY);
-}
-
-export function getStoredAuth() {
+export async function adminLogin(email, password) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
+    const data = await api.post(ADMIN_LOGIN_PATH, { email, password });
+    const auth = {
+      user: { name: data.nombre_cuenta, email, isAdmin: true },
+      tokens: {
+        id_token: data.id_token,
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+      },
+    };
+    setStoredAuth(auth);
+    return auth;
+  } catch (e) {
+    if (BYPASS) {
+      const auth = {
+        user: { name: "Admin Dev", email: email || "admin@dev.local", isAdmin: true },
+        tokens: { id_token: "dev.id", access_token: "dev.access", refresh_token: "dev.refresh" },
+      };
+      setStoredAuth(auth);
+      return auth;
+    }
+    throw e;
   }
+}
+
+export function logoutAuth() {
+  clearStoredAuth();
+}
+
+export function getAuth() {
+  return getStoredAuth();
 }
