@@ -11,7 +11,11 @@ def admin_create():
     if request.method == "POST":
         info = request.get_json() if request.is_json else request.form
 
-        admin_creador = get_token_admin(request, "Administrator (creator) not found")
+        # Permitir crear el PRIMER admin sin token
+        if Admin.query.count() == 0:
+            admin_creador = None
+        else:
+            admin_creador = get_token_admin(request, "Administrator (creator) not found")
 
         mail = info.get("email")
         nombre_usuario = info.get("username")
@@ -42,9 +46,14 @@ def admin_create():
                 Permanent=True
             )
         except Config.COGNITO_CLIENT.exceptions.UsernameExistsException:
-            return jsonify({"msg":"Administrator already exists"}), 400 
+            return jsonify({"msg":"Administrator already exists in cognito"}), 400 
         
-        n_admin = Admin(mail=mail, nombre_cuenta = nombre_usuario, contrasenia = hash_contr, mail_creador = admin_creador.mail)
+        n_admin = Admin(
+            mail=mail,
+            nombre_cuenta=nombre_usuario,
+            contrasenia=hash_contr,
+            mail_creador = admin_creador.mail if admin_creador else None
+        )
         db.session.add(n_admin)
         db.session.commit()
 
@@ -75,6 +84,7 @@ def admin_delete():
         db.session.commit()
 
         return jsonify({"msg": "Administrator deleted successfully"}), 200
+    
     
 
 def admin_user_count():
