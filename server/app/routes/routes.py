@@ -4,7 +4,11 @@ from ..controllers.user_actions_controller import *
 from ..controllers.movie_controller import *
 from ..controllers.group_controller import *
 from ..controllers.user_config_controller import *
+<<<<<<< HEAD
 from ..controllers.match_session_controller import *
+=======
+from ..controllers.admin_controller import *
+>>>>>>> rama_lautaro
 
 
 """
@@ -156,6 +160,7 @@ def add_favourite_route():
     return add_remove_favorite_movie()
 
 
+<<<<<<< HEAD
 """
 +--------------------------------- MATCHING SESSIONS ---------------------------------+
 Blueprints: Gestionar match 
@@ -190,3 +195,54 @@ def get_session_status_route(session_id):
 @match_bp.route("/match/group_session/<group_id>", methods=["GET"])
 def get_group_session_route(group_id):
     return get_group_session()
+=======
+
+
+"""
++------------------------------------- ADMIN --------------------------------------+
+"""
+
+admin_bp = Blueprint("admin", __name__)
+
+@admin_bp.route("/admin/home", methods=["GET"])
+def admin_home_route():
+    return "Admin Home"
+
+@admin_bp.route("/admin/login", methods=["GET"])
+def admin_login_route():
+    return handle_admin_login()
+
+@admin_bp.route("/admin/create", methods=["POST"])
+def admin_create_route():
+    return admin_create()
+
+@admin_bp.route("/admin/delete", methods=["DELETE"])
+def admin_delete_route():
+    return admin_delete()
+
+@admin_bp.route("/admin/home/user_count", methods=["GET"])
+def admin_user_count_route():
+    return admin_user_count()
+
+@admin_bp.route("/admin/home/most_rated_movies", methods=["GET"])
+def admin_rated_movies_route():
+    return get_most_rated_movies()
+#Debería recibir algo como esto:
+#GET /admin/home/most_rated_movies?page=2&per_page=10
+
+@admin_bp.route("/admin/home/users_most_favourites", methods=["GET"])
+def admin_users_most_fv():
+    return get_users_most_favourite_movies()
+#Debería recibir algo como esto:
+#GET /admin/home/users_most_favourites?page=2&per_page=10
+
+
+"""
++------------------------------------- RECOMMENDATIONS --------------------------------------+
+"""
+rec_bp = Blueprint("recommendations", __name__)
+
+@rec_bp.route("/recommendations/movies", methods=["GET"])
+def recommend_movies_route():
+    return recommend_movies()
+>>>>>>> rama_lautaro

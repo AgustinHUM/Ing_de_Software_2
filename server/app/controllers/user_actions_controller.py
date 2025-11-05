@@ -134,3 +134,42 @@ def get_seen_movies():
             "rating": user_movie.rating,
             "poster": pelicula.url_poster,
         } for user_movie, pelicula in peliculas_vistas]), 200
+    
+
+"""
++-------------------------------------- RECOMMENDATION -----------------------------------------+
+"""
+def recommend_movies():
+    if request.method == "GET":
+
+        data = request.json
+        mails = data.get("users") # lista de mails de usuarios del grupo
+
+        if not mails:
+            return jsonify({"msg": "No users provided"}), 400
+
+
+        for mail in mails:
+            calc_vector_usuario(mail)
+
+        db.session.commit()
+
+        recs = recomendar_grupo(mails)
+
+        pelis_ids = [r.movie_id for r in recs]
+        peliculas = (
+            db.session.query(Pelicula)
+            .filter(Pelicula.id_pelicula.in_(pelis_ids))
+            .all()
+        )
+
+        peliculas_map = {p.id_pelicula: p for p in peliculas}
+        peliculas_ordenadas = [peliculas_map[id] for id in pelis_ids]
+
+        res = [{
+            "id": p.id_pelicula,
+            "title": p.titulo,
+            "poster": p.url_poster,
+        } for p in peliculas_ordenadas]
+
+        return jsonify(res)

@@ -7,8 +7,8 @@ from ..functions.aux_functions import *
 
 """
 +------------------------------------ REGISTER ------------------------------------+
-
 """
+
 def handle_register(info = None):
     if request.method == "POST":
         if request.is_json:
@@ -107,3 +107,55 @@ def handle_login():
         except Exception as e:
             return jsonify({"msg": "Cognito error", "detail": str(e)}), 500
         
+
+
+def handle_admin_login():
+    if request.method == "POST":
+        if request.is_json:
+            info = request.get_json()
+        else:
+            info = request.form
+
+        mail = info.get("email")
+        contrasenia = info.get("password")
+
+
+        admin = Admin.query.filter_by(mail=mail).first()
+        if not admin:
+            return jsonify({"msg": "Auth credentials error"}), 401
+        
+        if admin.esta_eliminado == True:
+            return jsonify({"msg": "This administrator account in no longer active"}), 401
+
+        if not bcrypt.check_password_hash(admin.contrasenia, contrasenia):
+            return jsonify({"msg": "Auth credentials error"}), 401
+
+        auth_params = {
+            "USERNAME": mail,
+            "PASSWORD": contrasenia,
+            "SECRET_HASH": get_secret_hash(
+                mail,
+                Config.COGNITO_CLIENT_ID,
+                Config.COGNITO_CLIENT_SECRET
+            )
+        }
+
+        try:
+            resp = Config.COGNITO_CLIENT.initiate_auth(
+                ClientId=Config.COGNITO_CLIENT_ID,
+                AuthFlow="USER_PASSWORD_AUTH",
+                AuthParameters=auth_params
+            )
+
+            return jsonify({
+                "id_token": resp["AuthenticationResult"]["IdToken"],
+                "access_token": resp["AuthenticationResult"]["AccessToken"],
+                "refresh_token": resp["AuthenticationResult"]["RefreshToken"],
+                "nombre_cuenta": admin.nombre_cuenta,
+            }), 200
+
+        except Config.COGNITO_CLIENT.exceptions.NotAuthorizedException:
+            return jsonify({"msg": "Auth credentials error"}), 401
+
+        except Exception as e:
+            return jsonify({"msg": "Cognito error", "detail": str(e)}), 500
