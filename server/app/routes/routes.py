@@ -165,7 +165,7 @@ admin_bp = Blueprint("admin", __name__)
 def admin_home_route():
     return "Admin Home"
 
-@admin_bp.route("/admin/login", methods=["GET"])
+@admin_bp.route("/admin/login", methods=["POST"])
 def admin_login_route():
     return handle_admin_login()
 
