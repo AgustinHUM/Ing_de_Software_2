@@ -76,6 +76,7 @@ def admin_delete():
 
         return jsonify({"msg": "Administrator deleted successfully"}), 200
     
+    
 
 def admin_user_count():
     if request.method == "GET":

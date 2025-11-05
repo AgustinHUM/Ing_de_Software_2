@@ -3,7 +3,7 @@ from ..models.models import *
 from ..config import Config, bcrypt
 import hmac, hashlib, base64
 from flask import request, jsonify
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, text
 from sqlalchemy.orm import joinedload
 import jwt
 
@@ -189,4 +189,24 @@ def get_paginated_fm(page=1, per_page=10):
     offset_value = (page - 1) * per_page
     res = query.limit(per_page).offset(offset_value).all()
     return res
+
+"""
++------------------------------------ ADMIN FUNCTIONS ------------------------------------+
+"""
+
+def calc_vector_usuario(mail):
+    sql = text("SELECT calcular_vector_usuario(:m)")
+    db.session.execute(sql, {"m": mail})
+
+def recomendar_grupo(mails):
+    sql = text("""
+        SELECT * FROM recomendar_peliculas(
+            :mails,
+            NULL,            -- plataformas filtro
+            NULL,            -- países filtro
+            10               -- límite de películas
+        );
+    """)
+    result = db.session.execute(sql, {"mails": mails})
+    return result.fetchall()
 

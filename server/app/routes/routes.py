@@ -192,3 +192,13 @@ def admin_users_most_fv():
     return get_users_most_favourite_movies()
 #Debería recibir algo como esto:
 #GET /admin/home/users_most_favourites?page=2&per_page=10
+
+
+"""
++------------------------------------- RECOMMENDATIONS --------------------------------------+
+"""
+rec_bp = Blueprint("recommendations", __name__)
+
+@rec_bp.route("/recommendations/movies", methods=["GET"])
+def recommend_movies_route():
+    return recommend_movies()
