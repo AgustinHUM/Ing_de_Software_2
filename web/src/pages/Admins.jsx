@@ -6,6 +6,7 @@ export default function Admins() {
   const [createEmail, setCreateEmail] = useState("");
   const [createUsername, setCreateUsername] = useState("");
   const [createPassword, setCreatePassword] = useState("");
+  const [showCreatePass, setShowCreatePass] = useState(false);
   // Eliminar
   const [deleteEmail, setDeleteEmail] = useState("");
   // UI state
@@ -101,15 +102,25 @@ export default function Admins() {
 
             <label style={{ display: "grid", gap: 6 }}>
               <span style={labelSpanStyle}>Contraseña temporal</span>
-              <input
-                type="password"
-                value={createPassword}
-                onChange={(e) => setCreatePassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                style={inputStyle}
-                autoComplete="new-password"
-              />
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showCreatePass ? "text" : "password"}   // 👈 toggle
+                  value={createPassword}
+                  onChange={(e) => setCreatePassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  style={{ ...inputStyle, paddingRight: 200 }}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"                                  // 👈 no envía el form
+                  onClick={() => setShowCreatePass(v => !v)}
+                  style={ghostBtnStyle}
+                  aria-label={showCreatePass ? "Ocultar contraseña" : "Mostrar contraseña"}
+                >
+                  {showCreatePass ? "Ocultar" : "Mostrar"}
+                </button>
+              </div>
             </label>
 
             <button
@@ -174,6 +185,12 @@ export default function Admins() {
 
 /* === estilos consistentes con Login/Dashboard === */
 const labelSpanStyle = { fontSize: 12, opacity: .8 };
+
+const ghostBtnStyle = {
+  position: "absolute", right: 6, top: 6, padding: "8px 10px",
+  borderRadius: 10, border: "1px solid var(--panel-border, #2a2a2f)",
+  background: "transparent", color: "var(--text)", fontSize: 12, cursor: "pointer"
+};
 
 const inputStyle = {
   background: "var(--input, #0f0f12)",

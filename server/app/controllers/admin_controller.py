@@ -89,7 +89,7 @@ def admin_delete():
 
 def admin_user_count():
     if request.method == "GET":
-        cantidad = db.session.query(func.count(Usuario.id_usuario)).scalar()
+        cantidad = db.session.query(func.count()).select_from(Usuario).scalar()
         return jsonify({"user_count": cantidad}), 200
 
 
