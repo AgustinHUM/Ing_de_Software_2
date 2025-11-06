@@ -10,3 +10,6 @@ def register_routes(app):
     app.register_blueprint(forms_bp)
     app.register_blueprint(usuario_bp)
     app.register_blueprint(seen_movies_bp)
+    app.register_blueprint(match_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(rec_bp)

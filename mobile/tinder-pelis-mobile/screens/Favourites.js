@@ -1,4 +1,4 @@
-// Favorites.js
+
 import React, { useEffect, useState } from 'react';
 import { View, ScrollView, Platform } from 'react-native';
 import { ActivityIndicator, Text, useTheme } from 'react-native-paper';

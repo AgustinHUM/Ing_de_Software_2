@@ -1,10 +1,9 @@
 from flask import request, redirect, jsonify
+from ..functions.aux_functions import *
 from sqlalchemy.orm import joinedload
 from ..models.models import *
 from ..config import Config
 from ..db import db
-import random
-import jwt
 
 """
 +------------------------------------ FAVOURITES ------------------------------------+
@@ -19,69 +18,43 @@ def add_remove_favorite_movie():
 
         id_pelicula = info.get("movie_id")
         if not id_pelicula:
-            return jsonify({"Error": "Falta movie_id"}), 400
+            return jsonify({"msg": "Movie id is missing"}), 400
 
         pelicula = Pelicula.query.filter_by(id_pelicula=id_pelicula).first()
         if not pelicula:
-            return jsonify({"Error": "No se encuentra la película"}), 404
+            return jsonify({"msg": "Cannot find specified movie"}), 404
 
-        token = request.headers.get("Authorization", "").replace("Bearer ", "")
-        if not token:
-            print("No se recibió token")
-            return jsonify({"Error": "No se recibió token"}), 401
-
-        payload = jwt.decode(token, options={"verify_signature": False})
-        mail_usuario = payload.get("email")
-
-        if not mail_usuario:
-            return jsonify({"Error": "No se pudo obtener email del token"}), 401
-        
-        usuario = Usuario.query.filter_by(mail=mail_usuario).first()
-        if not usuario:
-            print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
-            return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+        usuario = get_token_user_fav(request)
 
         accion = info.get("action", "add").lower()
+
         if accion == "remove":
             if pelicula not in usuario.favoritas:
-                return jsonify({"msg": "La película no está en favoritas"}), 200
+                return jsonify({"msg": "Cannot find this movie in favourites"}), 200
 
             usuario.favoritas.remove(pelicula)
             db.session.commit()
-            return jsonify({"msg": "Película removida de favoritas con éxito"}), 200
+
+            return jsonify({"msg": "Movie removed from favourites successfully"}), 200
 
         else:  # acción por defecto es "add"
             if pelicula in usuario.favoritas:
-                return jsonify({"msg": "La película ya está en favoritas"}), 200
+                return jsonify({"msg": "Movie is already in favourites"}), 200
 
             usuario.favoritas.append(pelicula)
             db.session.commit()
 
-            return jsonify({"msg": "Película agregada a favoritas con éxito"}), 200
+            return jsonify({"msg": "Movie added successfully"}), 200
         
 
 def show_favorites():
     if request.method == "GET":
-        token = request.headers.get("Authorization", "").replace("Bearer ", "")
-        if not token:
-            print("No se recibió token")
-            return jsonify({"Error": "No se recibió token"}), 401
 
-        payload = jwt.decode(token, options={"verify_signature": False})
-        mail_usuario = payload.get("email")
+        usuario = get_token_user_fav(request)
 
-        if not mail_usuario:
-            return jsonify({"Error": "No se pudo obtener email del token"}), 401
-        
-        usuario = Usuario.query.filter_by(mail=mail_usuario).first()
-        if not usuario:
-            print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
-            return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
-
-        favoritas = usuario.favoritas or []
         lista = [{"id": peli.id_pelicula, 
                   "title": peli.titulo, 
-                  "poster": peli.url_poster} for peli in favoritas]
+                  "poster": peli.url_poster} for peli in usuario.favoritas]
         
         return jsonify(lista), 200
 
@@ -96,90 +69,47 @@ def rate_movie():
         else:
             info = request.form
 
-        token = request.headers.get("Authorization", "").replace("Bearer ", "")
-        if not token:
-            print("No se recibió token")
-            return jsonify({"Error": "No se recibió token"}), 401
-
-        try:
-            payload = jwt.decode(token, options={"verify_signature": False})
-            mail_usuario = payload.get("email") if payload else None
-        except jwt.DecodeError as e:
-            print(f"Error decodificando token: {e}")
-            return jsonify({"Error": "Token inválido"}), 401
-        except Exception as e:
-            print(f"Error inesperado con token: {e}")
-            return jsonify({"Error": "Error procesando token"}), 401
-
-        if not mail_usuario:
-            return jsonify({"Error": "No se pudo obtener email del token"}), 401
-        
-        usuario = Usuario.query.filter_by(mail=mail_usuario).first()
-        if not usuario:
-            print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
-            return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+        usuario = get_token_user(request, "User not found")
 
         movie_id = int(info.get("movie_id")) if info.get("movie_id") else None
         rating = int(info.get("rating")) if info.get("rating") else None
-
+        
         if not movie_id or rating is None:
-            return jsonify({"error": "movie_id y rating son requeridos"}), 400
+            return jsonify({"msg": "movieId y rating son requeridos"}), 400
 
         pelicula = Pelicula.query.filter_by(id_pelicula=movie_id).first()
         if not pelicula:
-            return jsonify({"error": "Película no encontrada"}), 404
+            return jsonify({"msg": "Película no encontrada"}), 404
 
         user_movie = UsuarioVioPeli.query.filter_by(
-            mail_usuario=mail_usuario,
+            mail_usuario=usuario.mail,
             id_pelicula=movie_id
         ).first()
 
         if user_movie:
             user_movie.rating = rating
         else:
-            nueva_relacion = UsuarioVioPeli(
-                mail_usuario=mail_usuario,
-                id_pelicula=movie_id,
-                rating=rating
-            )
-            db.session.add(nueva_relacion)
+            db.session.add(UsuarioVioPeli(mail_usuario=usuario.mail, id_pelicula=movie_id, rating=rating))
+
 
         db.session.commit()
 
-        return jsonify({"message": "Calificación guardada con éxito"}), 200
+        return jsonify({"msg": "Score saved"}), 200
 
 
 def get_user_rating():
     if request.method == "GET":
-        token = request.headers.get("Authorization", "").replace("Bearer ", "")
-        if not token:
-            print("No se recibió token")
-            return jsonify({"Error": "No se recibió token"}), 401
 
-        payload = jwt.decode(token, options={"verify_signature": False})
-        mail_usuario = payload.get("email")
-
-        if not mail_usuario:
-            return jsonify({"Error": "No se pudo obtener email del token"}), 401
-        
-        usuario = Usuario.query.filter_by(mail=mail_usuario).first()
-        if not usuario:
-            print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
-            return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+        usuario = get_token_user(request, "User not found")
 
         movie_id = request.args.get("movie_id", type=int)
         
         user_movie = UsuarioVioPeli.query.filter_by(
-            mail_usuario=mail_usuario,
+            mail_usuario=usuario.mail,
             id_pelicula=movie_id
         ).first()
             
-        if user_movie:
-            return jsonify({
-                "rating": user_movie.rating
-            }), 200
-        else:
-            return jsonify({"rating": None}), 200
+        return jsonify({"rating": user_movie.rating if user_movie else None}), 200
         
 
 """
@@ -188,28 +118,15 @@ def get_user_rating():
 
 def get_seen_movies():
     if request.method == "GET":
-        token = request.headers.get("Authorization", "").replace("Bearer ", "")
-        if not token:
-            print("No se recibió token")
-            return jsonify({"Error": "No se recibió token"}), 401
 
-        payload = jwt.decode(token, options={"verify_signature": False})
-        mail_usuario = payload.get("email")
-
-        if not mail_usuario:
-            return jsonify({"Error": "No se pudo obtener email del token"}), 401
-
-        usuario = Usuario.query.filter_by(mail=mail_usuario).first()
-        if not usuario:
-            print(f"Usuario con mail \"{mail_usuario}\" no encontrado")
-            return jsonify({"error": f"Usuario con mail \"{mail_usuario}\" no encontrado"}), 404
+        usuario = get_token_user(request, "User not found")
 
         peliculas_vistas = db.session.query(UsuarioVioPeli, Pelicula).join(
             Pelicula, UsuarioVioPeli.id_pelicula == Pelicula.id_pelicula
-        ).filter(UsuarioVioPeli.mail_usuario == mail_usuario).all()
+        ).filter(UsuarioVioPeli.mail_usuario == usuario.mail).all()
         
         if not peliculas_vistas:
-            return jsonify([]), 200
+            return jsonify({"msg": "Could not fetch seen movies"}), 200
 
         return jsonify([{
             "id": user_movie.id_pelicula,
@@ -217,3 +134,38 @@ def get_seen_movies():
             "rating": user_movie.rating,
             "poster": pelicula.url_poster,
         } for user_movie, pelicula in peliculas_vistas]), 200
+    
+
+"""
++-------------------------------------- RECOMMENDATION -----------------------------------------+
+"""
+def recommend_movies(mails):
+        if not mails:
+            return None
+
+        for mail in mails:
+            calc_vector_usuario(mail)
+            db.session.commit()
+
+
+        db.session.commit()
+
+        recs = recomendar_grupo(mails)
+
+        pelis_ids = [r.movie_id for r in recs]
+        peliculas = (
+            db.session.query(Pelicula)
+            .filter(Pelicula.id_pelicula.in_(pelis_ids))
+            .all()
+        )
+
+        peliculas_map = {p.id_pelicula: p for p in peliculas}
+        peliculas_ordenadas = [peliculas_map[id] for id in pelis_ids]
+
+        res = [{
+            "id": p.id_pelicula,
+            "title": p.titulo,
+            "poster": p.url_poster,
+        } for p in peliculas_ordenadas]
+        print("Recommended movies:", res)
+        return res

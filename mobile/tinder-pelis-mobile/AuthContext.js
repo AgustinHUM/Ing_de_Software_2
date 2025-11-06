@@ -15,6 +15,8 @@ function reducer(state, action) {
       return { ...state, userToken: action.token, user: action.user, isLoading: false };
     case 'SIGN_OUT':
       return { ...signedOutState };
+    case 'UPDATE_USER':
+      return { ...state, user: action.user };
     default:
       return state;
   }
@@ -60,14 +62,17 @@ export function AuthProvider({ children }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-
+      let data = null;
+      try {data = await res.json();} catch {}
+      console.log(data);
       if (!res.ok) {
-        let msg = `HTTP ${res.status}`;
-        try { const j = await res.json(); msg = j?.error || j?.detail || msg; } catch {}
+        let msg = null;
+        try { msg = data?.msg || `HTTP ${res.status}`; } catch {}
+        console.log(msg);
         throw new Error(msg);
       }
 
-      const data = await res.json();
+      
       const token = data?.id_token || data?.access_token || 'session-ok';
       const user = {
         email: email,
@@ -101,7 +106,7 @@ export function AuthProvider({ children }) {
       try { data = await res.json(); } catch {}
 
       if (!res.ok) {
-        const msg = data?.error || data?.detail || `HTTP ${res.status}`;
+        const msg = data?.msg || `HTTP ${res.status}`;
         throw new Error(msg);
       }
       return { status: data?.status || 'OK' };
@@ -127,7 +132,7 @@ export function AuthProvider({ children }) {
 
   function guestSignIn() {
     const token = `guest_${Math.random().toString(36).slice(2)}_${Date.now()}`;
-    const user = { email: 'guest@tinderpelis.com', name: 'Invitado' };
+    const user = { email: 'guest@moviemingle.com', name: 'Guest' };
     dispatch({ type: 'SIGN_IN', token, user });
     return { token };
   }
@@ -142,6 +147,14 @@ export function AuthProvider({ children }) {
     }
   }
 
+
+  function updateUser(update) {
+    console.log("Updating user - Prev: ",state.user.email,state.user.groups);
+    const updatedUser = typeof update === 'function' ? update(state.user) : { ...(state.user || {}), ...update };
+    console.log("Updated user - New:", updatedUser.email, updatedUser.groups);
+    dispatch({ type: 'UPDATE_USER', user: updatedUser });
+  }
+
   const value = {
     state,
     busy,
@@ -151,7 +164,8 @@ export function AuthProvider({ children }) {
     signUp,
     signOut,
     guestSignIn,
-    setFormPendingAsync
+    setFormPendingAsync,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

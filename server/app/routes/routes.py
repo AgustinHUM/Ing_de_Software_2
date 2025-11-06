@@ -4,6 +4,8 @@ from ..controllers.user_actions_controller import *
 from ..controllers.movie_controller import *
 from ..controllers.group_controller import *
 from ..controllers.user_config_controller import *
+from ..controllers.match_session_controller import *
+from ..controllers.admin_controller import *
 
 
 """
@@ -107,6 +109,9 @@ def join_group_route():
 def group_users_route():
     return get_group_users()
 
+@grupo_bp.route("/groups/leave", methods=["POST"])
+def leave_group_route():
+    return leave_group()
 
 
 
@@ -150,3 +155,88 @@ def show_favorites_route():
 @usuario_bp.route("/user/to_favorite", methods=["POST"])
 def add_favourite_route():
     return add_remove_favorite_movie()
+
+
+"""
++--------------------------------- MATCHING SESSIONS ---------------------------------+
+Blueprints: Gestionar match 
+"""
+
+match_bp = Blueprint("match", __name__)
+
+@match_bp.route("/match/create_session", methods=["POST"])
+def create_session_route():
+    return create_session()
+
+@match_bp.route("/match/join_session", methods=["POST"])
+def join_session_route():
+    return join_session()
+
+@match_bp.route("/match/start_matching", methods=["POST"])
+def start_matching_route():
+    return start_matching()
+
+@match_bp.route("/match/submit_votes", methods=["POST"])
+def submit_votes_route():
+    return submit_votes()
+
+@match_bp.route("/match/end_session", methods=["POST"])
+def end_session_route():
+    return end_session()
+
+@match_bp.route("/match/session_status/<session_id>", methods=["GET"])
+def get_session_status_route(session_id):
+    return get_session_status()
+
+@match_bp.route("/match/group_session/<group_id>", methods=["GET"])
+def get_group_session_route(group_id):
+    return get_group_session()
+
+
+"""
++------------------------------------- ADMIN --------------------------------------+
+"""
+
+admin_bp = Blueprint("admin", __name__)
+
+@admin_bp.route("/admin/home", methods=["GET"])
+def admin_home_route():
+    return "Admin Home"
+
+@admin_bp.route("/admin/login", methods=["GET"])
+def admin_login_route():
+    return handle_admin_login()
+
+@admin_bp.route("/admin/create", methods=["POST"])
+def admin_create_route():
+    return admin_create()
+
+@admin_bp.route("/admin/delete", methods=["DELETE"])
+def admin_delete_route():
+    return admin_delete()
+
+@admin_bp.route("/admin/home/user_count", methods=["GET"])
+def admin_user_count_route():
+    return admin_user_count()
+
+@admin_bp.route("/admin/home/most_rated_movies", methods=["GET"])
+def admin_rated_movies_route():
+    return get_most_rated_movies()
+#Debería recibir algo como esto:
+#GET /admin/home/most_rated_movies?page=2&per_page=10
+
+@admin_bp.route("/admin/home/users_most_favourites", methods=["GET"])
+def admin_users_most_fv():
+    return get_users_most_favourite_movies()
+#Debería recibir algo como esto:
+#GET /admin/home/users_most_favourites?page=2&per_page=10
+
+
+"""
++------------------------------------- RECOMMENDATIONS --------------------------------------+
+"""
+rec_bp = Blueprint("recommendations", __name__)
+
+@rec_bp.route("/recommendations/movies", methods=["GET"])
+def recommend_movies_route():
+    return recommend_movies()

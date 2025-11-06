@@ -21,3 +21,4 @@ class Config:
 
 'postgresql://dbmaster:password@ingsoft2.cj06eqq0ykhj.us-east-2.rds.amazonaws.com:5432/IngSoft2_db'
 
+'Root Admin name: root, mail: rootadmin@mingle.com, password: Root@1234'

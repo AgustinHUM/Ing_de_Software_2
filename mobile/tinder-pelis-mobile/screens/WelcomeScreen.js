@@ -36,8 +36,8 @@ export default function WelcomeScreen({ navigation }) {
               <Text style={{ color: theme.colors.primary, fontWeight: '700' }}>Mingle</Text>
             </Text>
 
-            <Text variant="bodyLarge" style={{ color: theme.colors.text, marginTop: 8, textAlign: 'center' }}>
-              match
+            <Text variant="bodyLarge" style={{ color: theme.colors.text, marginTop: 8, textAlign: 'center', fontWeight:'700' }}>
+              Watch better, together
             </Text>
           </View>
 
@@ -49,7 +49,7 @@ export default function WelcomeScreen({ navigation }) {
               style={{ width: btnWidth, marginVertical: spacingM / 2 }}
               borderWidth={3}
             >
-              Login
+              Log in
             </GradientButton>
 
             <GradientButton
@@ -58,7 +58,7 @@ export default function WelcomeScreen({ navigation }) {
               onPress={() => navigation.navigate('SignUp')}
               style={{ width: btnWidth, marginVertical: spacingM / 2 }}
             >
-              Register
+              Sign up
             </GradientButton>
 
             <Text variant="bodyLarge" style={{ color: theme.colors.text, marginTop: spacingL, textAlign: 'center' }}>

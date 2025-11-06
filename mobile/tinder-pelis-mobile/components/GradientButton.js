@@ -13,6 +13,7 @@ export default function GradientButton({
   mode = 'contained', // 'contained' | 'outlined' | 'text'
   borderWidth = 3,
   fullWidth = false,
+  inverted = false
 }) {
   const theme = useTheme();
 
@@ -21,7 +22,7 @@ export default function GradientButton({
   const end = theme.colors?.secondary ?? 'rgba(252, 210, 94, 1)';
   const text = theme.colors?.text ?? '#fff';
   const borderColor = mixColors(start,end) //Un tono en el medio para los colores fijos
-  const disabledOpacity = 0.6;
+  const disabledOpacity = 0.33;
 
   const buttonHeight = (theme.sizes && theme.sizes.buttonHeight) || 52;
   const paddingH = (theme.tokens && theme.tokens.spacing && theme.tokens.spacing.m) ?? 18;
@@ -52,7 +53,7 @@ export default function GradientButton({
         accessibilityRole="button"
       >
         <LinearGradient
-          colors={[start, end]}
+          colors={inverted ? [end, start] : [start, end]}
           start={[0, 0]}
           end={[1, 0]}
           style={[
@@ -63,6 +64,7 @@ export default function GradientButton({
               paddingHorizontal: paddingH,
             },
             disabledStyle,
+            style
           ]}
         >
           <View style={{ alignItems: 'center', justifyContent: 'center', minHeight: buttonHeight }}>

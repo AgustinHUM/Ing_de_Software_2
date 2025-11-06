@@ -39,7 +39,7 @@ export default function RateFilm() {
   const posterContainerWidth = '48%';
 
   function inc() { setRating(r => Math.min(10, Math.round(r + 1))); }
-  function dec() { setRating(r => Math.max(0, Math.round(r - 1))); }
+  function dec() { setRating(r => Math.max(1, Math.round(r - 1))); }
 
   async function onSave() {
     setSaving(true);
@@ -51,7 +51,7 @@ export default function RateFilm() {
       }
       await rateMovie(movie.id, rating, token);
       Alert.alert('Saved', 'Your rating was saved.', [
-        { text: 'OK', onPress: () => navigation.goBack() }
+        { text: 'OK', onPress: () => navigation.navigate('FilmDetails', { movie }) },
       ]);
     } catch (error) {
       console.error('Rating save error:', error);
@@ -85,7 +85,7 @@ export default function RateFilm() {
         <View style={{ flexDirection: 'row', alignItems: 'center', height: 48, marginBottom: 6 }}>
           <IconButton
             icon={() => <MaterialIcons name="chevron-left" size={28} color={theme.colors.text} />}
-            onPress={() => navigation.goBack()}
+            onPress={() => navigation.navigate('FilmDetails', { movie })}
             style={{ margin: 0 }}
           />
           <View style={{ flex: 1 }}>

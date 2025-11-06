@@ -1,7 +1,7 @@
 import axios from "axios";
 
-
 export const API_URL = "http://172.20.10.10:5050"; // Local server
+
 
 const api = axios.create({
   baseURL: API_URL,
@@ -64,7 +64,7 @@ export function getMovies(query,page) {
 
 export function getMovieDetails(movieId, token) {
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  return get('/movies/detailsScreen', {params:{movieId}, headers });
+  return get('/movies/detailsScreen', {params:{movie_id:movieId}, headers });
 }
 
 
@@ -78,6 +78,15 @@ export function createGroup(groupName, token) {
 // Se une a un grupo con el código y devuelve { message }
 export function joinGroup(groupJoinId, token) {
   return post('/groups/join', { group_join_id: groupJoinId }, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+// Sale de un grupo con el groupId y devuelve { id, name, members }
+export function leaveGroup(groupId, token) {
+  // server expects "group_join_id" (join code = internalId * 7 + 13)
+  const joinCode = Number(groupId) * 7 + 13;
+  return post('/groups/leave', { group_join_id: joinCode }, {
     headers: { Authorization: `Bearer ${token}` },
   });
 }
@@ -136,3 +145,89 @@ export function getFavourites(token) {
 export function homeMovies(token) {
  return get('/home/movies', {headers: { Authorization: `Bearer ${token}` }});
 }
+
+export function getUserInfo(token) {
+  return get('/user', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function updateUserInfo(data, token) {
+  return post('/user/update', data, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+
+// Match - Optimized endpoints
+export function createMatchSession(group_id, token) {
+  return post('/match/create_session', { group_id }, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function joinMatchSession(sessionId, genres, token) {
+  return post('/match/join_session', 
+    { session_id: sessionId, genres }, 
+    { headers: { Authorization: `Bearer ${token}` }}
+  );
+}
+
+export function startMatchSession(sessionId, token) {
+  return post('/match/start_matching', 
+    { session_id: sessionId }, 
+    { headers: { Authorization: `Bearer ${token}` }}
+  );
+}
+
+export function submitAllVotes(sessionId, votes, token) {
+  return post('/match/submit_votes', 
+    { session_id: sessionId, votes }, 
+    { headers: { Authorization: `Bearer ${token}` }}
+  );
+}
+
+export function endMatchSession(sessionId, token) {
+  return post('/match/end_session', 
+    { session_id: sessionId }, 
+    { headers: { Authorization: `Bearer ${token}` }}
+  );
+}
+
+export function getMatchSessionStatus(sessionId, token) {
+  return get(`/match/session_status/${sessionId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+}
+
+export function getGroupMatchSession(groupId, token) {
+  return get(`/match/group_session/${groupId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+}
+
+export async function createSoloMatch(token, genres) {
+  try {
+    // For solo sessions, pass null as group_id
+    const session = await createMatchSession(null, token);
+    
+    if (!session || !session.session_id) {
+      throw new Error('Failed to create solo session');
+    }
+    
+    await joinMatchSession(session.session_id, genres, token);
+    await startMatchSession(session.session_id, token);
+    return session;
+  } catch (error) {
+    console.error('Error in createSoloMatch:', error);
+    throw error;
+  }
+}
+
+export function getRecommendedMovies(token) {
+  return get('/recommendations/movies', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+
