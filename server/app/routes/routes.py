@@ -4,11 +4,8 @@ from ..controllers.user_actions_controller import *
 from ..controllers.movie_controller import *
 from ..controllers.group_controller import *
 from ..controllers.user_config_controller import *
-<<<<<<< HEAD
 from ..controllers.match_session_controller import *
-=======
 from ..controllers.admin_controller import *
->>>>>>> rama_lautaro
 
 
 """
@@ -160,7 +157,6 @@ def add_favourite_route():
     return add_remove_favorite_movie()
 
 
-<<<<<<< HEAD
 """
 +--------------------------------- MATCHING SESSIONS ---------------------------------+
 Blueprints: Gestionar match 
@@ -195,7 +191,6 @@ def get_session_status_route(session_id):
 @match_bp.route("/match/group_session/<group_id>", methods=["GET"])
 def get_group_session_route(group_id):
     return get_group_session()
-=======
 
 
 """
@@ -245,4 +240,3 @@ rec_bp = Blueprint("recommendations", __name__)
 @rec_bp.route("/recommendations/movies", methods=["GET"])
 def recommend_movies_route():
     return recommend_movies()
->>>>>>> rama_lautaro

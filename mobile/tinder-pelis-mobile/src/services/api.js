@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const API_URL = "http://192.168.68.51:5050"; // Local server
+export const API_URL = "http://172.20.10.10:5050"; // Local server
 
 
 const api = axios.create({
@@ -223,3 +223,11 @@ export async function createSoloMatch(token, genres) {
     throw error;
   }
 }
+
+export function getRecommendedMovies(token) {
+  return get('/recommendations/movies', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+

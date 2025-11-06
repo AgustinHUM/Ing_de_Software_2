@@ -7,7 +7,7 @@ from ..functions.aux_functions import *
 from ..functions.pusher_client import pusher_client
 import jwt
 import uuid
-
+from ..controllers.user_actions_controller import recommend_movies
 
 class MatchingSession:
     def __init__(self, session_id, group_id, creator_email):
@@ -217,13 +217,28 @@ class MatchingSession:
         return self.results
     
     def to_dict(self):
+        movies_with_defaults = []
+        if self.movies:
+            for movie in self.movies:
+                movie_with_defaults = {
+                    "id": movie.get("id"),
+                    "title": movie.get("title"),
+                    "poster": movie.get("poster"),
+                    "description": "No description available",  # Default description
+                    "year": "N/A",  # Default year
+                    "genres": [],  # Default empty genres array
+                    "runtime": 0,  # Default runtime
+                    "rating": "N/A"  # Default rating
+                }
+                movies_with_defaults.append(movie_with_defaults)
+                
         return {
             "session_id": self.session_id,
             "group_id": self.group_id,
             "creator_email": self.creator_email,
             "participants": self.get_participants_with_status(),
             "status": self.status,
-            "movies": self.movies,
+            "movies": movies_with_defaults,
             "can_start": self.can_start_matching(),
             "results": self.results,
             "created_at": self.created_at.isoformat() if self.created_at else None
@@ -287,26 +302,10 @@ def end_session():
         return jsonify({"msg": "Internal server error"}), 500
 
 
-def get_movies_for_session(limit=10, genres=None):
+def get_movies_for_session(session, limit=10, genres=None):
     try:
-        query = db.session.query(PeliculaCompleta)
-        # Filter by genres if provided
-        if genres and len(genres) > 0:
-            pass
-        peliculas = query.order_by(desc(PeliculaCompleta.score_critica)).limit(limit).all()
-        movies = [{
-            "id": peli.id_pelicula,
-            "title": peli.titulo,
-            "poster": peli.url_poster,
-            "genres": peli.generos,
-            "platforms": peli.plataformas,
-            "year": peli.anio_lanzamiento,
-            "runtime": peli.duracion,
-            "director": peli.directores,
-            "rating": peli.score_critica,
-            "description": peli.trama,
-            "ageRating": peli.clasificacion_edad
-        } for peli in peliculas]
+        mails = [mail for mail in session.participants.keys()]
+        movies = recommend_movies(mails)
         return movies
     except Exception as e:
         print(f"Error getting movies for session: {str(e)}")
@@ -453,7 +452,7 @@ def start_matching():
         all_genres = []
         for participant in session.participants.values():
             all_genres.extend(participant.get("genres", []))
-        session.movies = get_movies_for_session(limit=10, genres=list(set(all_genres)))
+        session.movies = get_movies_for_session(session, limit=10, genres=list(set(all_genres)))
         session.status = "matching"
         event_data = {
             "movies": session.movies,

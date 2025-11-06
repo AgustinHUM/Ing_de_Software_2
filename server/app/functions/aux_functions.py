@@ -197,6 +197,8 @@ def get_paginated_fm(page=1, per_page=10):
 def calc_vector_usuario(mail):
     sql = text("SELECT calcular_vector_usuario(:m)")
     db.session.execute(sql, {"m": mail})
+    db.session.commit()
+
 
 def recomendar_grupo(mails):
     sql = text("""

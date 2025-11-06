@@ -139,18 +139,14 @@ def get_seen_movies():
 """
 +-------------------------------------- RECOMMENDATION -----------------------------------------+
 """
-def recommend_movies():
-    if request.method == "GET":
-
-        data = request.json
-        mails = data.get("users") # lista de mails de usuarios del grupo
-
+def recommend_movies(mails):
         if not mails:
-            return jsonify({"msg": "No users provided"}), 400
-
+            return None
 
         for mail in mails:
             calc_vector_usuario(mail)
+            db.session.commit()
+
 
         db.session.commit()
 
@@ -171,5 +167,5 @@ def recommend_movies():
             "title": p.titulo,
             "poster": p.url_poster,
         } for p in peliculas_ordenadas]
-
-        return jsonify(res)
+        print("Recommended movies:", res)
+        return res
