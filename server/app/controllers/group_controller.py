@@ -17,6 +17,9 @@ def create_group():
         nombre_grupo_nuevo = info.get("group_name")
 
         usuario = get_token_user(request, "Cannot group owner")
+        # Verificar si get_token_user devolvió un error (tupla)
+        if isinstance(usuario, tuple):
+            return usuario[0], usuario[1]
         
         id_nuevo_grupo = generate_id()
         nuevo_grupo = Grupo(id_grupo=id_nuevo_grupo, nombre_grupo=nombre_grupo_nuevo)
@@ -41,6 +44,9 @@ def add_user_to_group():
         id_grupo = (codigo_union - 13) // 7
 
         usuario = get_token_user(request, "Cannot find user to add")
+        # Verificar si get_token_user devolvió un error (tupla)
+        if isinstance(usuario, tuple):
+            return usuario[0], usuario[1]
         
         grupo = Grupo.query.options(joinedload(Grupo.usuarios)).filter_by(id_grupo=id_grupo).first()
 
@@ -77,6 +83,10 @@ def leave_group():
             return jsonify({"msg": "Invalid group_join_id"}), 400
 
         usuario = get_token_user(request, "Cannot find user to remove")
+        # Verificar si get_token_user devolvió un error (tupla)
+        if isinstance(usuario, tuple):
+            return usuario[0], usuario[1]
+        
         grupo = Grupo.query.options(joinedload(Grupo.usuarios)).filter_by(id_grupo=id_grupo).first()
 
         if not grupo:
@@ -108,6 +118,9 @@ def get_user_groups():
     if request.method == "GET":
 
         usuario = get_token_user(request, "Cannot find user")
+        # Verificar si get_token_user devolvió un error (tupla)
+        if isinstance(usuario, tuple):
+            return usuario[0], usuario[1]
 
         lista_grupos = [
             {"id": grupo.id_grupo, "name": grupo.nombre_grupo, "members": len(grupo.usuarios)}

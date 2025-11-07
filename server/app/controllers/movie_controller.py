@@ -9,6 +9,9 @@ def show_home_movies():
     if request.method == "GET":
 
         usuario = get_token_full_user(request)
+        # Verificar si get_token_full_user devolvió un error (tupla)
+        if isinstance(usuario, tuple):
+            return usuario[0], usuario[1]
        
         id_generos = [g.id_genero for g in usuario.generos_fav]
         id_plataformas = [p.id_plataforma for p in usuario.plataformas]
@@ -55,18 +58,24 @@ def request_movie_info():
             page = 0
 
         # usa GIN para buscar usando un vector de texto para encontrar similitudes
+        # Detectar tipo de BD: PostgreSQL soporta full-text search, SQLite no
+        is_postgres = db.engine.dialect.name == 'postgresql'
+        
+        if is_postgres:
+            # PostgreSQL: usar búsqueda full-text + ILIKE para mejor rendimiento
+            filter_condition = or_(
+                func.to_tsvector('english', PeliculaCompleta.titulo).op('@@')(
+                    func.plainto_tsquery('english', nombre_peli)
+                ),
+                PeliculaCompleta.titulo.ilike(f"%{nombre_peli}%")
+            )
+        else:
+            # SQLite y otras BD: usar solo ILIKE (compatible con todas)
+            filter_condition = PeliculaCompleta.titulo.ilike(f"%{nombre_peli}%")
+        
         peliculas = (
             db.session.query(PeliculaCompleta)
-            .filter(
-                or_(
-                    # usando GIN
-                    func.to_tsvector('english', PeliculaCompleta.titulo).op('@@')(
-                        func.plainto_tsquery('english', nombre_peli)
-                    ),
-                    # usando con trigram (ILIKE)
-                    PeliculaCompleta.titulo.ilike(f"%{nombre_peli}%")
-                )
-            )
+            .filter(filter_condition)
             .order_by(PeliculaCompleta.titulo)
             .limit(21)
             .offset(page * 20)
@@ -99,6 +108,9 @@ def movie_details_screen_info():
         id_peli = request.args.get("movie_id")
 
         usuario = get_token_user(request, "Cannot find user")
+        # Verificar si get_token_user devolvió un error (tupla)
+        if isinstance(usuario, tuple):
+            return usuario[0], usuario[1]
        
         peli = PeliculaCompleta.query.filter_by(id_pelicula = id_peli).first()
 
