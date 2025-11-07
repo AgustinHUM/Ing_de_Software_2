@@ -47,11 +47,12 @@ node run_e2e_mobile.js e2e:test     # Ejecutar tests
 
 ## 📊 Estado Actual
 
-- ✅ **Backend**: 19 tests (100% pasando)
-- ✅ **Frontend**: 15 tests (100% pasando)
+- ✅ **Backend**: 154 tests de integración + tests unitarios (100% pasando)
+- ✅ **Frontend Mobile**: 47 tests (100% pasando)
+- ✅ **Bugs Documentados**: 24 bugs en `BUGS_PARA_ARREGLAR.md`
+- ✅ **Cobertura Backend**: ~85-90% de endpoints críticos
 - ✅ **Documentación**: Completa
 - ⏳ **CI/CD**: Pendiente
-- ⏳ **Herramientas QA**: Pendiente
 
 ## 🛠️ Tecnologías
 
@@ -62,8 +63,7 @@ node run_e2e_mobile.js e2e:test     # Ejecutar tests
 ## 📖 Documentación Detallada
 
 - [Backend Testing Guide](server/tests/README.md)
-- [Frontend Testing Guide](mobile/tinder-pelis-mobile/TESTING.md)
-- [QA Best Practices](QA_BEST_PRACTICES.md)
+- [Bugs para Arreglar](BUGS_PARA_ARREGLAR.md) - Lista de bugs encontrados en tests
 
 ## 🤝 Contribución
 

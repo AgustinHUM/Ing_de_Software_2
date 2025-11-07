@@ -98,15 +98,24 @@ markers =
 
 ## 📊 Tests Actuales
 
-### Tests Unitarios (22 tests)
-- **test_basic.py**: 3 tests - Verificación de configuración
-- **test_aux_functions.py**: 7 tests - Funciones auxiliares del proyecto
-- **test_auth_functions.py**: 4 tests - Autenticación y permisos
-- **test_movie_functions.py**: 4 tests - Validación de películas
-- **test_group_functions.py**: 4 tests - Validación de grupos
+### Tests Unitarios (4 archivos)
+- **test_auth_functions.py** - Funciones de autenticación
+- **test_aux_functions.py** - Funciones auxiliares
+- **test_group_functions.py** - Funciones de grupos
+- **test_movie_functions.py** - Funciones de películas
 
-### Tests de Integración (3 tests)
-- **test_app.py**: 3 tests - Configuración de aplicación Flask
+### Tests de Integración (9 archivos, 154 tests pasando)
+- **test_app.py** - Configuración básica de aplicación Flask
+- **test_auth_endpoints.py** - Endpoints de autenticación (register/login)
+- **test_movie_endpoints.py** - Endpoints de películas (búsqueda, detalles, recomendadas)
+- **test_group_endpoints.py** - Endpoints de grupos (crear, unirse, salir, usuarios)
+- **test_favorites_endpoints.py** - Endpoints de favoritos
+- **test_ratings_endpoints.py** - Endpoints de calificaciones
+- **test_user_endpoints.py** - Endpoints de usuario
+- **test_forms_endpoints.py** - Endpoints de formularios
+- **test_matching_sessions_endpoints.py** - Endpoints de matching sessions
+
+**Total:** 154 tests de integración pasando + tests unitarios
 
 ## 🎯 Mejores Prácticas
 
