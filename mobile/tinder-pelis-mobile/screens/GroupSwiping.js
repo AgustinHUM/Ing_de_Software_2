@@ -148,14 +148,19 @@ export default function GroupSwiping({ route, navigation }) {
       useNativeDriver: true,
     }).start(() => {
       // reset and move to next
-      position.setValue({ x: 0, y: 0 });
       panelHeight.setValue(INFO_HEIGHT);
       synopsisOpacity.setValue(0);
       setIsOpen(false);
+
       const nextIndex = currentIndex + 1;
       setCurrentIndex(nextIndex);
-      
-      // Auto-submit when all movies are voted on
+
+      // reset animation AFTER next card mounts
+      setTimeout(() => {
+        position.setValue({ x: 0, y: 0 });
+      }, 0);
+
+      // Auto-submit when finished
       if (nextIndex >= movies.length) {
         handleAutoSubmitVotes(newVotes);
       }
