@@ -406,8 +406,8 @@ def join_session():
         if not success:
             return jsonify({"msg": f"Failed to join session: {result}"}), 400
 
-        if selected_genres:
-            session.set_participant_genres(user.mail, selected_genres)
+        
+        session.set_participant_genres(user.mail, selected_genres)
         return jsonify({
             "msg": "Successfully joined session",
             "session": session.to_dict()
@@ -426,6 +426,7 @@ def start_matching():
         data = request.get_json()
         session_id = data.get("session_id")
         session = matching_sessions.get(session_id)
+
         if not session:
             return jsonify({"msg": "Session not found"}), 404
 

@@ -82,7 +82,7 @@ export default function MatchedMovie({ route }) {
         style={{
           color: "white",
           fontSize: 17,
-          marginBottom: 20,
+          marginBottom: 15,
           textAlign: "center",
           opacity: 0.9,
         }}
@@ -93,7 +93,8 @@ export default function MatchedMovie({ route }) {
       {/* Movie card */}
       <View
         style={{
-          width: width * 0.78,
+          width: "100%",
+          aspectRatio: 0.70,
           borderRadius: 18,
           overflow: "hidden",
           borderWidth: 2.5,
@@ -103,12 +104,11 @@ export default function MatchedMovie({ route }) {
           shadowRadius: 10,
         }}
       >
-                <Image
+        <Image
           style={{
-            width: width * 0.7,
-            height: width * 0.9,
-            borderRadius: 20,
-            marginBottom: 20,
+            height: '100%',
+            width: '100%',
+            resizeMode: "cover",
           }}
           source={displayMovie.poster ? { uri: displayMovie.poster } : require("../assets/jaws.jpg")}
         />
@@ -204,12 +204,7 @@ export default function MatchedMovie({ route }) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => {
-            if (isSoloSession) {
-              navigation.navigate("Home");
-            } else {
-              navigation.navigate("GroupCode", { groupId: groupId, groupName: groupName });
-            }
+          onPress={() => {navigation.navigate("FilmDetails", { movie: { ...winningMovie, poster: { uri: winningMovie.poster } } });
           }}
           style={{
             backgroundColor: "#4CAF50",
@@ -227,7 +222,7 @@ export default function MatchedMovie({ route }) {
               fontWeight: "800",
             }}
           >
-            Keep Match →
+            Movie Details →
           </Text>
         </TouchableOpacity>
       </View>

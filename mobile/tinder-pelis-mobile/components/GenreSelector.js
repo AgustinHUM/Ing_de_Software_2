@@ -79,44 +79,53 @@ export default function GenreSelector({
       onRequestClose={handleClose}
       transparent={false}
     >
-      <View style={{ 
-        flex: 1, 
-        flexDirection: 'column', 
-        padding: 25, 
-        paddingVertical: Platform.OS === 'ios' ? 70 : 35, 
-        backgroundColor: theme.colors.background 
-      }}>
-        <View style={{ 
-          flexDirection: 'row', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          marginBottom: 16 
-        }}>
-          <View style={{ width: 40 }} />
-          <Text style={{ 
-            color: theme.colors.text, 
-            fontWeight: '700', 
-            fontSize: 18, 
-            textAlign: 'center', 
-            flex: 1 
-          }}>
+      <View
+        style={{
+          flex: 1,
+          flexDirection: "column",
+          padding: 25,
+          paddingVertical: Platform.OS === "ios" ? 70 : 35,
+          backgroundColor: theme.colors.background,
+        }}
+      >
+        {/* Header with Close button */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 16,
+          }}
+        >
+          <View style={{ width: 40 }}>{/* para centrar */}</View>
+          <Text
+            style={{
+              color: theme.colors.text,
+              fontWeight: "700",
+              fontSize: 18,
+              textAlign: "center",
+              flex: 1,
+            }}
+          >
             Select Genres
           </Text>
-          <TouchableOpacity
-            onPress={handleSubmit}
-            disabled={loading}
-          >
-            <Text style={{ 
-              color: theme.colors.primary, 
-              fontSize: 16, 
-              fontWeight: '600', 
-              opacity: loading ? 0.5 : 1 
-            }}>
-              {selectedGenres.length > 0 ? (loading ? 'Joining...' : 'Join') : 'Skip'}
+
+          <TouchableOpacity onPress={handleSubmit} disabled={loading}>
+            <Text
+              style={{
+                width: 40,
+                color: theme.colors.primary,
+                fontSize: 16,
+                fontWeight: "600",
+                opacity: loading ? 0.5 : 1,
+              }}
+            >
+              {selectedGenres.length > 0 ? (loading ? "Joining..." : "Join") : "Skip"}
             </Text>
           </TouchableOpacity>
         </View>
-        
+
+        {/* Top divider */}
         <Divider
           style={{
             backgroundColor: theme.colors.primary,
@@ -125,33 +134,58 @@ export default function GenreSelector({
             borderRadius: 5,
           }}
         />
-        
-        <ScrollView 
-          contentContainerStyle={{ paddingBottom: 24 }} 
+
+        {/* Scrollable genre list */}
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 24 }}
           showsVerticalScrollIndicator={false}
         >
-          {allGenres.map(genre => (
+          {allGenres.map((genre) => (
             <View key={genre} style={{ marginTop: 12 }}>
               <Seleccionable
                 label={genre}
                 initialSelected={selectedGenres.includes(genre)}
                 onSelect={(selected) => toggleGenre(genre, selected)}
-                width='100%'
+                width="100%"
                 fontSize={18}
               />
             </View>
           ))}
         </ScrollView>
-        
+
+        {/* Bottom divider */}
         <Divider
           style={{
             backgroundColor: theme.colors.primary,
             width: "100%",
             height: 5,
             borderRadius: 5,
-            marginBottom: 16
+            marginBottom: 16,
           }}
         />
+
+        {/* Bottom button — keep Skip/Join logic */}
+        <TouchableOpacity
+          onPress={onClose}
+          disabled={loading}
+          style={{
+            backgroundColor: theme.colors.primary,
+            borderRadius: 25,
+            paddingVertical: 12,
+            alignItems: "center",
+          }}
+        >
+          <Text
+            style={{
+              color: "white",
+              fontSize: 17,
+              fontWeight: "800",
+              opacity: loading ? 0.5 : 1,
+            }}
+          >
+            Close
+          </Text>
+        </TouchableOpacity>
       </View>
     </Modal>
   );
