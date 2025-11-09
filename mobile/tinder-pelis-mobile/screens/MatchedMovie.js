@@ -49,7 +49,25 @@ export default function MatchedMovie({ route }) {
   const fallbackMovie = movies[Math.floor(Math.random() * movies.length)];
   
   const displayMovie = winningMovie || fallbackMovie;
-  
+  const sharedBtn = {
+  borderRadius: 30,            // same for both
+  paddingVertical: 12,
+  minWidth: 160,
+  alignItems: "center",        // center children vertically
+  flexDirection: "row",
+  };
+
+  const textStyle = {
+    color: "white",
+    fontSize: 17,
+    fontWeight: "800",
+    textAlign: "center",
+  };
+
+  const iconStyle = {
+    marginBottom:-2,
+    alignSelf: "center",
+  };
   // Debug logging
   console.log('MatchedMovie results:', results);
   console.log('Winning movie:', winningMovie);
@@ -175,57 +193,40 @@ export default function MatchedMovie({ route }) {
           marginTop: 18,
         }}
       >
-        <TouchableOpacity
-          onPress={() => {
-            if (isSoloSession) {
-              navigation.navigate("HomeScreen");
-            } else {
-              navigation.navigate("GroupCode", { groupId: groupId, groupName: groupName });
-            }
-          }}
-          style={{
-            backgroundColor: "#FF4444",
-            borderRadius: 30,
-            paddingVertical: 12,
-            paddingHorizontal: 26,
-            minWidth: 160,
-            alignItems: "center",
-          }}
-        >
-          <Text
-            style={{
-              color: "white",
-              fontSize: 17,
-              fontWeight: "800",
+          {/* LEFT (Try Again) */}
+          <TouchableOpacity
+            onPress={() => {
+              if (isSoloSession) navigation.navigate("Home");
+              else navigation.navigate("GroupCode", { groupId, groupName });
             }}
+            style={[sharedBtn, { backgroundColor: "#FF4444",justifyContent:'flex-start',paddingLeft:8 }]}
           >
-            ←   Try Again
-          </Text>
-        </TouchableOpacity>
+            <MaterialCommunityIcons
+              name="arrow-left-circle"
+              size={30}
+              color="white"
+              style={[iconStyle,{marginRight:14}]}
+            />
+            <Text style={textStyle}>Try Again</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => {navigation.navigate("FilmDetails", { movie: { ...winningMovie, poster: { uri: winningMovie.poster } } });
-          }}
-          style={{
-            backgroundColor: "#4CAF50",
-            borderRadius: 25,
-            paddingVertical: 12,
-            paddingHorizontal: 26,
-            minWidth: 160,
-            alignItems: "center",
-          }}
-        >
-          <Text
-            style={{
-              color: "white",
-              fontSize: 17,
-              fontWeight: "800",
+          {/* RIGHT (Go to Movie) */}
+          <TouchableOpacity
+            onPress={() => {
+              
+              navigation.navigate("FilmDetails", { movie: { ...winningMovie, poster: { uri: winningMovie.poster } } });
             }}
+            style={[sharedBtn, { backgroundColor: "#4CAF50", justifyContent:'flex-end',paddingRight:8 }]}
           >
-            Movie Details →
-          </Text>
-        </TouchableOpacity>
-      </View>
+            <Text style={textStyle}>Go to Movie</Text>
+            <MaterialCommunityIcons
+              name="arrow-right-circle"
+              size={30}
+              color="white"
+              style={[iconStyle,{marginLeft:8}]}
+            />
+          </TouchableOpacity>
+        </View>
     </View>
   );
 }
