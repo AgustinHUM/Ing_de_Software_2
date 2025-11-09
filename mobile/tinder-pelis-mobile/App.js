@@ -36,6 +36,7 @@ import RateFilm from './screens/RateFilm';
 
 import { API_URL } from './src/services/api';
 import EditProfileScreen from './screens/EditProfile';
+import DidYouWatch from './screens/DidYouWatchScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -258,7 +259,7 @@ function MainNavigator({ setAppTheme, themesMap, themeName }) {
           <Stack.Screen name="MatchedMovie" component={MatchedMovie} options={{headerShown: false}} />
 
           <Stack.Screen name="RateFilm" component={RateFilm} options={{ headerShown: false }} />
-          
+          <Stack.Screen name="DidYouWatch" component={DidYouWatch} options={{ headerShown: false }} />
           <Stack.Screen name="Search" component={SearchScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Favourites" component={FavouritesScreen} options={{ headerShown: false }} />
         </>

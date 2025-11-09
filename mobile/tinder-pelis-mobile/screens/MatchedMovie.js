@@ -4,6 +4,7 @@ import { useTheme } from "react-native-paper";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
 const { width } = Dimensions.get("window");
@@ -213,8 +214,13 @@ export default function MatchedMovie({ route }) {
           {/* RIGHT (Go to Movie) */}
           <TouchableOpacity
             onPress={() => {
-              
+              AsyncStorage.setItem('lastMatchedMovie',JSON.stringify({ ...winningMovie, poster: { uri: winningMovie.poster },time: Date.now() }));
               navigation.navigate("FilmDetails", { movie: { ...winningMovie, poster: { uri: winningMovie.poster } } });
+              AsyncStorage.getItem('lastMatchedMovie').then(value => {
+                console.log('Saved lastMatchedMovie:', value);
+              }).catch(err => {
+                console.error('Error saving lastMatchedMovie:', err);
+              });
             }}
             style={[sharedBtn, { backgroundColor: "#4CAF50", justifyContent:'flex-end',paddingRight:8 }]}
           >

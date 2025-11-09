@@ -11,6 +11,7 @@ import * as SecureStore from 'expo-secure-store';
 import { homeMovies, createSoloMatch } from '../src/services/api';
 import GenreSelector from '../components/GenreSelector';
 import { useAuth } from '../AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -82,6 +83,30 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [showGenreSelector, setShowGenreSelector] = useState(false);
   const [matchLoading, setMatchLoading] = useState(false);
+
+   useEffect(() => {
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem('lastMatchedMovie');
+        if (raw) {
+          let movieObj = null;
+          try {
+            movieObj = JSON.parse(raw);
+          } catch (e) {
+            // no debería pasar esto pero por las dudas
+            movieObj = raw;
+            console.warn('lastMatchedMovie found but JSON.parse failed — using raw value', e);
+          }
+          if (movieObj && movieObj.time && (Date.now() - movieObj.time) > (1/60) * 60 * 60 * 1000) {
+            await AsyncStorage.removeItem('lastMatchedMovie');
+            navigation.navigate('DidYouWatch', { movie: movieObj });
+          }
+        }
+      } catch (err) {
+        console.error('Error while checking lastMatchedMovie from AsyncStorage', err);
+      }
+    })();
+  }, []);
 
    useEffect(() => {
     const user = state?.user;

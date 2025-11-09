@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useReducer, useEffect, useState, useCallback, useRef } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { API_URL } from './src/services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const AuthContext = createContext();
 
 const initialState = { isLoading: true, userToken: null, user: null };
@@ -119,7 +120,7 @@ export function AuthProvider({ children }) {
 
       try {
         await SecureStore.deleteItemAsync('userToken');
-
+        AsyncStorage.removeItem('lastMatchedMovie');
         const email = await SecureStore.getItemAsync('lastLoginEmail');
         if (email) {
           await SecureStore.deleteItemAsync('lastLoginEmail');
