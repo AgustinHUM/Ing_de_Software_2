@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { ActivityIndicator, useTheme } from 'react-native-paper';
 
-export default function LoadingOverlay({ visible = false, width = undefined, height = undefined, background = 'rgba(0,0,0,0.5)'}) {
+export default function LoadingOverlay({ visible = false, width = undefined, height = undefined, background = 'rgba(0,0,0,0.5)', text = 'Loading…' }) {
   const theme = useTheme();
   const styles = StyleSheet.create({
   container: [
@@ -33,7 +33,7 @@ export default function LoadingOverlay({ visible = false, width = undefined, hei
       <View style={[styles.backdrop, { backgroundColor: background }]} />
       <View style={styles.center}>
         <ActivityIndicator animating size="large" />
-        <Text style={[styles.text, { color: theme.colors.text, marginTop: 12 }]}>Loading…</Text>
+        <Text style={[styles.text, { color: theme.colors.text, marginTop: 12 }]}>{text}</Text>
       </View>
     </View>
   );

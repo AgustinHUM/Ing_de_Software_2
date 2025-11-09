@@ -166,6 +166,11 @@ def recommend_movies(mails):
             "id": p.id_pelicula,
             "title": p.titulo,
             "poster": p.url_poster,
+            "description": p.trama,
+            "year": p.anio_lanzamiento,
+            "rating": p.score_critica,
+            "genres": [g.nombre_genero for g in p.generos],
+            "runtime": p.duracion,
         } for p in peliculas_ordenadas]
         print("Recommended movies:", res)
         return res

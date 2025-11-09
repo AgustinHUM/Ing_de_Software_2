@@ -148,10 +148,11 @@ export function AuthProvider({ children }) {
   }
 
 
-  function updateUser(update) {
-    console.log("Updating user - Prev: ",state.user.email,state.user.groups);
+  function updateUser(update, deleteHomeMovies = false) {
     const updatedUser = typeof update === 'function' ? update(state.user) : { ...(state.user || {}), ...update };
-    console.log("Updated user - New:", updatedUser.email, updatedUser.groups);
+    if (deleteHomeMovies && Object.prototype.hasOwnProperty.call(updatedUser, 'homeMovies')) {
+      delete updatedUser.homeMovies;
+    }
     dispatch({ type: 'UPDATE_USER', user: updatedUser });
   }
 

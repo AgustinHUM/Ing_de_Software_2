@@ -10,13 +10,14 @@ import GradientButton from '../components/GradientButton';
 import * as SecureStore from 'expo-secure-store';
 import { homeMovies, createSoloMatch } from '../src/services/api';
 import GenreSelector from '../components/GenreSelector';
+import { useAuth } from '../AuthContext';
 
 export default function HomeScreen() {
   const theme = useTheme();
   const navigation = useNavigation();
-
-  // Géneros de prueba (en la versión final asumo que se sacarán de la db)
-   const allGenres = [ "Action",
+  const { state, updateUser } = useAuth();
+  const MOVIE_WIDTH = 118;
+  const allGenres = [ "Action",
    "Action & Adventure",
    "Adventure",
    "Animation",
@@ -83,23 +84,33 @@ export default function HomeScreen() {
   const [matchLoading, setMatchLoading] = useState(false);
 
    useEffect(() => {
-   const fetchMovies = async () => {
-     setLoading(true);
-     try {
-       const token = await SecureStore.getItemAsync("userToken");
-       const data = await homeMovies(token);
-       if (data) {
-         setMovies(data);
-       }
-     } catch (error) {
-       console.error('Error fetching home movies:', error);
-     } finally {
-       setLoading(false);
-     }
-   };
+    const user = state?.user;
+    const userHasMoviesProp =
+      user != null && Object.prototype.hasOwnProperty.call(user, "homeMovies");
+    const fetchMovies = async () => {
+      setLoading(!userHasMoviesProp);
+      try {
+        const token = await SecureStore.getItemAsync("userToken");
+        const data = await homeMovies(token);
+        if (data && data!==movies) {
+          setMovies(data);
+          updateUser(user => ({ ...user, homeMovies: data }));
+        }
+      } catch (error) {
+        console.error('Error fetching home movies:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    if (userHasMoviesProp) {
+      setLoading(false);
+      setMovies(user.homeMovies ?? []);
+      fetchMovies();
+    } else {
+      fetchMovies();
+    }
 
-   fetchMovies();
  }, []);
  const PLACEHOLDER_COUNT = 6;
  const placeholders = Array.from({ length: PLACEHOLDER_COUNT });
@@ -108,6 +119,15 @@ export default function HomeScreen() {
     ? movies
     : movies.filter(movie => activeFilters.every(f => movie.genres.includes(f)));
   // --------------------------------------------------------------------------------------------
+
+  const chunk = (arr, size = 2) => {
+    const out = [];
+    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+    return out;
+  };
+
+  const moviePairs = chunk(displayedMovies, 2);
+
 
   const matchButtonStyle = {
       borderBottomLeftRadius: 8,
@@ -129,7 +149,7 @@ export default function HomeScreen() {
     };
 
   return (
-    <View style={{ flex: 1, padding: '1%', flexDirection:'column' }}>
+    <View style={{ flex: 1,paddingBottom:6, flexDirection:'column' }}>
       <View
         style={{paddingTop:'17%', flex:0.75,flexGrow:1, backgroundColor: 'transparent'}}
       >
@@ -142,13 +162,13 @@ export default function HomeScreen() {
          <Text variant='bodyMedium' style={{ color: theme.colors.text }}>What are we watching today?</Text>
        </View>
 
-        <View style={{padding:'5%', flex:1, gap:15, backgroundColor:'transparent'}}>
+        <View style={{ flex:1, gap:15, backgroundColor:'transparent'}}>
 
-          <View >
+          <View style={{paddingHorizontal:21,paddingTop:21}} >
             <SearchBar />
           </View>
 
-          <View style={{paddingHorizontal:5}}>
+          <View style={{paddingHorizontal:26}}>
             <View>
               <Text style={{color:theme.colors.text, fontWeight:700, fontSize:20}}>
                 Genres:
@@ -192,17 +212,35 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <View style={{paddingHorizontal:5}}>
-            <View>
+          <View >
+            <View style={{paddingLeft:26}}>
               <Text style={{color:theme.colors.text, fontWeight:700, fontSize:20}}>
                 Movies for you:
               </Text>
             </View>
 
-            <View style={{paddingTop:16, flexDirection: 'row', flexWrap: 'wrap', justifyContent:'space-between',height: 350 }}>
+            <ScrollView style={{height: 370 }} 
+            contentContainerStyle={{paddingTop:8,paddingLeft:16, flexDirection: 'row', justifyContent:'flex-start',gap:13}} 
+            horizontal={true} showsHorizontalScrollIndicator={false}>
              {loading ? (
-               placeholders.map((_, idx) => (
-                 <View key={`ph-${idx}`} style={{ width: '30%' }}>
+               chunk(placeholders,2).map((_, idx) => (
+                 <View
+                  key={`pair-${idx}`}
+                  style={{
+                    width: MOVIE_WIDTH,
+                    padding:5,
+                    justifyContent: 'flex-start'
+                  }}
+                >
+                   <LoadingBox
+                     style={{
+                       marginBottom: 16,
+                       width: '100%',
+                       aspectRatio: 2 / 3,
+                       borderRadius: 15,
+                       overflow: 'hidden'
+                     }}
+                   />
                    <LoadingBox
                      style={{
                        marginBottom: 16,
@@ -215,28 +253,54 @@ export default function HomeScreen() {
                  </View>
                ))
              ) : (
-               displayedMovies.map(movie => (
-                 <FilmDisplay
-                   width={'30%'}
-                   key={movie.id}
-                   movie={{ ...movie, poster: { uri: movie.poster } }}
-                   onPress={(selected) => navigation.navigate('FilmDetails', { movie: { ...movie, poster: { uri: movie.poster } } })}
-                 />
-               ))
-             )}
-              {displayedMovies.length % 3 ===2 && (
-                <View style={{ width: '30%' }}>
-                  <View style={{marginBottom:16, width: '100%', aspectRatio: 2/3, borderRadius:15, overflow:'hidden', backgroundColor:'transparent' }} />
+               moviePairs.map((pair, pairIdx) => (
+                <View
+                  key={`pair-${pairIdx}`}
+                  style={{
+                    width: MOVIE_WIDTH,
+                    padding:5,
+                    backgroundColor: 'transparent',
+                    justifyContent: 'flex-start'
+                  }}
+                >
+                  {pair.map((movie, i) =>
+                    movie ? (
+                      <View key={movie.id} >
+                        <FilmDisplay
+                          width={'100%'}
+                          movie={{ ...movie, poster: { uri: movie.poster } }}
+                          onPress={() =>
+                            navigation.navigate('FilmDetails', {
+                              movie: { ...movie, poster: { uri: movie.poster } }
+                            })
+                          }
+                        />
+                      </View>
+                    ) : (
+                      // empty slot for missing second movie (keeps consistent layout)
+                      <View
+                        key={`empty-${pairIdx}`}
+                        style={{
+                          width: '100%',
+                          aspectRatio: 2 / 3,
+                          borderRadius: 15,
+                          overflow: 'hidden',
+                          backgroundColor: 'transparent'
+                        }}
+                      />
+                    )
+                  )}
                 </View>
-              )}
+              ))
+             )}
               {!loading && displayedMovies.length === 0 && (
                 <View style={{ width: '100%', alignItems: 'center', marginTop: 20 }}>
-                  <Text style={{ color: theme.colors.text }}>Sorry! We couldn't find any movies for you with those filters!</Text>
+                  <Text style={{ color: theme.colors.text }}>Sorry! We couldn't find any movies to match you! May be try changing your preferences.</Text>
                 </View>
               )}
-            </View>
+            </ScrollView>
 
-          </View>
+          
           <GradientButton 
             style={[matchButtonStyle]} 
             inverted={true}
@@ -245,7 +309,7 @@ export default function HomeScreen() {
           > 
             <Text style={{color: theme?.colors?.onGradient ?? theme.colors.text,fontSize:16,fontWeight:700}}>MATCH</Text>
           </GradientButton>
-
+            </View>
           <GenreSelector 
             visible={showGenreSelector}
             onClose={() => setShowGenreSelector(false)}
