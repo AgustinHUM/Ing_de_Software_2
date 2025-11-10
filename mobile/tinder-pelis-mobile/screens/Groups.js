@@ -89,6 +89,7 @@ export default function GroupsHome({ navigation }) {
         if (token) {
           const userGroups = await getUserGroups(token);
           if (mountedRef.current) {
+            console.log("Fetched user groups:", userGroups);
             setGroups(userGroups || []);
             updateUser({ groups: userGroups || [] });
           }
