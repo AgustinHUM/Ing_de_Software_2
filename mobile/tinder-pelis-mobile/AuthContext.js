@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useReducer, useEffect, useState, useCallback, useRef } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { API_URL } from './src/services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const AuthContext = createContext();
 
 const initialState = { isLoading: true, userToken: null, user: null };
@@ -119,7 +120,7 @@ export function AuthProvider({ children }) {
 
       try {
         await SecureStore.deleteItemAsync('userToken');
-
+        AsyncStorage.removeItem('lastMatchedMovie');
         const email = await SecureStore.getItemAsync('lastLoginEmail');
         if (email) {
           await SecureStore.deleteItemAsync('lastLoginEmail');
@@ -148,11 +149,13 @@ export function AuthProvider({ children }) {
   }
 
 
-  function updateUser(update) {
+  function updateUser(update, deleteHomeMovies = false) {
     if (state.user) {
     console.log("Updating user - Prev: ",state.user.email,state.user.groups);
     const updatedUser = typeof update === 'function' ? update(state.user) : { ...(state.user || {}), ...update };
-    console.log("Updated user - New:", updatedUser.email, updatedUser.groups);
+    if (deleteHomeMovies && Object.prototype.hasOwnProperty.call(updatedUser, 'homeMovies')) {
+      delete updatedUser.homeMovies;
+    }
     dispatch({ type: 'UPDATE_USER', user: updatedUser });
   } else {
     console.warn("state user null, cannot update user.");

@@ -171,7 +171,7 @@ export default function EditProfileScreen({ navigation }) {
       try {
         const token = await SecureStore.getItemAsync('userToken');
         await updateUserInfo({...modified, platforms: platforms.map((p)=>p.id)}, token);
-        updateUser({...modified, flag: country.flag});
+        updateUser({...modified, flag: country.flag,}, true); 
       } catch (error) {
         console.error('Error saving:', error);
       } finally {

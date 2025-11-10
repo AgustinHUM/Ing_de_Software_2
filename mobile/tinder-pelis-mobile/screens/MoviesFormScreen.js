@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, Activity } from "react";
 import { ScrollView, View } from "react-native";
-import { Divider, IconButton, Text, useTheme } from "react-native-paper";
+import { ActivityIndicator, Divider, IconButton, Text, useTheme } from "react-native-paper";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import SearchBar from "../components/Searchbar";
 import GradientButton from "../components/GradientButton";
@@ -9,12 +9,14 @@ import FilmDisplay from "../components/FilmDisplay";
 import * as SecureStore from "expo-secure-store";
 import { getMovies, saveForm } from "../src/services/api";
 import { useAuth } from "../AuthContext";
+import LoadingOverlay from "../components/LoadingOverlay";
 
 export default function MoviesFormScreen({ navigation, route }) {
   const theme = useTheme();
   const { setFormPendingAsync, withBusy } = useAuth();
   const [MOVIES, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMovies, setLoadingMovies] = useState(false);
   const MOVIES_FAKE = useMemo(
     () => [
       { id: "m1", title: "Avengers: Endgame", poster: require("../assets/avengers_endgame.jpg") },
@@ -29,7 +31,7 @@ export default function MoviesFormScreen({ navigation, route }) {
 
   useEffect(() => {
     const fetchMovies = async () => {
-      setLoading(true);
+      setLoadingMovies(true);
       try {
         const result = await getMovies("a", 0);
         setMovies(Array.isArray(result) ? result.map(m => ({
@@ -40,7 +42,7 @@ export default function MoviesFormScreen({ navigation, route }) {
         console.error("Error fetching movies:", err);
         setMovies([]);
       } finally {
-        setLoading(false);
+        setLoadingMovies(false);
       }
     };
     fetchMovies();
@@ -55,6 +57,7 @@ export default function MoviesFormScreen({ navigation, route }) {
   const [selectedIds, setSelectedIds] = useState([]);
 
 const handleFinish = async () => {
+  setLoading(true);
   try {
     await withBusy(async () => {
       const email = await SecureStore.getItemAsync("lastLoginEmail");
@@ -75,6 +78,8 @@ const handleFinish = async () => {
     // App.js maneja automatico navigation cuando formPending cambia a false
   } catch (err) {
     console.log("Error saving form:", err);
+  } finally {
+    setLoading(false);
   }
 };
 
@@ -96,7 +101,7 @@ const handleFinish = async () => {
       return;
     }
 
-    setLoading(true);
+    setLoadingMovies(true);
     try {
       const result = await getMovies(trimmed, 0);
       const searchResults = Array.isArray(result) ? result.map(m => ({
@@ -108,7 +113,7 @@ const handleFinish = async () => {
       console.error("Error searching movies:", err);
       setFilteredItems([]);
     } finally {
-      setLoading(false);
+      setLoadingMovies(false);
     }
   };
 
@@ -137,9 +142,12 @@ const handleFinish = async () => {
 
   return (
     <View style={{ flex: 1, paddingTop: 40, backgroundColor: theme.colors.background }}>
+      
+      <LoadingOverlay visible={loading} />
+      
       <View style={{ flexDirection: "row", paddingHorizontal: 25, alignItems: "center", justifyContent: "space-between" }}>
         <IconButton icon={() => <MaterialCommunityIcons name="chevron-left" size={32} color={theme.colors.text} />} onPress={() => navigation.goBack()} />
-        <GradientButton mode="text" onPress={handleFinish}>
+        <GradientButton mode="text" onPress={handleFinish} disabled={loading}>
           {buttonText}
         </GradientButton>
       </View>
@@ -170,8 +178,9 @@ const handleFinish = async () => {
 
       <ScrollView contentContainerStyle={{ paddingBottom: 128, paddingHorizontal: 25 }} showsVerticalScrollIndicator={false}>
         <View style={{ paddingTop: 16, flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}>
-          {loading ? (
-            <View style={{ width: "100%", alignItems: "center", marginTop: 20 }}>
+          {loadingMovies ? (
+            <View style={{flexDirection:'column', width: "100%", alignItems: "center", marginTop: 64, gap: 24 }}>
+              <ActivityIndicator animating size="large" />
               <Text style={{ color: theme.colors.text }}>Loading movies...</Text>
             </View>
           ) : (
@@ -195,7 +204,7 @@ const handleFinish = async () => {
             </View>
           )}
 
-          {!loading && filteredItems.length === 0 && (
+          {!loadingMovies && filteredItems.length === 0 && (
             <View style={{ width: "100%", alignItems: "center", marginTop: 20 }}>
               <Text style={{ color: theme.colors.text }}>No movies found.</Text>
             </View>

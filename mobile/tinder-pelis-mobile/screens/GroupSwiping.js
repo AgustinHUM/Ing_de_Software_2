@@ -56,7 +56,7 @@ export default function GroupSwiping({ route, navigation }) {
         results: data.results,
         sessionId,
         groupId,
-        groupName,
+        groupName: groupName ?? 'Solo Session',
         isSoloSession
       });
     },
@@ -77,6 +77,7 @@ export default function GroupSwiping({ route, navigation }) {
       const response = await getMatchSessionStatus(sessionId, token);
       setSession(response);
       setMovies(response.movies || []);
+      console.log(response.movies);
       setLoading(false);
     } catch (error) {
       console.error('Failed to fetch session data:', error);
@@ -276,7 +277,7 @@ export default function GroupSwiping({ route, navigation }) {
           marginBottom: 10,
         }}
       >
-         Movie <Text style={{ color: theme.colors.primary }}>Mingle</Text>
+         Movie<Text style={{ color: theme.colors.primary }}>Mingle</Text>
       </Text>
 
       {/* Progress indicator */}
@@ -286,7 +287,7 @@ export default function GroupSwiping({ route, navigation }) {
         marginBottom: 20,
         opacity: 0.8 
       }}>
-        {groupName}
+        {groupName ?? 'Solo Session'} - Movie {currentIndex + 1} of {movies.length}
       </Text>
 
       {/* WebSocket status indicator */}
@@ -319,16 +320,17 @@ export default function GroupSwiping({ route, navigation }) {
               borderRadius: 18,
               overflow: "hidden",
               backgroundColor: theme.colors.surface,
-              borderWidth: 3,
+              borderWidth: 2,
               borderColor: theme.colors.primary + "50", // 50 = 0.5 opacity
-              shadowColor: theme.colors.primary,
-              shadowOffset: {
-                width: 0,
-                height: 0,
-              },
-              shadowOpacity: 0.6,
-              shadowRadius: 12,
-              elevation: 8,
+              boxShadow: [
+                          {
+                            offsetX: 0,
+                            offsetY: 0,
+                            blurRadius: 100,
+                            color: theme.colors.primary,
+                            opacity: 1,
+                          },
+                        ],
             }}
           >
             {movie.poster ? (

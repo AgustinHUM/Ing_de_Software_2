@@ -217,28 +217,14 @@ class MatchingSession:
         return self.results
     
     def to_dict(self):
-        movies_with_defaults = []
-        if self.movies:
-            for movie in self.movies:
-                movie_with_defaults = {
-                    "id": movie.get("id"),
-                    "title": movie.get("title"),
-                    "poster": movie.get("poster"),
-                    "description": "No description available",  # Default description
-                    "year": "N/A",  # Default year
-                    "genres": [],  # Default empty genres array
-                    "runtime": 0,  # Default runtime
-                    "rating": "N/A"  # Default rating
-                }
-                movies_with_defaults.append(movie_with_defaults)
-                
+               
         return {
             "session_id": self.session_id,
             "group_id": self.group_id,
             "creator_email": self.creator_email,
             "participants": self.get_participants_with_status(),
             "status": self.status,
-            "movies": movies_with_defaults,
+            "movies": self.movies,
             "can_start": self.can_start_matching(),
             "results": self.results,
             "created_at": self.created_at.isoformat() if self.created_at else None
@@ -455,6 +441,7 @@ def start_matching():
             all_genres.extend(participant.get("genres", []))
         session.movies = get_movies_for_session(session, limit=10, genres=list(set(all_genres)))
         session.status = "matching"
+        print(session.movies)
         event_data = {
             "movies": session.movies,
             "status": session.status,
