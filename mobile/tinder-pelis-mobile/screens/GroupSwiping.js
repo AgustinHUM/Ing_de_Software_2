@@ -124,10 +124,10 @@ export default function GroupSwiping({ route, navigation }) {
   const calculateSynopsisHeight = (text) => {
     const wordsPerLine = 8; // Approximate words per line
     const lineHeight = 20;
-    const padding = 20;
+    const padding = 36;
     const words = text.split(' ').length;
     const lines = Math.ceil(words / wordsPerLine);
-    const calculatedHeight = Math.min(lines * lineHeight + padding, 180); // Cap at 180px
+    const calculatedHeight = Math.min(lines * lineHeight + padding, 280); // Cap at 180px
     return Math.max(calculatedHeight, 80); // Minimum 80px
   };
 
@@ -336,7 +336,7 @@ export default function GroupSwiping({ route, navigation }) {
             />
           </View>
         )}
-        
+        <TouchableOpacity activeOpacity={1} onPress={togglePanel} >
           <Animated.View
             style={{
               transform: [
@@ -347,7 +347,6 @@ export default function GroupSwiping({ route, navigation }) {
           }}
           >
             
-          {/* Touching poster toggles the bottom panel */}
             <View>
             <View
               style={{
@@ -396,7 +395,7 @@ export default function GroupSwiping({ route, navigation }) {
               )}
             </View>
             
-            <TouchableOpacity activeOpacity={1} onPress={togglePanel} >
+            
             <Animated.View //Bottom panel
               style={{
                 position: "absolute",
@@ -404,11 +403,14 @@ export default function GroupSwiping({ route, navigation }) {
                 left: 0,
                 right: 0,
                 height: panelHeight, // animated height
+                
               }}
             >
               {/* Gradient overlay */}
               <LinearGradient
                 colors={["transparent", "rgba(0,0,0,0.95)"]}
+                start={[0,0]}
+                end={[0,0.33]}
                 style={{ flex: 1 }}
               >
                 {/* Info row (title, rating) - stays at the top of the panel */}
@@ -486,7 +488,7 @@ export default function GroupSwiping({ route, navigation }) {
                   </Text>
 
                   <ScrollView
-                    style={{ maxHeight: calculateSynopsisHeight(movie.description) - 18 }}
+                    style={{ maxHeight: calculateSynopsisHeight(movie.description) - 18,  }}
                     showsVerticalScrollIndicator={false}
                   >
                     <Text
@@ -503,12 +505,13 @@ export default function GroupSwiping({ route, navigation }) {
                 </Animated.View>
               </LinearGradient>
             </Animated.View>
-            </TouchableOpacity>
+            
 
             </View>
           
           
           </Animated.View>
+          </TouchableOpacity>
          </>
        )}
       </View>
