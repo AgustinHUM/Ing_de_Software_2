@@ -97,7 +97,7 @@ export default function GenreSelector({
             marginBottom: 16,
           }}
         >
-          <View style={{ width: 40 }}>{/* para centrar */}</View>
+          <View style={{ width: 45 }}>{/* para centrar */}</View>
           <Text
             style={{
               color: theme.colors.text,
@@ -110,17 +110,17 @@ export default function GenreSelector({
             Select Genres
           </Text>
 
-          <TouchableOpacity onPress={handleSubmit} disabled={loading}>
+          <TouchableOpacity onPress={handleClose} disabled={loading}>
             <Text
               style={{
-                width: 40,
+                width: 45,
                 color: theme.colors.primary,
                 fontSize: 16,
                 fontWeight: "600",
                 opacity: loading ? 0.5 : 1,
               }}
             >
-              {selectedGenres.length > 0 ? (loading ? "Joining..." : "Join") : "Skip"}
+              Close
             </Text>
           </TouchableOpacity>
         </View>
@@ -166,7 +166,7 @@ export default function GenreSelector({
 
         {/* Bottom button — keep Skip/Join logic */}
         <TouchableOpacity
-          onPress={onClose}
+          onPress={handleSubmit}
           disabled={loading}
           style={{
             backgroundColor: theme.colors.primary,
@@ -183,7 +183,7 @@ export default function GenreSelector({
               opacity: loading ? 0.5 : 1,
             }}
           >
-            Close
+            {selectedGenres.length > 0 ? (loading ? "Joining..." : "Join") : "Skip"}
           </Text>
         </TouchableOpacity>
       </View>

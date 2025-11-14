@@ -5,36 +5,13 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import AnimatedIcon from "../components/AnimatedIcon";
+import Icon from '../assets/no-movie-matched-icon.svg';
 
 
 const { width } = Dimensions.get("window");
 
-const movies = [
-  {
-    id: "m1",
-    title: "Jaws",
-    genres: ["Romantic comedy"],
-    poster: require("../assets/jaws.jpg"),
-    rating: 6.9,
-    year: 1996,
-  },
-  {
-    id: "m2",
-    title: "Interstellar",
-    genres: ["Science fiction"],
-    poster: require("../assets/interstellar.jpg"),
-    rating: 8.7,
-    year: 2014,
-  },
-  {
-    id: "m3",
-    title: "The Bad Guys 2",
-    genres: ["Action", "Animation"],
-    poster: require("../assets/the_bad_guys_2.jpg"),
-    rating: 7.3,
-    year: 2023,
-  },
-];
+
 
 export default function MatchedMovie({ route }) {
   const theme = useTheme();
@@ -45,11 +22,7 @@ export default function MatchedMovie({ route }) {
   
   // Use the winning movie from results, or fallback to hardcoded for backwards compatibility
   const winningMovie = results?.winning_movie;
-  
-  // Fallback to hardcoded movies if no results provided (for backwards compatibility)
-  const fallbackMovie = movies[Math.floor(Math.random() * movies.length)];
-  
-  const displayMovie = winningMovie || fallbackMovie;
+  const displayMovie = winningMovie || null;
   const sharedBtn = {
   borderRadius: 30,            // same for both
   paddingVertical: 12,
@@ -74,15 +47,17 @@ export default function MatchedMovie({ route }) {
   console.log('Winning movie:', winningMovie);
   console.log('Display movie:', displayMovie);
 
+
+
   return (
     <View
       style={{
         flex: 1,
         backgroundColor: theme.colors.background,
-        justifyContent: "center",
+        justifyContent: "flex-start",
         alignItems: "center",
         paddingHorizontal: 24,
-      }}
+        paddingTop: 70}}
     >
       {/* Title */}
       <Text
@@ -94,7 +69,7 @@ export default function MatchedMovie({ route }) {
           textAlign: "center",
         }}
       >
-        It’s a match!
+        {!displayMovie ? "No Match Found..." : "It’s a match!"}
       </Text>
 
       <Text
@@ -106,9 +81,15 @@ export default function MatchedMovie({ route }) {
           opacity: 0.9,
         }}
       >
-        Your group also loved this movie:
+        {!displayMovie ? "We're afraid we couldn't find a match for you" : "Your group also loved this movie:"}
       </Text>
 
+      {!displayMovie ? (
+        <View style={{ width: '100%', height: width }}>
+          <AnimatedIcon Icon={Icon} size={width * 0.6} />
+        </View>
+      ) : (
+        <View style={{ width: '100%' }}> 
       {/* Movie card */}
       <View
         style={{
@@ -170,18 +151,19 @@ export default function MatchedMovie({ route }) {
           </View>
         </LinearGradient>
       </View>
+        </View> )}
 
       {/* Subtitle */}
       <Text
         style={{
           color: "white",
           fontSize: 15,
-          marginTop: 20,
+            marginTop: 10,
           opacity: 0.5,
           textAlign: "center",
         }}
       >
-        Are you happy with the matched movie?
+          {!displayMovie ? "Shall we try again?" : "Are you happy with the matched movie?"}
       </Text>
 
       {/* Buttons */}
@@ -211,8 +193,9 @@ export default function MatchedMovie({ route }) {
             <Text style={textStyle}>Try Again</Text>
           </TouchableOpacity>
 
+
           {/* RIGHT (Go to Movie) */}
-          <TouchableOpacity
+            {displayMovie && (<TouchableOpacity
             onPress={() => {
               AsyncStorage.setItem('lastMatchedMovie',JSON.stringify({ ...winningMovie, poster: { uri: winningMovie.poster },time: Date.now() }));
               navigation.navigate("FilmDetails", { movie: { ...winningMovie, poster: { uri: winningMovie.poster } } });
@@ -231,8 +214,10 @@ export default function MatchedMovie({ route }) {
               color="white"
               style={[iconStyle,{marginLeft:8}]}
             />
-          </TouchableOpacity>
+            </TouchableOpacity>)
+            } 
         </View>
     </View>
   );
 }
+

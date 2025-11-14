@@ -138,18 +138,17 @@ def seed_watchmode():
     params = {
         'apiKey': api_key,
         'types': 'movie',
-        'page': 1,
-        'limit': 180,  # Get more to skip first 30
+        'page': 3,
         'sort_by': 'popularity_desc'
     }
-    print("Fetching 180 popular movies (skipping first 30)...")
+    print("Fetching page 3 movies...")
     print(params)
     response = requests.get('https://api.watchmode.com/v1/list-titles/', params=params)
     print(response)
     
     all_movies = []
     if response.status_code == 200:
-        all_movies = response.json().get('titles', [])[30:]  # Skip first 30 results
+        all_movies = response.json().get('titles', [])  # Skip first 30 results
     else:
         print(f"Failed to fetch movies: {response.status_code}")
         return

@@ -12,6 +12,9 @@ import { homeMovies, createSoloMatch } from '../src/services/api';
 import GenreSelector from '../components/GenreSelector';
 import { useAuth } from '../AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AnimatedIcon from '../components/AnimatedIcon';
+import SpinningIcon from '../components/SpinningIcon';
+import Icon from '../assets/gear-spinner.svg';
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -172,6 +175,27 @@ export default function HomeScreen() {
                       color: theme.colors.primary,
                       }]
     };
+  if (matchLoading) {
+      return (
+        <View style={{ flex: 1, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background, width: '100%', height: '100%' }}>
+          <View style={{ width:'100%', height: '40%', justifyContent: 'center', alignItems: 'center' }}>
+            <SpinningIcon 
+              Icon={Icon} 
+              size={150} 
+              color={theme.colors.primary}
+              style={{
+                shadowColor: theme.colors.primary,
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.6,
+                shadowRadius: 20,
+              }}
+            />
+          </View>
+          <Text style={{ color: theme.colors.text, fontSize: 20 }}>Loading session...</Text>
+        </View>
+      );
+    }
+  
 
   return (
     <View style={{ flex: 1,paddingBottom:6, flexDirection:'column' }}>
@@ -346,7 +370,6 @@ export default function HomeScreen() {
                 sessionId: session.session_id,
                 isSoloSession: true
               });
-              setMatchLoading(false);
               setShowGenreSelector(false);
             }}
             loading={matchLoading}

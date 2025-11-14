@@ -21,7 +21,8 @@ import {
   endMatchSession 
 } from "../src/services/api";
 import { useMatchingWebSocket } from "../websockets/useMatchingWebSocket";
-
+import { StyleSheet } from "react-native";
+import LoadingBox from "../components/LoadingBox";
 
 const { width } = Dimensions.get("window");
 
@@ -41,6 +42,7 @@ export default function GroupSwiping({ route, navigation }) {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   // WebSocket connection for real-time updates
   const { isConnected, disconnect } = useMatchingWebSocket(sessionId, {
@@ -132,41 +134,48 @@ export default function GroupSwiping({ route, navigation }) {
   // No PanResponder needed - only button-based swiping
 
   const swipe = (direction) => {
-    if (!movie) return;
-    
-    // Record the vote
-    const vote = direction === "right"; // true for like, false for dislike
-    const newVotes = {
-      ...userVotes,
-      [movie.id]: vote
-    };
+    if (!movie || isAnimating) return;
+
+    setIsAnimating(true);
+
+    // Record vote
+    const vote = direction === "right";
+    const newVotes = { ...userVotes, [movie.id]: vote };
     setUserVotes(newVotes);
 
     const toValue = direction === "right" ? width * 1.2 : -width * 1.2;
+
+    // Animate top card out
     Animated.timing(position, {
       toValue: { x: toValue, y: 0 },
       duration: 260,
       useNativeDriver: true,
     }).start(() => {
-      // reset and move to next
-      panelHeight.setValue(INFO_HEIGHT);
-      synopsisOpacity.setValue(0);
-      setIsOpen(false);
+      // Immediately advance index
+      setCurrentIndex(prev => {
+        const nextIndex = prev + 1;
 
-      const nextIndex = currentIndex + 1;
-      setCurrentIndex(nextIndex);
+        if (nextIndex >= movies.length) {
+          handleAutoSubmitVotes(newVotes);
+        }
 
-      // reset animation AFTER next card mounts
+        return nextIndex;
+      });
+
+      // Reset animation for the new top card
       setTimeout(() => {
         position.setValue({ x: 0, y: 0 });
-      }, 0);
-
-      // Auto-submit when finished
-      if (nextIndex >= movies.length) {
-        handleAutoSubmitVotes(newVotes);
-      }
+      }, 10);
+      setIsOpen(false);
+      panelHeight.setValue(INFO_HEIGHT);
+      synopsisOpacity.setValue(0);
+      setIsAnimating(false);
     });
   };
+
+
+
+
 
   // Auto-submit votes when all movies are completed
   const handleAutoSubmitVotes = async (votesToSubmit = userVotes) => {
@@ -216,24 +225,32 @@ export default function GroupSwiping({ route, navigation }) {
     }).start();
 
     setIsOpen(!isOpen);
-  };
+    };
 
-  const movie = movies[currentIndex];
-  
+  const movie = movies[currentIndex] || null;
+  const nextMovie = movies[currentIndex + 1] || null;
+
+  // whenever movies load or change
+  useEffect(() => {
+    if (movies.length > 0) {
+      setCurrentIndex(0);
+      // Aggressively prefetch all movie posters for smooth transitions
+      movies.forEach(movie => {
+        if (movie.poster) {
+          Image.prefetch(movie.poster).catch(err => 
+            console.log('Failed to prefetch:', movie.title, err)
+          );
+        }
+      });
+    }
+  }, [movies]);
+
+
   // Check if all movies have been voted on
   const allMoviesVoted = Object.keys(userVotes).length === movies.length;
   
-  // Show loading screen while fetching data
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background }}>
-        <Text style={{ color: theme.colors.text, fontSize: 16 }}>Loading session...</Text>
-      </View>
-    );
-  }
-
-  // Show waiting screen after votes are submitted (removed submit votes screen)
-  if (hasSubmitted || (allMoviesVoted && currentIndex >= movies.length)) {
+  // Show waiting screen after votes are submitted (but not while loading initial data)
+  if (!loading && (hasSubmitted || (allMoviesVoted && currentIndex >= movies.length))) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background, padding: 20 }}>
         <Text style={{ color: theme.colors.text, fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>
@@ -250,7 +267,7 @@ export default function GroupSwiping({ route, navigation }) {
   }
 
   // No movie to show (shouldn't happen with proper error handling)
-  if (!movie) {
+  if (!loading && !movie) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background }}>
         <Text style={{ color: theme.colors.text, fontSize: 16 }}>No movies available</Text>
@@ -301,179 +318,215 @@ export default function GroupSwiping({ route, navigation }) {
       </Text>
 
        {/* Card (button-swipeable only) */}
-       <Animated.View
-         style={{
-           width: "85%",
-           borderRadius: 18,
-           overflow: "hidden",
-           backgroundColor: theme.colors.surface,
-           transform: [
-             { translateX: position.x },
-           ],
-           elevation: 4,
-         }}
-       >
-        {/* Touching poster toggles the bottom panel */}
-        <TouchableOpacity activeOpacity={0.95} onPress={togglePanel}>
-          <View
-            style={{
-              borderRadius: 18,
-              overflow: "hidden",
-              backgroundColor: theme.colors.surface,
-              borderWidth: 2,
-              borderColor: theme.colors.primary + "50", // 50 = 0.5 opacity
-              boxShadow: [
-                          {
-                            offsetX: 0,
-                            offsetY: 0,
-                            blurRadius: 100,
-                            color: theme.colors.primary,
-                            opacity: 1,
-                          },
-                        ],
-            }}
-          >
-            {movie.poster ? (
-              <Image
-                source={{ uri: movie.poster }}
-                style={{ width: "100%", height: 480, resizeMode: "cover" }}
-              />
-            ) : (
-              <View style={{ 
-                width: "100%", 
-                height: 480, 
-                backgroundColor: theme.colors.surface,
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}>
-                <MaterialCommunityIcons 
-                  name="film" 
-                  size={100} 
-                  color={theme.colors.onSurface}
-                  style={{ opacity: 0.3 }}
-                />
-                <Text style={{ 
-                  color: theme.colors.onSurface, 
-                  fontSize: 16, 
-                  marginTop: 10,
-                  opacity: 0.6
-                }}>
-                  No poster available
-                </Text>
-              </View>
-            )}
+       <View style={{width: "85%", borderRadius: 18, backgroundColor: theme.colors.surface, borderWidth: 2, borderColor: theme.colors.primary + "50", borderRadius: 18, overflow: "hidden", backgroundColor: theme.colors.surface, borderWidth: 2, borderColor: theme.colors.primary + "50" }}>
+       {loading ? (
+         <LoadingBox 
+           style={{
+             width: "100%", 
+             height: 480,
+           }} 
+         />
+       ) : (
+         <>
+        {isAnimating && nextMovie && (
+          <View style={{ ...StyleSheet.absoluteFillObject, overflow: "hidden", zIndex: 1 }}>
+            <Image 
+              source={{ uri: nextMovie.poster }}
+              style={{ width: "100%", height: "100%", resizeMode: "cover" }}
+            />
           </View>
-
-          <Animated.View //Bottom panel
+        )}
+        
+          <Animated.View
             style={{
-              position: "absolute",
-              bottom: 0, // anchor to bottom of the card
-              left: 0,
-              right: 0,
-              height: panelHeight, // animated height
-            }}
+              transform: [
+                { translateX: position.x },
+              ],
+              zIndex: 10,
+              elevation: 4,
+          }}
           >
-            {/* Gradient overlay */}
-            <LinearGradient
-              colors={["transparent", "rgba(0,0,0,0.95)"]}
-              style={{ flex: 1 }}
+            
+          {/* Touching poster toggles the bottom panel */}
+            <View>
+            <View
+              style={{
+                overflow: "hidden",
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.primary + "50", // 50 = 0.5 opacity
+                boxShadow: [
+                            {
+                              offsetX: 0,
+                              offsetY: 0,
+                              blurRadius: 100,
+                              color: theme.colors.primary,
+                              opacity: 1,
+                            },
+                          ],
+              }}
             >
-              {/* Info row (title, rating) - stays at the top of the panel */}
-              <View
-                style={{
-                  paddingHorizontal: 16,
-                  paddingTop: 12,
-                  paddingBottom: 8,
-                }}
+              {movie.poster ? (
+                <Image
+                  source={{ uri: movie.poster }}
+                  style={{ width: "100%", height: 480, resizeMode: "cover" }}
+                />
+              ) : (
+                <View style={{ 
+                  width: "100%", 
+                  height: 480, 
+                  backgroundColor: theme.colors.surface,
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}>
+                  <MaterialCommunityIcons 
+                    name="film" 
+                    size={100} 
+                    color={theme.colors.onSurface}
+                    style={{ opacity: 0.3 }}
+                  />
+                  <Text style={{ 
+                    color: theme.colors.onSurface, 
+                    fontSize: 16, 
+                    marginTop: 10,
+                    opacity: 0.6
+                  }}>
+                    No poster available
+                  </Text>
+                </View>
+              )}
+            </View>
+            
+            <TouchableOpacity activeOpacity={1} onPress={togglePanel} >
+            <Animated.View //Bottom panel
+              style={{
+                position: "absolute",
+                bottom: 0, // anchor to bottom of the card
+                left: 0,
+                right: 0,
+                height: panelHeight, // animated height
+              }}
+            >
+              {/* Gradient overlay */}
+              <LinearGradient
+                colors={["transparent", "rgba(0,0,0,0.95)"]}
+                style={{ flex: 1 }}
               >
+                {/* Info row (title, rating) - stays at the top of the panel */}
                 <View
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginBottom: 6,
+                    paddingHorizontal: 16,
+                    paddingTop: 12,
+                    paddingBottom: 8,
                   }}
                 >
-                  <Text
-                    numberOfLines={1}
+                  <View
                     style={{
-                      color: "white",
-                      fontSize: 24,
-                      fontWeight: "700",
-                      flex: 1,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginBottom: 6,
                     }}
                   >
-                    {movie.title}
-                  </Text>
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        color: "white",
+                        fontSize: 24,
+                        fontWeight: "700",
+                        flex: 1,
+                      }}
+                    >
+                      {movie.title}
+                    </Text>
 
-                  <MaterialCommunityIcons
-                    name="star"
-                    size={16}
-                    color="#FFA500"
-                    style={{ marginRight: 4 }}
-                    
-                  />
-                  <Text style={{ color: "white", fontWeight: "600" }}>
-                    {movie.rating}
+                    <MaterialCommunityIcons
+                      name="star"
+                      size={16}
+                      color="#FFA500"
+                      style={{ marginRight: 4 }}
+                      
+                    />
+                    <Text style={{ color: "white", fontWeight: "600" }}>
+                      {movie.rating}
+                    </Text>
+                  </View>
+
+                  <Text style={{ color: "white", fontSize: 14, opacity: 0.92 }}>
+                    {movie.year} • {movie.genres.join(", ")} • {movie.runtime} min
                   </Text>
                 </View>
 
-                <Text style={{ color: "white", fontSize: 14, opacity: 0.92 }}>
-                  {movie.year} • {movie.genres.join(", ")} • {movie.runtime} min
-                </Text>
-              </View>
-
-              {/* Synopsis container - visible only when open.
-                  We use Animated.View opacity + a little translate for a nicer touch.
-                  The ScrollView is limited so it won't push layout beyond EXPANDED_HEIGHT. */}
-              <Animated.View
-                style={{
-                  opacity: synopsisOpacity,
-                  transform: [
-                    {
-                      translateY: synopsisOpacity.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [8, 0],
-                      }),
-                    },
-                  ],
-                  paddingHorizontal: 16,
-                  paddingBottom: 10,
-                }}
-                pointerEvents={isOpen ? "auto" : "none"} // disable interaction when closed
-              >
-                <Text
+                {/* Synopsis container - visible only when open.
+                    We use Animated.View opacity + a little translate for a nicer touch.
+                    The ScrollView is limited so it won't push layout beyond EXPANDED_HEIGHT. */}
+                <Animated.View
                   style={{
-                    color: "white",
-                    fontSize: 15,
-                    fontWeight: "700",
-                    marginBottom: 6,
+                    opacity: synopsisOpacity,
+                    transform: [
+                      {
+                        translateY: synopsisOpacity.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [8, 0],
+                        }),
+                      },
+                    ],
+                    paddingHorizontal: 16,
+                    paddingBottom: 10,
                   }}
+                  pointerEvents={isOpen ? "auto" : "none"} // disable interaction when closed
                 >
-                  Synopsis:
-                </Text>
-
-                 <ScrollView
-                   style={{ maxHeight: calculateSynopsisHeight(movie.description) - 18 }}
-                   showsVerticalScrollIndicator={false}
-                 >
                   <Text
                     style={{
                       color: "white",
-                      fontSize: 14,
-                      lineHeight: 20,
-                      opacity: 0.95,
+                      fontSize: 15,
+                      fontWeight: "700",
+                      marginBottom: 6,
                     }}
                   >
-                    {movie.description}
+                    Synopsis:
                   </Text>
-                </ScrollView>
-              </Animated.View>
-            </LinearGradient>
+
+                  <ScrollView
+                    style={{ maxHeight: calculateSynopsisHeight(movie.description) - 18 }}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    <Text
+                      style={{
+                        color: "white",
+                        fontSize: 14,
+                        lineHeight: 20,
+                        opacity: 0.95,
+                      }}
+                    >
+                      {movie.description}
+                    </Text>
+                  </ScrollView>
+                </Animated.View>
+              </LinearGradient>
+            </Animated.View>
+            </TouchableOpacity>
+
+            </View>
+          
+          
           </Animated.View>
-        </TouchableOpacity>
-      </Animated.View>
+         </>
+       )}
+      </View>
 
       {/* Barra de botones inferior (dislike, guardar, like) */}
+      {loading ? (
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-evenly",
+            width: "80%",
+            marginTop: 25,
+          }}
+        >
+          <LoadingBox style={{ width: 70, height: 70, borderRadius: 50 }} />
+          <LoadingBox style={{ width: 70, height: 70, borderRadius: 50 }} />
+        </View>
+      ) : (
       <View
         style={{
           flexDirection: "row",
@@ -484,6 +537,7 @@ export default function GroupSwiping({ route, navigation }) {
       >
         <TouchableOpacity
           onPress={() => swipe("left")}
+          disabled={isAnimating}
           style={{
             width: 70,
             height: 70,
@@ -491,28 +545,17 @@ export default function GroupSwiping({ route, navigation }) {
             backgroundColor: "#FF4444",
             justifyContent: "center",
             alignItems: "center",
+            opacity: isAnimating ? 0.5 : 1,
           }}
         >
           <MaterialCommunityIcons name="close" size={30} color="white" fontWeight />
         </TouchableOpacity>
 
-        <TouchableOpacity
-        //  Hay que cambiar esto para que guarde la peli en favoritos
-          style={{
-            width: 55,
-            height: 55,
-            borderRadius: 30,
-            marginTop: 5, 
-            backgroundColor: "#FF8A00",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <MaterialCommunityIcons name="bookmark" size={30} color="white" />
-        </TouchableOpacity>
+        
 
         <TouchableOpacity
           onPress={() => swipe("right")}
+          disabled={isAnimating}
           style={{
             width: 70,
             height: 70,
@@ -520,11 +563,13 @@ export default function GroupSwiping({ route, navigation }) {
             backgroundColor: "#4CAF50",
             justifyContent: "center",
             alignItems: "center",
+            opacity: isAnimating ? 0.5 : 1,
           }}
         >
           <MaterialCommunityIcons name="heart" size={30} color="white" />
         </TouchableOpacity>
       </View>
+      )}
     </View>
   );
 }

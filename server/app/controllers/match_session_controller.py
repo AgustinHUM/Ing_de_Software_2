@@ -200,19 +200,29 @@ class MatchingSession:
         print(f"DEBUG: All movie scores: {movie_scores}")
         winning_movie_id = max(movie_scores.keys(), key=lambda x: movie_scores[x])
         winning_score = movie_scores[winning_movie_id]
-        print(f"DEBUG: Winner ID: {winning_movie_id}, Score: {winning_score}")
+        if winning_score == 0:
+            print("DEBUG: No movie received any likes.")
+            self.results = {
+                "winning_movie": None,
+                "score": 0,
+                "total_participants": self.get_ready_count(),
+                "all_scores": movie_scores
+            }
+            return self.results
+        else:
+            print(f"DEBUG: Winner ID: {winning_movie_id}, Score: {winning_score}")
         
-        winning_movie = next((movie for movie in self.movies 
+            winning_movie = next((movie for movie in self.movies 
                             if movie.get('id') == winning_movie_id), None)
         
-        print(f"DEBUG: Winning movie: {winning_movie['title'] if winning_movie else 'None'}")
+            print(f"DEBUG: Winning movie: {winning_movie['title'] if winning_movie else 'None'}")
         
-        self.results = {
-            "winning_movie": winning_movie,
-            "score": winning_score,
-            "total_participants": self.get_ready_count(),
-            "all_scores": movie_scores
-        }
+            self.results = {
+                "winning_movie": winning_movie,
+                "score": winning_score,
+                "total_participants": self.get_ready_count(),
+                "all_scores": movie_scores
+            }
         
         return self.results
     
@@ -441,7 +451,7 @@ def start_matching():
             all_genres.extend(participant.get("genres", []))
         session.movies = get_movies_for_session(session, limit=10, genres=list(set(all_genres)))
         session.status = "matching"
-        print(session.movies)
+        print(session.participants)
         event_data = {
             "movies": session.movies,
             "status": session.status,
