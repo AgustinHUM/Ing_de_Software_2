@@ -100,7 +100,7 @@ export default function HomeScreen() {
             movieObj = raw;
             console.warn('lastMatchedMovie found but JSON.parse failed — using raw value', e);
           }
-          if (movieObj && movieObj.time && (Date.now() - movieObj.time) > (1/60) * 60 * 60 * 1000) {
+          if (movieObj && movieObj.time && (Date.now() - movieObj.time) > (3) * 60 * 60 * 1000) { // 3 horas
             await AsyncStorage.removeItem('lastMatchedMovie');
             navigation.navigate('DidYouWatch', { movie: movieObj });
           }

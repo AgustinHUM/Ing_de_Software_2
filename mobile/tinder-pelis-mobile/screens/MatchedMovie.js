@@ -180,7 +180,7 @@ export default function MatchedMovie({ route }) {
           <TouchableOpacity
             onPress={() => {
               if (isSoloSession) navigation.navigate("Home");
-              else navigation.navigate("GroupCode", { groupId, groupName });
+              else navigation.navigate("Groups");
             }}
             style={[sharedBtn, { backgroundColor: "#FF4444",justifyContent:'flex-start',paddingLeft:8 }]}
           >
