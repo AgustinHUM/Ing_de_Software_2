@@ -9,6 +9,7 @@ export default function Seleccionable({
     icon = null, 
     iconWidth = 16,
     iconHeight = 16,
+    iconBorderRadius = -1,
     height = 'auto',
     width = 'auto',
     onSelect = () => {},
@@ -19,8 +20,8 @@ export default function Seleccionable({
     const start = theme.colors?.primary ?? 'rgba(255, 138, 0, 1)';
     const end = theme.colors?.secondary ?? 'rgba(252, 210, 94, 1)';
 
+    const iconBorderRadiusValue = iconBorderRadius === -1 ? iconWidth / 4 : iconBorderRadius;
     const [selected, setSelected] = useState(initialSelected);
-
     useEffect(() => {
         setSelected(initialSelected);
     }, [initialSelected]);
@@ -62,7 +63,7 @@ export default function Seleccionable({
       if (React.isValidElement(icon)) {
         return <View style={{ marginRight: 8 }}>{icon}</View>;
       }
-      return <Image source={icon} style={{ width: iconWidth, height: iconHeight, marginRight: iconWidth/2, marginLeft:iconWidth/4, borderRadius:iconWidth/4 }} resizeMode="contain" />;
+      return <Image source={icon} style={{ width: iconWidth, height: iconHeight, marginRight: iconWidth/2, marginLeft:iconWidth/4, borderRadius:iconBorderRadius }} resizeMode="contain" />;
     };
 
     if (!selected) {

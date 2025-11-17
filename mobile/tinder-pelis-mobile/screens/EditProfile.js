@@ -105,12 +105,13 @@ export default function EditProfileScreen({ navigation }) {
     if (modalType === "icon") {
         const array = [];
         for (let k = 0; k < localAvatars.length; k++) {
+          if (k!=1){
             array.push({
                 name: localAvatars[k].name || `Avatar ${k}`,
                 id: k,
                 icon: localAvatars[k].avatar,
                 raw: { key: k, source: localAvatars[k] },
-                });
+                });}
         }
       return array;
     }
@@ -401,6 +402,7 @@ export default function EditProfileScreen({ navigation }) {
       >
         <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
               <SelectableListForm
+              iconBorderRadius={modalType === "icon" ? 99 : 12}
               pTop={0}
                 items={buildItemsForModal()}
                 title={

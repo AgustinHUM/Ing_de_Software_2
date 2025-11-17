@@ -6,10 +6,8 @@ import {
   TouchableOpacity,
   Share,
   Alert,
-  FlatList,
-  Modal,
-  StyleSheet,
-  ScrollView,
+  Image,
+  ScrollView
 } from "react-native";
 import { ActivityIndicator, Text, Divider } from "react-native-paper";
 import { useTheme } from "@react-navigation/native";
@@ -26,49 +24,10 @@ import { useAuth } from "../AuthContext";
 import LoadingOverlay from "../components/LoadingOverlay";
 import LoadingBox from "../components/LoadingBox";
 import GenreSelector from "../components/GenreSelector";
+import { localAvatars } from "./Profile";
 
 const APPBAR_HEIGHT = 60;
 const APPBAR_BOTTOM_INSET = 10;
-
-// Genres available for selection
-const allGenres = [
-  "Action",
-  "Action & Adventure", 
-  "Adventure",
-  "Animation",
-  "Anime",
-  "Biography",
-  "Comedy",
-  "Crime",
-  "Documentary",
-  "Drama",
-  "Family",
-  "Fantasy",
-  "Food",
-  "Game Show",
-  "History",
-  "Horror",
-  "Kids",
-  "Music",
-  "Musical",
-  "Mystery",
-  "Nature",
-  "News",
-  "Reality",
-  "Romance",
-  "Sci-Fi & Fantasy",
-  "Science Fiction",
-  "Soap",
-  "Sports",
-  "Supernatural",
-  "Talk",
-  "Thriller",
-  "Travel",
-  "TV Movie",
-  "War",
-  "War & Politics",
-  "Western"
-];
 
 // helper: id interno -> código lindo
 const toJoinCode = (groupId) => groupId * 7 + 13;
@@ -131,9 +90,27 @@ export default function GroupCode({ navigation, route }) {
     );
   };
 
+  // retry helpers for avatars (per-email)
+  const reloadMapRef = useRef({});           // keeps per-email retry counts
+  const [reloadTick, setReloadTick] = useState(0);
+  const MAX_AVATAR_RETRIES = 5;
+
   const groupRef = useMemo(() => {
     return state.user.groups.find(item => item.id === groupId);
   },[state.user.groups, groupId]);
+
+  const [waiting, setWaiting] = useState(false);
+  
+  useEffect(() => {
+    setWaiting(true);
+    if (members.length > 0) {
+      const timer = setTimeout(() => {
+        setWaiting(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [members]);
+
 
   // --- Fetch initial members once (replaces the old polling) ---
   useEffect(() => {
@@ -177,6 +154,7 @@ export default function GroupCode({ navigation, route }) {
         
         const list = await getGroupUsersById(groupId, token);
         if (!cancelled && Array.isArray(list)) {
+          console.log("Fetched group members:", list);
           setMembers(list);
           // Update member count in state when we get authoritative member list
           updateUser({groups:state.user.groups.map(group => group.id != groupId ? group : {...group,members:list.length})});
@@ -202,407 +180,384 @@ export default function GroupCode({ navigation, route }) {
     };
   }, [groupId]);
 
-const userRef = useRef(state.user);
-useEffect(() => { userRef.current = state.user; }, [state.user]);
+  const userRef = useRef(state.user);
+  useEffect(() => { userRef.current = state.user; }, [state.user]);
 
-// Pusher references
-const channelRef = useRef(null);
-const pusherRef = useRef(null);
+  // Pusher references
+  const channelRef = useRef(null);
+  const pusherRef = useRef(null);
 
-const currentUserEmailRef = useRef(currentUserEmail);
-useEffect(() => { currentUserEmailRef.current = currentUserEmail; }, [currentUserEmail]);
+  const currentUserEmailRef = useRef(currentUserEmail);
+  useEffect(() => { currentUserEmailRef.current = currentUserEmail; }, [currentUserEmail]);
 
-// helper to safely parse payloads (keeps code DRY)
-const parsePayload = (payload) => {
-  if (!payload) return null;
-  if (typeof payload === 'string') {
-    try { return JSON.parse(payload); } catch { return payload; }
-  }
-  return payload;
-};
-
-useEffect(() => {
-  if (!groupId) return;
-  let mounted = true;
-
-  (async () => {
-    try {
-      Pusher.logToConsole = true;
-
-      // if there's an existing pusher instance, tear it down first (avoid duplicate connections)
-      try {
-        if (pusherRef.current) {
-          pusherRef.current.disconnect && pusherRef.current.disconnect();
-          channelRef.current = null;
-          pusherRef.current = null;
-        }
-      } catch (_) {}
-
-      const pusher = new Pusher('fcb8b1c83278ac43036d', {
-        cluster: 'sa1',
-        // forceTLS: true,
-      });
-      pusherRef.current = pusher;
-
-      const channel = pusher.subscribe(`group-${groupId}`);
-      channelRef.current = channel;
-
-      // Generic connection logging
-      pusher.connection.bind('error', (err) => {
-        // keep it quiet in production, but helpful while debugging
-        console.warn('Pusher connection error', err);
-      });
-
-      // --- new-member ---
-      const onNewMember = (payload) => {
-        const data = parsePayload(payload);
-        if (!data) return;
-        const email = data.email ?? null;
-        const username = data.username ?? (email ? email.split('@')[0] : 'User');
-
-        // We require an email (or some unique id) to avoid duplicates
-        if (!email) {
-          console.warn('[pusher] Ignoring new-member without email:', data);
-          return;
-        }
-
-        // check that user still belongs to this group (use latest user state)
-        const user = userRef.current;
-        if (!user || !Array.isArray(user.groups) || !user.groups.some(g => g.id === groupId)) return;
-
-        if (!mounted) return;
-        setMembers(prev => {
-          // dedupe by email 
-          if (prev.some(m => m.email === email)) return prev;
-          const next = [...prev, { email, username }];
-          
-          // Update the member count based on the actual member list size
-          updateUser(prevUser => ({
-            ...prevUser,
-            groups: prevUser.groups.map(g => 
-              g.id === groupId ? { ...g, members: next.length } : g
-            )
-          }));
-          
-          return next;
-        });
-      };
-
-      channel.bind('new-member', onNewMember);
-
-      // --- member-left ---
-      const onMemberLeft = (payload) => {
-        const data = parsePayload(payload);
-        if (!data) return;
-        const email = data.email ?? null;
-        if (!email) {
-          console.warn('[pusher] Ignoring member-left without email:', data);
-          return;
-        }
-
-        const user = userRef.current;
-        if (!user || !Array.isArray(user.groups) || !user.groups.some(g => g.id === groupId)) return;
-
-        if (!mounted) return;
-        
-        // Update members list first to get accurate count
-        setMembers(prev => {
-          const next = prev.filter(m => m.email !== email);
-          if (next.length === prev.length) return prev; // nothing removed
-          
-          // Then update the member count based on the filtered list
-          updateUser(prevUser => ({
-            ...prevUser,
-            groups: prevUser.groups.map(g => {
-              if (g.id === groupId) {
-                return { ...g, members: next.length };
-              }
-              return g;
-            })
-          }));
-          
-          return next;
-        });
-      };
-
-      channel.bind('member-left', onMemberLeft);
-
-      // Handle session creation event
-      channel.bind('session-created', (payload) => {
-        try {
-          const data = typeof payload === 'string' ? (() => {
-            try { return JSON.parse(payload); } catch { return payload; }
-          })() : payload;
-
-          ////console.log('PUSHER EVENT session-created payload:', JSON.stringify(data));
-
-          if (!mounted) return;
-          
-          // Update session data with the created session
-          setSessionData({
-            session_id: data.session_id,
-            creator_email: data.creator_email,
-            status: 'waiting_for_participants',
-            participants: {},
-            group_id: groupId
-          });
-
-          // Add session activity for the creator
-          setSessionActivities(prev => [...prev, {
-            message: data.message || "created a session",
-            timestamp: new Date(),
-            email: data.creator_email,
-            action: data.action || 'created_session'
-          }]);
-
-        } catch (err) {
-          //console.log('session-created event handling error', err);
-        }
-      });
-
-      // Handle participant joining session
-      channel.bind('participant-joined', (payload) => {
-        try {
-          const data = typeof payload === 'string' ? (() => {
-            try { return JSON.parse(payload); } catch { return payload; }
-          })() : payload;
-
-          ////console.log('PUSHER EVENT participant-joined payload:', JSON.stringify(data));
-
-          if (!mounted) return;
-          
-          // Add session activity
-          setSessionActivities(prev => [...prev, {
-            message: data.message || "joined the session",
-            timestamp: new Date(),
-            email: data.email,
-            action: data.action || 'joined_session'
-          }]);
-          
-          setSessionData(prev => {
-            if (!prev) return prev;
-            const updatedSession = {
-              ...prev,
-              participants: {
-                ...prev.participants,
-                [data.email]: {
-                  username: data.username,
-                  status: 'joined',
-                  joined_at: new Date().toISOString()
-                }
-              }
-            };
-            //console.log("Updated session after participant joined:", updatedSession);
-            return updatedSession;
-          });
-
-        } catch (err) {
-          //console.log('participant-joined event handling error', err);
-        }
-      });
-
-      // Handle participant ready (after selecting genres)
-      channel.bind('participant-ready', (payload) => {
-        try {
-          const data = typeof payload === 'string' ? (() => {
-            try { return JSON.parse(payload); } catch { return payload; }
-          })() : payload;
-
-          //console.log('PUSHER EVENT participant-ready payload:', JSON.stringify(data));
-
-          if (!mounted) return;
-          
-          // Add session activity
-          setSessionActivities(prev => [...prev, {
-            message: data.message || "is ready to match",
-            timestamp: new Date(),
-            email: data.email,
-            action: data.action || 'ready_to_match'
-          }]);
-          
-          setSessionData(prev => {
-            if (!prev || !prev.participants[data.email]) {
-              //console.log("No session or participant not found for ready event");
-              return prev;
-            }
-            const updatedSession = {
-              ...prev,
-              participants: {
-                ...prev.participants,
-                [data.email]: {
-                  ...prev.participants[data.email],
-                  status: 'ready'
-                }
-              }
-            };
-            //console.log("Updated session after participant ready:", updatedSession);
-            return updatedSession;
-          });
-
-        } catch (err) {
-          //console.log('participant-ready event handling error', err);
-        }
-      });
-
-      // Handle matching-started event
-      channel.bind('matching-started', (payload) => {
-        try {
-          const data = typeof payload === 'string' ? (() => {
-            try { return JSON.parse(payload); } catch { return payload; }
-          })() : payload;
-
-          //console.log('PUSHER EVENT matching-started payload:', JSON.stringify(data));
-
-          if (!mounted) return;
-          
-          // Add session activity
-          setSessionActivities(prev => [...prev, {
-            message: data.message || "Matching started!",
-            timestamp: new Date(),
-            email: null, // System message
-            action: data.action || 'started_matching'
-          }]);
-          
-          setSessionData(prev => {
-            if (!prev) return prev;
-            const updatedSession = {
-              ...prev,
-              status: 'matching',
-              movies: data.movies || []
-            };
-            //console.log("Session updated for matching start, navigating to swiping...");
-            
-            // Navigate using the session ID from the current session data
-            setTimeout(() => {
-              const navParams = { 
-                sessionId: prev.session_id,
-                groupId: groupId,
-                groupName: groupName
-              };
-              //console.log("Navigating to GroupSwiping with params:", navParams);
-              navigation.navigate("GroupSwiping", navParams);
-            }, 100);
-            
-            return updatedSession;
-          });
-
-        } catch (err) {
-          //console.log('matching-started event handling error', err);
-        }
-      });
-
-      // Handle session end/cleanup
-      channel.bind('session-ended', (payload) => {
-        try {
-          const data = typeof payload === 'string' ? (() => {
-            try { return JSON.parse(payload); } catch { return payload; }
-          })() : payload;
-
-          //console.log('PUSHER EVENT session-ended payload:', JSON.stringify(data));
-
-          if (!mounted) return;
-          
-          // Clear session data and activities
-          setSessionData(null);
-          setSessionActivities([]);
-
-        } catch (err) {
-          //console.log('session-ended event handling error', err);
-        }
-      });
-
-      // Handle session cleanup
-      channel.bind('session-cleanup', (payload) => {
-        try {
-          const data = typeof payload === 'string' ? (() => {
-            try { return JSON.parse(payload); } catch { return payload; }
-          })() : payload;
-
-          //console.log('PUSHER EVENT session-cleanup payload:', JSON.stringify(data));
-
-          if (!mounted) return;
-          
-          // Clear session data and activities
-          setSessionData(null);
-          setSessionActivities([]);
-
-        } catch (err) {
-          //console.log('session-cleanup event handling error', err);
-        }
-      });
-
-      try {
-        const token = await SecureStore.getItemAsync("userToken");
-        if (token && mounted) {
-          const list = await getGroupUsersById(groupId, token);
-          if (!mounted) return;
-
-          // normalize server list and dedupe (email required)
-          const serverList = Array.isArray(list) ? list.filter(u => u && u.email).map(u => ({ email: u.email, username: u.username || u.email.split('@')[0] })) : [];
-
-          // merge existing `members` (from any events that arrived before fetch) with serverList
-          setMembers(prev => {
-            const map = new Map();
-            // prefer server version if exists (server authoritative)
-            serverList.forEach(u => map.set(u.email, u));
-            (prev || []).forEach(u => {
-              if (u && u.email && !map.has(u.email)) {
-                map.set(u.email, u); // keep event-only entries if server didn't include them
-              }
-            });
-            return Array.from(map.values());
-          });
-
-          outageShownRef.current = false;
-        }
-      } catch (e) {
-        // fetch error handled elsewhere in your code
-        console.warn('error fetching initial members', e);
-      }
-
-    } catch (err) {
-      console.warn('Pusher setup error', err);
+  // helper to safely parse payloads (keeps code DRY)
+  const parsePayload = (payload) => {
+    if (!payload) return null;
+    if (typeof payload === 'string') {
+      try { return JSON.parse(payload); } catch { return payload; }
     }
-  })();
+    return payload;
+  };
+
+  useEffect(() => {
+    if (!groupId) return;
+    let mounted = true;
+
+    (async () => {
+      try {
+        Pusher.logToConsole = true;
+
+        // if there's an existing pusher instance, tear it down first (avoid duplicate connections)
+        try {
+          if (pusherRef.current) {
+            pusherRef.current.disconnect && pusherRef.current.disconnect();
+            channelRef.current = null;
+            pusherRef.current = null;
+          }
+        } catch (_) {}
+
+        const pusher = new Pusher('fcb8b1c83278ac43036d', {
+          cluster: 'sa1',
+          // forceTLS: true,
+        });
+        pusherRef.current = pusher;
+
+        const channel = pusher.subscribe(`group-${groupId}`);
+        channelRef.current = channel;
+
+        // Generic connection logging
+        pusher.connection.bind('error', (err) => {
+          // keep it quiet in production, but helpful while debugging
+          console.warn('Pusher connection error', err);
+        });
+
+        // --- new-member ---
+        const onNewMember = (payload) => {
+          const data = parsePayload(payload);
+          if (!data) return;
+          const email = data.email ?? null;
+          const username = data.username ?? (email ? email.split('@')[0] : 'User');
+
+          // We require an email (or some unique id) to avoid duplicates
+          if (!email) {
+            console.warn('[pusher] Ignoring new-member without email:', data);
+            return;
+          }
+
+          // check that user still belongs to this group (use latest user state)
+          const user = userRef.current;
+          if (!user || !Array.isArray(user.groups) || !user.groups.some(g => g.id === groupId)) return;
+
+          if (!mounted) return;
+          setMembers(prev => {
+            // dedupe by email 
+            if (prev.some(m => m.email === email)) return prev;
+            const next = [...prev, { email, username }];
+            
+            // Update the member count based on the actual member list size
+            updateUser(prevUser => ({
+              ...prevUser,
+              groups: prevUser.groups.map(g => 
+                g.id === groupId ? { ...g, members: next.length } : g
+              )
+            }));
+            
+            return next;
+          });
+        };
+
+        channel.bind('new-member', onNewMember);
+
+        // --- member-left ---
+        const onMemberLeft = (payload) => {
+          const data = parsePayload(payload);
+          if (!data) return;
+          const email = data.email ?? null;
+          if (!email) {
+            console.warn('[pusher] Ignoring member-left without email:', data);
+            return;
+          }
+
+          const user = userRef.current;
+          if (!user || !Array.isArray(user.groups) || !user.groups.some(g => g.id === groupId)) return;
+
+          if (!mounted) return;
+          
+          // Update members list first to get accurate count
+          setMembers(prev => {
+            const next = prev.filter(m => m.email !== email);
+            if (next.length === prev.length) return prev; // nothing removed
+            
+            // Then update the member count based on the filtered list
+            updateUser(prevUser => ({
+              ...prevUser,
+              groups: prevUser.groups.map(g => {
+                if (g.id === groupId) {
+                  return { ...g, members: next.length };
+                }
+                return g;
+              })
+            }));
+            
+            return next;
+          });
+        };
+
+        channel.bind('member-left', onMemberLeft);
+
+        // Handle session creation event
+        channel.bind('session-created', (payload) => {
+          try {
+            const data = typeof payload === 'string' ? (() => {
+              try { return JSON.parse(payload); } catch { return payload; }
+            })() : payload;
+
+            if (!mounted) return;
+            
+            // Update session data with the created session
+            setSessionData({
+              session_id: data.session_id,
+              creator_email: data.creator_email,
+              status: 'waiting_for_participants',
+              participants: {},
+              group_id: groupId
+            });
+
+            // Add session activity for the creator
+            setSessionActivities(prev => [...prev, {
+              message: data.message || "created a session",
+              timestamp: new Date(),
+              email: data.creator_email,
+              action: data.action || 'created_session'
+            }]);
+
+          } catch (err) {
+            //console.log('session-created event handling error', err);
+          }
+        });
+
+        // Handle participant joining session
+        channel.bind('participant-joined', (payload) => {
+          try {
+            const data = typeof payload === 'string' ? (() => {
+              try { return JSON.parse(payload); } catch { return payload; }
+            })() : payload;
+
+            if (!mounted) return;
+            
+            // Add session activity
+            setSessionActivities(prev => [...prev, {
+              message: data.message || "joined the session",
+              timestamp: new Date(),
+              email: data.email,
+              action: data.action || 'joined_session'
+            }]);
+            
+            setSessionData(prev => {
+              if (!prev) return prev;
+              const updatedSession = {
+                ...prev,
+                participants: {
+                  ...prev.participants,
+                  [data.email]: {
+                    username: data.username,
+                    status: 'joined',
+                    joined_at: new Date().toISOString()
+                  }
+                }
+              };
+              return updatedSession;
+            });
+
+          } catch (err) {
+            //console.log('participant-joined event handling error', err);
+          }
+        });
+
+        // Handle participant ready (after selecting genres)
+        channel.bind('participant-ready', (payload) => {
+          try {
+            const data = typeof payload === 'string' ? (() => {
+              try { return JSON.parse(payload); } catch { return payload; }
+            })() : payload;
+
+            if (!mounted) return;
+            
+            // Add session activity
+            setSessionActivities(prev => [...prev, {
+              message: data.message || "is ready to match",
+              timestamp: new Date(),
+              email: data.email,
+              action: data.action || 'ready_to_match'
+            }]);
+            
+            setSessionData(prev => {
+              if (!prev || !prev.participants[data.email]) {
+                return prev;
+              }
+              const updatedSession = {
+                ...prev,
+                participants: {
+                  ...prev.participants,
+                  [data.email]: {
+                    ...prev.participants[data.email],
+                    status: 'ready'
+                  }
+                }
+              };
+              return updatedSession;
+            });
+
+          } catch (err) {
+            //console.log('participant-ready event handling error', err);
+          }
+        });
+
+        // Handle matching-started event
+        channel.bind('matching-started', (payload) => {
+          try {
+            const data = typeof payload === 'string' ? (() => {
+              try { return JSON.parse(payload); } catch { return payload; }
+            })() : payload;
+
+            if (!mounted) return;
+            
+            // Add session activity
+            setSessionActivities(prev => [...prev, {
+              message: data.message || "Matching started!",
+              timestamp: new Date(),
+              email: null, // System message
+              action: data.action || 'started_matching'
+            }]);
+            
+            setSessionData(prev => {
+              if (!prev) return prev;
+              const updatedSession = {
+                ...prev,
+                status: 'matching',
+                movies: data.movies || []
+              };
+              
+              // Navigate using the session ID from the current session data
+              setTimeout(() => {
+                const navParams = { 
+                  sessionId: prev.session_id,
+                  groupId: groupId,
+                  groupName: groupName
+                };
+                navigation.navigate("GroupSwiping", navParams);
+              }, 100);
+              
+              return updatedSession;
+            });
+
+          } catch (err) {
+            //console.log('matching-started event handling error', err);
+          }
+        });
+
+        // Handle session end/cleanup
+        channel.bind('session-ended', (payload) => {
+          try {
+            const data = typeof payload === 'string' ? (() => {
+              try { return JSON.parse(payload); } catch { return payload; }
+            })() : payload;
+
+            if (!mounted) return;
+            
+            // Clear session data and activities
+            setSessionData(null);
+            setSessionActivities([]);
+
+          } catch (err) {
+            //console.log('session-ended event handling error', err);
+          }
+        });
+
+        // Handle session cleanup
+        channel.bind('session-cleanup', (payload) => {
+          try {
+            const data = typeof payload === 'string' ? (() => {
+              try { return JSON.parse(payload); } catch { return payload; }
+            })() : payload;
+
+            if (!mounted) return;
+            
+            // Clear session data and activities
+            setSessionData(null);
+            setSessionActivities([]);
+
+          } catch (err) {
+            //console.log('session-cleanup event handling error', err);
+          }
+        });
+
+        try {
+          const token = await SecureStore.getItemAsync("userToken");
+          if (token && mounted) {
+            const list = await getGroupUsersById(groupId, token);
+            if (!mounted) return;
+
+            // normalize server list and dedupe (email required)
+            const serverList = Array.isArray(list) ? list.filter(u => u && u.email).map(u => ({ email: u.email, username: u.username || u.email.split('@')[0] })) : [];
+
+            // merge existing `members` (from any events that arrived before fetch) with serverList
+            setMembers(prev => {
+              const map = new Map();
+              // prefer server version if exists (server authoritative)
+              serverList.forEach(u => map.set(u.email, u));
+              (prev || []).forEach(u => {
+                if (u && u.email && !map.has(u.email)) {
+                  map.set(u.email, u); // keep event-only entries if server didn't include them
+                }
+              });
+              return Array.from(map.values());
+            });
+
+            outageShownRef.current = false;
+          }
+        } catch (e) {
+          // fetch error handled elsewhere in your code
+          console.warn('error fetching initial members', e);
+        }
+
+      } catch (err) {
+        console.warn('Pusher setup error', err);
+      }
+    })();
 
     return () => {
-    mounted = false;
-    try {
-      if (channelRef.current) {
-        // unbind specific handlers (if available)
-        try { channelRef.current.unbind('new-member'); } catch (e) {}
-        try { channelRef.current.unbind('member-left'); } catch (e) {}
-        // fallback to unbind_all if supported by your pusher client
-        try { channelRef.current.unbind_all && channelRef.current.unbind_all(); } catch (e) {}
+      mounted = false;
+      try {
+        if (channelRef.current) {
+          // unbind specific handlers (if available)
+          try { channelRef.current.unbind('new-member'); } catch (e) {}
+          try { channelRef.current.unbind('member-left'); } catch (e) {}
+          // fallback to unbind_all if supported by your pusher client
+          try { channelRef.current.unbind_all && channelRef.current.unbind_all(); } catch (e) {}
+        }
+        if (pusherRef.current) {
+          try { pusherRef.current.unsubscribe && pusherRef.current.unsubscribe(`group-${groupId}`); } catch (e) {}
+          try { pusherRef.current.disconnect && pusherRef.current.disconnect(); } catch (e) {}
+        }
+      } catch (e) {
+        console.warn('Pusher cleanup error', e);
+      } finally {
+        channelRef.current = null;
+        pusherRef.current = null;
       }
-      if (pusherRef.current) {
-        try { pusherRef.current.unsubscribe && pusherRef.current.unsubscribe(`group-${groupId}`); } catch (e) {}
-        try { pusherRef.current.disconnect && pusherRef.current.disconnect(); } catch (e) {}
-      }
-    } catch (e) {
-      console.warn('Pusher cleanup error', e);
-    } finally {
-      channelRef.current = null;
-      pusherRef.current = null;
-    }
-  };
-}, [groupId]);
+    };
+  }, [groupId]);
 
 
- 
   // Genre selection functions
   const toggleGenre = (genre, selected) => {
-    //console.log("Toggling genre:", genre, "selected:", selected);
     if (selected) {
       setSelectedGenres(prev => [...prev, genre]);
     } else {
       setSelectedGenres(prev => prev.filter(g => g !== genre));
     }
   };
-
-  // handleGenreModalSubmit logic will be inlined where used
-
-  // handleGenreModalClose logic will be inlined where used
 
   const handleGenreSubmit = async (genres) => {
     try {
@@ -645,7 +600,6 @@ useEffect(() => {
       return {
         text: "Start Session",
         action: () => {
-          //console.log("Opening genre modal for session creation");
           setCreatingSession(true);
           setShowGenreModal(true);
         },
@@ -669,8 +623,6 @@ useEffect(() => {
         return {
           text: "Join Session",
           action: () => {
-            // Only ever called when a session exists
-            //console.log("Opening genre modal to join session:", sessionData.session_id);
             setCreatingSession(false);
             setShowGenreModal(true);
           },
@@ -694,7 +646,6 @@ useEffect(() => {
     return {
       text: "Start Session",
       action: () => {
-        //console.log("Opening genre modal for session creation");
         setShowGenreModal(true);
       },
       disabled: sessionActionLoading
@@ -719,93 +670,117 @@ useEffect(() => {
     return {};
   };
 
-  const renderItem = ({ item }) => {
+  const renderMemberRow = (item, index) => {
     const participantStyle = getParticipantStyle(item.email);
-    
+    const userKeyBase = item.email || item.username || JSON.stringify(item);
+    const retryCount = reloadMapRef.current[userKeyBase] || 0;
+    const rowKey = `${userKeyBase}-${item.avatar || 0}-${retryCount}`;
+
     // Find the most recent session activity for this user
     const userActivity = sessionActivities
       .filter(activity => activity.email === item.email)
       .sort((a, b) => b.timestamp - a.timestamp)[0]; // Most recent first
-    
-    // Determine the display message
+
     const displayMessage = userActivity ? userActivity.message : "Has joined your group";
-    
+
+    // safe avatar lookup with fallback
+    const avatarIndex = Number.isFinite(item?.avatar) ? item.avatar : 0;
+    console.log('Avatar index for member', item.username, ':', item.avatar);
+    const avatarSource = (localAvatars && localAvatars[avatarIndex] && localAvatars[avatarIndex].avatar) ? localAvatars[avatarIndex].avatar : localAvatars[3].avatar;
+    //console.log('Rendering member row:', item.username, 'Avatar source:', avatarSource);
     return (
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginVertical: 6,
-        }}
-      >
+      <View key={rowKey} style={{ marginVertical: 6 }}>
         <View
           style={{
             backgroundColor: "rgba(255,255,255,0.12)",
             paddingVertical: 8,
             paddingHorizontal: 16,
             borderRadius: 14,
-            maxWidth: "60%",
+            width: "100%",
+            alignItems: "center",
+            flexDirection: "row",
+            justifyContent: "space-between",
             ...participantStyle,
           }}
         >
-          <Text style={{ color: textColor, fontWeight: "800" }} numberOfLines={1}>
-            {item.username || item.email || "User"}
+          <View style={{ flexDirection: "row", alignItems: "center", flex:1}}>
+            {waiting ? (
+              <LoadingBox style={{ width:48, height:48, marginRight: 24, borderRadius:99 }} />
+            ) : (
+              <Image
+                source={ avatarSource }
+                defaultSource={ localAvatars[0].avatar }
+                style={{ width: 48, height: 48, marginRight: 24, borderRadius:99 }}
+                resizeMode="contain"
+                onError={() => {
+                  const emailKey = userKeyBase;
+                  const tries = (reloadMapRef.current[emailKey] || 0) + 1;
+                  if (tries <= MAX_AVATAR_RETRIES) {
+                    reloadMapRef.current[emailKey] = tries;
+                    // bump reloadTick after a small backoff so the row remounts
+                    setTimeout(() => setReloadTick(t => t + 1), 200 * tries);
+                  } else {
+                    console.warn(`Failed to load avatar for ${emailKey} after ${tries} attempts.`);
+                  }
+                }}
+              />
+            )}
+            <Text style={{ color: textColor, fontWeight: "800" }} numberOfLines={1}>
+              {item.username || item.email || "User"}
+            </Text>
+          </View>
+
+          <Text style={{ color: textColor, opacity: 0.85 }}>
+            {displayMessage}
           </Text>
         </View>
-        <Text style={{ color: textColor, opacity: 0.85 }}>
-          {displayMessage}
-        </Text>
-      
       </View>
-      );
-    }
+    );
+  };
 
- const handleLeaveGroup = () => {
-  Alert.alert(
-    "Leave Group",
-    'Are you sure you want to leave this group?',
-    [
-      { text: "Cancel", style: "cancel" }, 
-      { text: "Leave", style: "destructive", onPress: async () => {
-          try {
-            setLoading(true);
-            const token = await SecureStore.getItemAsync("userToken");
-            if (!token || !groupId) {
-              throw new Error("Missing auth token or group ID");
-            }
-            await leaveGroup(groupId, token);
-
-            // Unsubscribe from pusher/channel immediately — we don't care about updates anymore
+  const handleLeaveGroup = () => {
+    Alert.alert(
+      "Leave Group",
+      'Are you sure you want to leave this group?',
+      [
+        { text: "Cancel", style: "cancel" }, 
+        { text: "Leave", style: "destructive", onPress: async () => {
             try {
-              if (channelRef.current) {
-                channelRef.current.unbind_all && channelRef.current.unbind_all();
+              setLoading(true);
+              const token = await SecureStore.getItemAsync("userToken");
+              if (!token || !groupId) {
+                throw new Error("Missing auth token or group ID");
               }
-              if (pusherRef.current) {
-                pusherRef.current.unsubscribe && pusherRef.current.unsubscribe(`group-${groupId}`);
-                pusherRef.current.disconnect && pusherRef.current.disconnect();
+              await leaveGroup(groupId, token);
+
+              // Unsubscribe from pusher/channel immediately — we don't care about updates anymore
+              try {
+                if (channelRef.current) {
+                  channelRef.current.unbind_all && channelRef.current.unbind_all();
+                }
+                if (pusherRef.current) {
+                  pusherRef.current.unsubscribe && pusherRef.current.unsubscribe(`group-${groupId}`);
+                  pusherRef.current.disconnect && pusherRef.current.disconnect();
+                }
+              } catch (e) {
+                //console.log('pusher unsubscribe error', e);
+              } finally {
+                channelRef.current = null;
+                pusherRef.current = null;
               }
+
+              updateUser({groups:state.user.groups.filter(group => group.id != groupId)});
+              navigation.navigate("Groups");
             } catch (e) {
-              //console.log('pusher unsubscribe error', e);
+              //console.log("leaveGroup error:", e?.message || e);
+              Alert.alert("Error", "Could not leave the group. Please try again later.");
             } finally {
-              channelRef.current = null;
-              pusherRef.current = null;
-            }
-
-            updateUser({groups:state.user.groups.filter(group => group.id != groupId)});
-            navigation.navigate("Groups");
-          } catch (e) {
-            //console.log("leaveGroup error:", e?.message || e);
-            Alert.alert("Error", "Could not leave the group. Please try again later.");
-          } finally {
-            setLoading(false); }
-        } 
-      }
-    ]
-  );
-}
-
-
+              setLoading(false); }
+          } 
+        }
+      ]
+    );
+  }
 
   const codeLabel = (joinCode ?? "------").toString().toUpperCase();
 
@@ -967,34 +942,31 @@ useEffect(() => {
               }}
             />
 
-            {/* Lista de miembros (actualizada en tiempo real vía Pusher) */}
-            <FlatList
-              data={members}
-              keyExtractor={(u, i) => (u.email || u.username || `m${i}`)}
-              renderItem={renderItem}
-              ListEmptyComponent={
-                <>
-                <LoadingBox style={{width:350, height:40,borderRadius:15,
-                   alignSelf:'center', marginVertical:6}} />
-                <LoadingBox style={{width:350, height:40,borderRadius:15,
-                   alignSelf:'center', marginVertical:6}} />
-                <LoadingBox style={{width:350, height:40,borderRadius:15,
-                   alignSelf:'center', marginVertical:6}} />
-                <LoadingBox style={{width:350, height:40,borderRadius:15,
-                   alignSelf:'center', marginVertical:6}} />
-                </>
-              }
-              ListFooterComponent={
-                members.length === 1 ? (
-                  <View style={{ alignItems: "center" }}>
-                    <Text style={{ color: textColor, opacity: 0.8, fontStyle: "italic" }}>
-                      Waiting for others to join...
-                    </Text>
-                  </View>
-                ) : null
-              }
+            <ScrollView
               contentContainerStyle={{ paddingBottom: 16 }}
-            />
+              // include reloadTick in key to force remount of ScrollView if retries change
+              key={`members-scroll-${reloadTick}`}
+              showsVerticalScrollIndicator={false}
+            >
+              {members.length === 0 ? (
+                <>
+                  <LoadingBox style={{width:'100%', height:60,borderRadius:15, alignSelf:'center', marginVertical:8}} />
+                  <LoadingBox style={{width:'100%', height:60,borderRadius:15, alignSelf:'center', marginVertical:8}} />
+                  <LoadingBox style={{width:'100%', height:60,borderRadius:15, alignSelf:'center', marginVertical:8}} />
+                </>
+              ) : (
+                members.map((m, i) => renderMemberRow(m, i))
+              )}
+
+              {members.length === 1 && (
+                <View style={{ alignItems: "center", marginTop: 8 }}>
+                  <Text style={{ color: textColor, opacity: 0.8, fontStyle: "italic" }}>
+                    Waiting for others to join...
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
+
             <View
               style={{
                 height: 1,

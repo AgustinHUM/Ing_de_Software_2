@@ -22,9 +22,42 @@ import LoadingBox from '../components/LoadingBox';
 const { width } = Dimensions.get('window');
 
 export const localAvatars = [
-  {avatar: require('../assets/avatars/0.png'), name: 'Default'},
-  {avatar: require('../assets/avatars/1.png'), name: 'Avatar 1'},
-  //{avatar: require('../assets/avatars/1.png'), name: 'Avatar 1'}
+  {avatar: require('../assets/avatars/0.png'), name: 'Mingler'},
+  {avatar: require('../assets/avatars/1.gif'), name: 'Creepy Eye'},
+  {avatar: require('../assets/avatars/2.png'), name: 'Minglercorn'},
+  {avatar: require('../assets/avatars/3.png'), name: 'Minglershroom'},
+  {avatar: require('../assets/avatars/4.png'), name: 'Eco Mingler'},
+  {avatar: require('../assets/avatars/5.png'), name: 'Angler Mingler'},
+  {avatar: require('../assets/avatars/6.png'), name: 'Space Mingler'},
+  {avatar: require('../assets/avatars/7.png'), name: 'Horny Mingler'},
+  {avatar: require('../assets/avatars/8.png'), name: 'Tim'},
+  {avatar: require('../assets/avatars/9.png'), name: 'Kamado Tanjiro'},
+  {avatar: require('../assets/avatars/10.png'), name: 'Zenitsu Agatsuma'},
+  {avatar: require('../assets/avatars/11.png'), name: 'Inosuke Hashibira'},
+  {avatar: require('../assets/avatars/12.png'), name: 'Frodo'},
+  {avatar: require('../assets/avatars/13.png'), name: 'Gandalf'},
+  {avatar: require('../assets/avatars/14.png'), name: 'Legolas'},
+  {avatar: require('../assets/avatars/15.png'), name: 'Coraline'},
+  {avatar: require('../assets/avatars/16.png'), name: 'Other Wybie'},
+  {avatar: require('../assets/avatars/17.png'), name: 'Other Mother'},
+  {avatar: require('../assets/avatars/18.png'), name: 'Jynx'},
+  {avatar: require('../assets/avatars/19.png'), name: 'Vi'},
+  {avatar: require('../assets/avatars/20.png'), name: 'Poro'},
+  {avatar: require('../assets/avatars/21.png'), name: 'Marty McFly'},
+  {avatar: require('../assets/avatars/22.png'), name: 'Doc Brown'},
+  {avatar: require('../assets/avatars/23.png'), name: 'DeLorean'},
+  {avatar: require('../assets/avatars/24.png'), name: 'Iron Man'},
+  {avatar: require('../assets/avatars/25.png'), name: 'Captain America'},
+  {avatar: require('../assets/avatars/26.png'), name: 'Spiderman'},
+  {avatar: require('../assets/avatars/27.png'), name: 'Darth Vader'},
+  {avatar: require('../assets/avatars/28.png'), name: 'Yoda'},
+  {avatar: require('../assets/avatars/29.png'), name: 'R2-D2'},
+  {avatar: require('../assets/avatars/30.png'), name: 'Batman'},
+  {avatar: require('../assets/avatars/31.png'), name: 'Superman'},
+  {avatar: require('../assets/avatars/32.png'), name: 'Wonder Woman'},
+  {avatar: require('../assets/avatars/33.png'), name: 'Harry Potter'},
+  {avatar: require('../assets/avatars/34.png'), name: 'Hermione Granger'},
+  {avatar: require('../assets/avatars/35.png'), name: 'Ron Weasley'}
 ];
 
 

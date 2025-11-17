@@ -128,6 +128,6 @@ def get_group_users():
         if not grupo:
             return jsonify({"Error": "No se encuentra el grupo"}), 404
 
-        lista = [{"email": u.mail, "username": u.nombre_cuenta} for u in grupo.usuarios]
+        lista = [{"email": u.mail, "username": u.nombre_cuenta, "avatar":u.id_icono} for u in grupo.usuarios]
 
         return jsonify(lista), 200

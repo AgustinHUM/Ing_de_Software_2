@@ -343,8 +343,8 @@ export default function HomeScreen() {
               ))
              )}
               {!loading && displayedMovies.length === 0 && (
-                <View style={{ width: '100%', alignItems: 'center', marginTop: 20 }}>
-                  <Text style={{ color: theme.colors.text }}>Sorry! We couldn't find any movies to match you! May be try changing your preferences.</Text>
+                <View style={{ width: '100%', alignItems: 'center', marginTop: 20, width:300,marginLeft:40 }}>
+                  <Text style={{ color: theme.colors.text, textAlign:'center' }}>Sorry! We couldn't find any movies to match you! May be try changing your preferences.</Text>
                 </View>
               )}
             </ScrollView>

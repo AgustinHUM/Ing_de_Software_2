@@ -16,6 +16,7 @@ export default function SelectableListForm({
   showGoBack = true,
   showSelectButton = true,
   unitarySelection = false, 
+  iconBorderRadius = 12,
   initialSelected = [], // [id1, id2, ...]
   pTop = 40, // paddingTop
 }) {
@@ -23,7 +24,7 @@ export default function SelectableListForm({
   const navigation = useNavigation();
   const [filteredItems, setFilteredItems] = useState(items);
   const [selectedNames, setSelectedNames] = useState(items.filter((it) => initialSelected.includes(it.id)).map((it) => it.name) || []);
-
+  
   const normalize = (str = "") =>
     String(str)
       .toLowerCase()
@@ -166,6 +167,7 @@ export default function SelectableListForm({
               icon={it.icon}
               iconHeight={48}
               iconWidth={48}
+              iconBorderRadius={iconBorderRadius}
               initialSelected={selectedNames.includes(it.name)}
               onSelect={(selected) => toggleSelected(it.name, selected)}
               width="100%"
