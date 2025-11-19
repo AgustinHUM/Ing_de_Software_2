@@ -445,7 +445,8 @@ export default function GroupCode({ navigation, route }) {
                   const navParams = { 
                     sessionId: prev.session_id,
                     groupId: groupId,
-                    groupName: groupName
+                    groupName: groupName,
+                    isSoloSession: false
                   };
                   navigation.navigate("GroupSwiping", navParams);
                 }, 100);

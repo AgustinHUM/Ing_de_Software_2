@@ -22,6 +22,7 @@ def show_home_movies():
             .filter(Genero.id_genero.in_(id_generos))
             .filter(PeliculaPlataformaPais.id_plataforma.in_(id_plataformas))
             .filter(PeliculaPlataformaPais.id_pais == id_pais)
+            .filter(Pelicula.score_critica.isnot(None))
             .order_by(desc(Pelicula.score_critica))
             .distinct()
             .limit(6)
