@@ -194,21 +194,32 @@ def get_paginated_fm(page=1, per_page=10):
 +------------------------------------ ADMIN FUNCTIONS ------------------------------------+
 """
 
-def calc_vector_usuario(mail):
-    sql = text("SELECT calcular_vector_usuario(:m)")
-    db.session.execute(sql, {"m": mail})
+def calc_vector_usuario(mail, genres):
+    sql = text("SELECT calcular_vector_usuario(:m, :g)")
+    db.session.execute(sql, {
+        "m": mail,
+        "g": genres 
+    })
     db.session.commit()
 
 
-def recomendar_grupo(mails):
+
+def recomendar_grupo(mails, platforms=None, countries=None, genres=None, limit_count=10):
     sql = text("""
         SELECT * FROM recomendar_peliculas(
             :mails,
-            NULL,            -- plataformas filtro
-            NULL,            -- países filtro
-            10               -- límite de películas
+            :platforms,
+            :countries,
+            :genres,
+            :limit_count
         );
     """)
-    result = db.session.execute(sql, {"mails": mails})
+    result = db.session.execute(sql, {
+        "mails": mails,
+        "platforms": platforms,
+        "countries": countries,
+        "genres": genres,
+        "limit_count": limit_count
+    })
     return result.fetchall()
 
