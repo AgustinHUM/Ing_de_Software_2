@@ -320,7 +320,7 @@ export default function HomeScreen() {
                           movie={{ ...movie, poster: { uri: movie.poster } }}
                           onPress={() =>
                             navigation.navigate('FilmDetails', {
-                              movie: { ...movie, poster: { uri: movie.poster } }
+                              movie: { ...movie, poster: { uri: movie.poster } }, back: 'Home'
                             })
                           }
                         />

@@ -100,7 +100,7 @@ export default function JoinGroup({ navigation }) {
         }}
       >
         <View style={{ flexDirection: "row", alignItems: "center", height: 48 }}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 8 }}>
+          <TouchableOpacity onPress={() => navigation.navigate('Groups')} style={{ padding: 8 }}>
             <MaterialCommunityIcons name="chevron-left" size={28} color={textColor} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>

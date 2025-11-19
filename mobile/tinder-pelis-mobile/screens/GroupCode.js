@@ -443,7 +443,8 @@ export default function GroupCode({ navigation, route }) {
                 const navParams = { 
                   sessionId: prev.session_id,
                   groupId: groupId,
-                  groupName: groupName
+                  groupName: groupName,
+                  isSoloSession: false
                 };
                 navigation.navigate("GroupSwiping", navParams);
               }, 100);
@@ -585,7 +586,7 @@ export default function GroupCode({ navigation, route }) {
       const token = await SecureStore.getItemAsync("userToken");
       await startMatchSession(sessionData.session_id, token);
       // Navigate to GroupSwiping screen
-      navigation.navigate("GroupSwiping", { sessionId: sessionData.session_id });
+      navigation.navigate("GroupSwiping", { sessionId: sessionData.session_id, isSoloSession:false, groupName:groupName });
     } catch (error) {
       Alert.alert("Error", error.message || "Failed to start matching");
     } finally {

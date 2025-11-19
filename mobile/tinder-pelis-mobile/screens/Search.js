@@ -121,7 +121,7 @@ const fetchMovies = async (q, p) => {
                 onlyPoster={false}
                 movie={{ ...m, poster: { uri: m.poster } }}
                 onPress={(selected) =>
-                  navigation.navigate('FilmDetails', { movie: { ...m, poster: { uri: m.poster } } })
+                  navigation.navigate('FilmDetails', { movie: { ...m, poster: { uri: m.poster } }, back: 'Search' })
                 }
               />
             </View>

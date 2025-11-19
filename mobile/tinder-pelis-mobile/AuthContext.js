@@ -156,6 +156,11 @@ export function AuthProvider({ children }) {
     if (deleteHomeMovies && Object.prototype.hasOwnProperty.call(updatedUser, 'homeMovies')) {
       delete updatedUser.homeMovies;
     }
+    if (!!update?.name) {
+      SecureStore.setItemAsync('userName', update.name).catch(e => {
+        console.warn('Error updating userName in SecureStore', e);
+      });
+    }
     dispatch({ type: 'UPDATE_USER', user: updatedUser });
   } else {
     console.warn("state user null, cannot update user.");

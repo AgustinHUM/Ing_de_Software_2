@@ -114,7 +114,7 @@ export default function Favorites() {
                   <FilmDisplay
                     width={120}
                     movie={{...movie,poster:{uri: movie.poster}}}
-                    onPress={() => navigation.navigate('FilmDetails', { movie: { ...movie, poster: { uri: movie.poster } } })}
+                    onPress={() => navigation.navigate('FilmDetails', { movie: { ...movie, poster: { uri: movie.poster } },back:'Favourites' })}
                   />
                   <Text
                     style={{
@@ -186,7 +186,7 @@ export default function Favorites() {
                   <FilmDisplay
                     width={120}
                     movie={{...movie,poster:{uri: movie.poster}}}
-                    onPress={() => navigation.navigate('FilmDetails', { movie: { ...movie, poster: { uri: movie.poster } } })}
+                    onPress={() => navigation.navigate('FilmDetails', { movie: { ...movie, poster: { uri: movie.poster } }, back:'Favourites' })}
                   />
                   <Text
                     style={{

@@ -38,6 +38,7 @@ const fallbackMovie = {
 export default function FilmDetailsScreen() {
     const theme = useTheme();
     const route = useRoute();
+    const back = route.params?.back || 'Home';
     const navigation = useNavigation();
     const [movie,setMovie] = useState(route.params?.movie || fallbackMovie);
     const [showGenresModal, setShowGenresModal] = React.useState(false);
@@ -160,7 +161,7 @@ export default function FilmDetailsScreen() {
                             color={theme.colors.text}
                             />
                         )}
-                        onPress={() => navigation.goBack()}
+                        onPress={() => navigation.navigate(back)}
                         style={{ position: 'absolute', left: 0 }}
                         />
                         <Text variant='headlineSmall' style={{ color: theme.colors.text, fontWeight: 400 }}>Details</Text>
@@ -397,7 +398,7 @@ export default function FilmDetailsScreen() {
                     />
                 )}
             onPress={() => {
-                navigation.navigate('RateFilm', { movie, userRating });
+                navigation.navigate('RateFilm', { movie, userRating, back });
             }}
             style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
             />

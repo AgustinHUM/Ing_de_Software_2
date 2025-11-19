@@ -198,7 +198,7 @@ export default function MatchedMovie({ route }) {
             {displayMovie && (<TouchableOpacity
             onPress={() => {
               AsyncStorage.setItem('lastMatchedMovie',JSON.stringify({ ...winningMovie, poster: { uri: winningMovie.poster },time: Date.now() }));
-              navigation.navigate("FilmDetails", { movie: { ...winningMovie, poster: { uri: winningMovie.poster } } });
+              navigation.navigate("FilmDetails", { movie: { ...winningMovie, poster: { uri: winningMovie.poster }, back: isSoloSession ? 'Home' : 'Groups' } });
               AsyncStorage.getItem('lastMatchedMovie').then(value => {
                 console.log('Saved lastMatchedMovie:', value);
               }).catch(err => {

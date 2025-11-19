@@ -23,7 +23,7 @@ export default function RateFilm() {
   const navigation = useNavigation();
   const route = useRoute();
   const { bottom, top } = useSafeAreaInsets();
-
+  const back = route.params?.back || 'Home';
   const movie = route.params?.movie ?? {};
   const title = movie?.title ?? 'Unknown';
   const year = movie?.year ?? '';
@@ -51,7 +51,7 @@ export default function RateFilm() {
       }
       await rateMovie(movie.id, rating, token);
       Alert.alert('Saved', 'Your rating was saved.', [
-        { text: 'OK', onPress: () => navigation.navigate('FilmDetails', { movie }) },
+        { text: 'OK', onPress: () => navigation.navigate('FilmDetails', { movie,back }) },
       ]);
     } catch (error) {
       console.error('Rating save error:', error);
@@ -85,7 +85,7 @@ export default function RateFilm() {
         <View style={{ flexDirection: 'row', alignItems: 'center', height: 48, marginBottom: 6 }}>
           <IconButton
             icon={() => <MaterialIcons name="chevron-left" size={28} color={theme.colors.text} />}
-            onPress={() => navigation.navigate('FilmDetails', { movie })}
+            onPress={() => navigation.navigate('FilmDetails', { movie,back })}
             style={{ margin: 0 }}
           />
           <View style={{ flex: 1 }}>
