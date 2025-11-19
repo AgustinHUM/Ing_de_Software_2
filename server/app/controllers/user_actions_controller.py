@@ -139,38 +139,32 @@ def get_seen_movies():
 """
 +-------------------------------------- RECOMMENDATION -----------------------------------------+
 """
-def recommend_movies(mails):
-        if not mails:
-            return None
+def recommend_movies(mails, platforms=None, countries=None, genres=None, limit_count=10):
+    if not mails:
+        return None
 
-        for mail in mails:
-            calc_vector_usuario(mail)
-            db.session.commit()
+    recs = recomendar_grupo(mails, platforms, countries, genres, limit_count)
 
+    pelis_ids = [r.movie_id for r in recs]
+    peliculas = (
+        db.session.query(Pelicula)
+        .filter(Pelicula.id_pelicula.in_(pelis_ids))
+        .all()
+    )
 
-        db.session.commit()
+    peliculas_map = {p.id_pelicula: p for p in peliculas}
+    peliculas_ordenadas = [peliculas_map[id] for id in pelis_ids]
 
-        recs = recomendar_grupo(mails)
+    res = [{
+        "id": p.id_pelicula,
+        "title": p.titulo,
+        "poster": p.url_poster,
+        "description": p.trama,
+        "year": p.anio_lanzamiento,
+        "rating": p.score_critica,
+        "genres": [g.nombre_genero for g in p.generos],
+        "runtime": p.duracion,
+    } for p in peliculas_ordenadas]
 
-        pelis_ids = [r.movie_id for r in recs]
-        peliculas = (
-            db.session.query(Pelicula)
-            .filter(Pelicula.id_pelicula.in_(pelis_ids))
-            .all()
-        )
-
-        peliculas_map = {p.id_pelicula: p for p in peliculas}
-        peliculas_ordenadas = [peliculas_map[id] for id in pelis_ids]
-
-        res = [{
-            "id": p.id_pelicula,
-            "title": p.titulo,
-            "poster": p.url_poster,
-            "description": p.trama,
-            "year": p.anio_lanzamiento,
-            "rating": p.score_critica,
-            "genres": [g.nombre_genero for g in p.generos],
-            "runtime": p.duracion,
-        } for p in peliculas_ordenadas]
-        print("Recommended movies:", res)
-        return res
+    print("Recommended movies:", res)
+    return res

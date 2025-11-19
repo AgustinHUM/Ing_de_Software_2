@@ -77,6 +77,8 @@ class MatchingSession:
         if email in self.participants:
             self.participants[email]["genres"] = genres
             self.participants[email]["status"] = "ready"
+
+            calc_vector_usuario(email, genres)
             
             pusher_client.trigger(
                 f"matching-session-{self.session_id}",
@@ -301,7 +303,7 @@ def end_session():
 def get_movies_for_session(session, limit=10, genres=None):
     try:
         mails = [mail for mail in session.participants.keys()]
-        movies = recommend_movies(mails)
+        movies = recommend_movies(mails, genres=genres, limit_count=limit)
         return movies
     except Exception as e:
         print(f"Error getting movies for session: {str(e)}")
