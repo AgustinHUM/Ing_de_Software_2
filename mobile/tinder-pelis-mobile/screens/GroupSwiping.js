@@ -304,7 +304,7 @@ export default function GroupSwiping({ route, navigation }) {
         marginBottom: 20,
         opacity: 0.8 
       }}>
-        {groupName ?? 'Solo Session'} - Movie {currentIndex + 1} of {movies.length}
+        {groupName ?? 'Solo Session'} - Movie {Math.min(currentIndex + 1,movies.length)} of {movies.length}
       </Text>
 
       {/* WebSocket status indicator */}
@@ -557,7 +557,13 @@ export default function GroupSwiping({ route, navigation }) {
         
 
         <TouchableOpacity
-          onPress={() => swipe("right")}
+          onPress={() => {
+            //if (isSoloSession)
+              //handleAutoSubmitVotes();
+            //else {
+              swipe("right");
+            //}
+          }}
           disabled={isAnimating}
           style={{
             width: 70,

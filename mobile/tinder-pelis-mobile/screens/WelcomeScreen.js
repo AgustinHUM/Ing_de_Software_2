@@ -62,7 +62,7 @@ export default function WelcomeScreen({ navigation }) {
             </GradientButton>
 
             <Text variant="bodyLarge" style={{ color: theme.colors.text, marginTop: spacingL, textAlign: 'center' }}>
-              ¿Want to try the app without an account?
+              Want to try the app without an account?
             </Text>
 
             <GradientButton
