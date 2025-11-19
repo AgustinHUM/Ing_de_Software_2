@@ -99,15 +99,12 @@ export default function GroupCode({ navigation, route }) {
     return state.user.groups.find(item => item.id === groupId);
   },[state.user.groups, groupId]);
 
-  const [waiting, setWaiting] = useState(false);
+  const [waiting, setWaiting] = useState(true);
   
   useEffect(() => {
-    setWaiting(true);
+    // Set waiting false once we have members data (even if empty)
     if (members.length > 0) {
-      const timer = setTimeout(() => {
-        setWaiting(false);
-      }, 500);
-      return () => clearTimeout(timer);
+      setWaiting(false);
     }
   }, [members]);
 
@@ -237,6 +234,7 @@ export default function GroupCode({ navigation, route }) {
           if (!data) return;
           const email = data.email ?? null;
           const username = data.username ?? (email ? email.split('@')[0] : 'User');
+          const avatar = data.avatar ?? null;
 
           // We require an email (or some unique id) to avoid duplicates
           if (!email) {
@@ -252,7 +250,7 @@ export default function GroupCode({ navigation, route }) {
           setMembers(prev => {
             // dedupe by email 
             if (prev.some(m => m.email === email)) return prev;
-            const next = [...prev, { email, username }];
+            const next = [...prev, { email, username, avatar }];
             
             // Update the member count based on the actual member list size
             updateUser(prevUser => ({
@@ -438,16 +436,20 @@ export default function GroupCode({ navigation, route }) {
                 movies: data.movies || []
               };
               
-              // Navigate using the session ID from the current session data
-              setTimeout(() => {
-                const navParams = { 
-                  sessionId: prev.session_id,
-                  groupId: groupId,
-                  groupName: groupName,
-                  isSoloSession: false
-                };
-                navigation.navigate("GroupSwiping", navParams);
-              }, 100);
+              // Only navigate if current user is a participant
+              const currentEmail = currentUserEmailRef.current;
+              const isParticipant = prev.participants && prev.participants[currentEmail];
+              
+              if (isParticipant) {
+                setTimeout(() => {
+                  const navParams = { 
+                    sessionId: prev.session_id,
+                    groupId: groupId,
+                    groupName: groupName
+                  };
+                  navigation.navigate("GroupSwiping", navParams);
+                }, 100);
+              }
               
               return updatedSession;
             });
@@ -492,35 +494,6 @@ export default function GroupCode({ navigation, route }) {
             //console.log('session-cleanup event handling error', err);
           }
         });
-
-        try {
-          const token = await SecureStore.getItemAsync("userToken");
-          if (token && mounted) {
-            const list = await getGroupUsersById(groupId, token);
-            if (!mounted) return;
-
-            // normalize server list and dedupe (email required)
-            const serverList = Array.isArray(list) ? list.filter(u => u && u.email).map(u => ({ email: u.email, username: u.username || u.email.split('@')[0] })) : [];
-
-            // merge existing `members` (from any events that arrived before fetch) with serverList
-            setMembers(prev => {
-              const map = new Map();
-              // prefer server version if exists (server authoritative)
-              serverList.forEach(u => map.set(u.email, u));
-              (prev || []).forEach(u => {
-                if (u && u.email && !map.has(u.email)) {
-                  map.set(u.email, u); // keep event-only entries if server didn't include them
-                }
-              });
-              return Array.from(map.values());
-            });
-
-            outageShownRef.current = false;
-          }
-        } catch (e) {
-          // fetch error handled elsewhere in your code
-          console.warn('error fetching initial members', e);
-        }
 
       } catch (err) {
         console.warn('Pusher setup error', err);

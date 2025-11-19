@@ -54,7 +54,7 @@ def add_user_to_group():
         pusher_client.trigger(
             f"group-{id_grupo}",
             "new-member",
-            {"email": usuario.mail, "username": usuario.nombre_cuenta}
+            {"email": usuario.mail, "username": usuario.nombre_cuenta, "avatar": usuario.id_icono}
         )
 
         return jsonify({"id":id_grupo,"name":grupo.nombre_grupo,"members":len(grupo.usuarios)}), 200
@@ -94,7 +94,7 @@ def leave_group():
                 pusher_client.trigger(
                     f"group-{id_grupo}",
                     "member-left",
-                    {"email": usuario.mail, "username": usuario.nombre_cuenta}
+                    {"email": usuario.mail, "username": usuario.nombre_cuenta, "avatar": usuario.id_icono}
                 )
             except Exception as e:
                 print("pusher trigger error on leave:", e)
