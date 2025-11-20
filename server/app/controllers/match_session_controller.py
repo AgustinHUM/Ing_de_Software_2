@@ -418,8 +418,8 @@ def join_session():
         if not success:
             return jsonify({"msg": f"Failed to join session: {result}"}), 400
 
-        
-        session.set_participant_genres(user.mail, selected_genres)
+        genres = [g.nombre_genero for g in user.generos_fav if g.nombre_genero not in selected_genres] + [g for g in selected_genres]
+        session.set_participant_genres(user.mail, genres)
         return jsonify({
             "msg": "Successfully joined session",
             "session": session.to_dict()

@@ -19,7 +19,7 @@ def show_user_info():
             lista_plataformas = [{"id": p.id_plataforma,
                                   "name": p.nombre_plataforma,
                                   "image": p.url_logo} for p in usuario.plataformas]
-            print(usuario.mail, usuario.nombre_cuenta, pais.id_pais)
+            print(usuario.mail, usuario.nombre_cuenta)
             res = {"email": usuario.mail,
                    "name": usuario.nombre_cuenta,
                    "country": pais.id_pais,
